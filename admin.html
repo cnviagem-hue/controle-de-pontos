@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Painel do Gestor - Controle de Ponto</title>
     <style>
-        /* ESTILIZAÇÃO DO PAINEL */
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body { font-family: 'Segoe UI', Arial, sans-serif; display: flex; min-height: 100vh; background-color: #f8fafc; color: #1e293b; }
         
@@ -38,7 +37,6 @@
         .btn-primary:hover { background-color: #ea580c; }
         .divider { margin-top: 20px; border-top: 1px solid #e2e8f0; padding-top: 20px; color: #0f172a; }
         
-        /* RESPONSIVIDADE PARA CELULAR (MOBILE) */
         @media (max-width: 768px) {
             body { flex-direction: column; }
             .sidebar { width: 100%; padding: 16px; }
@@ -57,6 +55,7 @@
 </head>
 <body>
     
+    <!-- MENU LATERAL -->
     <aside class="sidebar">
         <div class="sidebar-header">
             <h2>Ponto Web</h2>
@@ -68,14 +67,16 @@
         </ul>
     </aside>
 
+    <!-- ÁREA CENTRAL -->
     <main class="main-content">
         <header class="topbar">
             <h1 id="titulo-pagina">Gestão de Pessoas</h1>
-            <button id="btnSair" class="btn-sair">Sair da Conta ➔</button>
+            <button id="btnSair" class="btn-sair">Sair ➔</button>
         </header>
 
         <div class="content-area">
             
+            <!-- TELA 1: CADASTRO -->
             <div id="sec-cadastro" class="card">
                 <div class="card-header"><h3>+ Novo Usuário</h3></div>
                 <form id="cadastroForm">
@@ -99,14 +100,12 @@
                                 <option value="admin">Gestor (Acesso Painel)</option>
                             </select>
                         </div>
-                        <div class="input-group full-width divider"><h4>Carga Horária Diária (Horas)</h4></div>
-                        <div class="input-group"><label for="horasSegSex">Segunda a Sexta</label><input type="number" id="horasSegSex" value="8" required></div>
-                        <div class="input-group"><label for="horasSab">Sábado</label><input type="number" id="horasSab" value="4" required></div>
                     </div>
                     <button type="submit" class="btn-primary">Cadastrar Usuário</button>
                 </form>
             </div>
 
+            <!-- TELA 2: RELATÓRIOS -->
             <div id="sec-relatorios" class="card" style="display: none;">
                 <div class="card-header"><h3>Filtro de Registros</h3></div>
                 <div class="card-body">
@@ -119,6 +118,7 @@
                 </div>
             </div>
 
+            <!-- TELA 3: CONFIGURAÇÕES -->
             <div id="sec-config" class="card" style="display: none;">
                 <div class="card-header"><h3>Configuração de Localização</h3></div>
                 <form id="configForm">
@@ -133,6 +133,55 @@
         </div>
     </main>
 
-    <script type="module" src="js/admin.js?v=99"></script>
+    <!-- Mudamos o script para ler de forma direta, ignorando o arquivo antigo temporariamente -->
+    <script>
+        const btnCadastro = document.getElementById('menu-cadastro');
+        const btnRelatorios = document.getElementById('menu-relatorios');
+        const btnConfig = document.getElementById('menu-config');
+
+        const liCadastro = document.getElementById('li-cadastro');
+        const liRelatorios = document.getElementById('li-relatorios');
+        const liConfig = document.getElementById('li-config');
+
+        const boxCadastro = document.getElementById('sec-cadastro');
+        const boxRelatorios = document.getElementById('sec-relatorios');
+        const boxConfig = document.getElementById('sec-config');
+        const txtTitulo = document.getElementById('titulo-pagina');
+
+        function alternarTela(telaVisivel, liAtivo, textoTitulo) {
+            if (boxCadastro) boxCadastro.style.display = 'none';
+            if (boxRelatorios) boxRelatorios.style.display = 'none';
+            if (boxConfig) boxConfig.style.display = 'none';
+            
+            if (liCadastro) liCadastro.classList.remove('active');
+            if (liRelatorios) liRelatorios.classList.remove('active');
+            if (liConfig) liConfig.classList.remove('active');
+
+            if (telaVisivel) telaVisivel.style.display = 'block';
+            if (liAtivo) liAtivo.classList.add('active');
+            if (txtTitulo) txtTitulo.textContent = textoTitulo;
+        }
+
+        if (btnCadastro) {
+            btnCadastro.onclick = function(e) {
+                e.preventDefault();
+                alternarTela(boxCadastro, liCadastro, 'Gestão de Pessoas');
+            };
+        }
+
+        if (btnRelatorios) {
+            btnRelatorios.onclick = function(e) {
+                e.preventDefault();
+                alternarTela(boxRelatorios, liRelatorios, 'Relatórios e Fechamento');
+            };
+        }
+
+        if (btnConfig) {
+            btnConfig.onclick = function(e) {
+                e.preventDefault();
+                alternarTela(boxConfig, liConfig, 'Configurações do Sistema');
+            };
+        }
+    </script>
 </body>
 </html>

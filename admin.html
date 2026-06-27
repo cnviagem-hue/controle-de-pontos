@@ -8,6 +8,7 @@
 </head>
 <body class="dashboard-body">
     
+    <!-- MENU LATERAL -->
     <aside class="sidebar">
         <div class="sidebar-header">
             <img src="https://cdn-icons-png.flaticon.com/512/2088/2088617.png" alt="Logo">
@@ -20,16 +21,19 @@
         </ul>
     </aside>
 
+    <!-- ÁREA CENTRAL -->
     <main class="main-content">
+        <!-- CABEÇALHO DO CENTRO -->
         <header class="topbar">
-            <h1>Gestão de Colaboradores</h1>
+            <h1>Gestão de Pessoas e Acessos</h1>
             <button id="btnSair" class="btn-sair">Sair da Conta ➔</button>
         </header>
 
+        <!-- CONTEÚDO (O FORMULÁRIO) -->
         <div class="content-area">
             <div class="card">
                 <div class="card-header">
-                    <h3>+ Novo Colaborador</h3>
+                    <h3>+ Novo Usuário</h3>
                 </div>
                 
                 <form id="cadastroForm" class="card-body">
@@ -47,6 +51,15 @@
                         <div class="input-group">
                             <label for="senhaNova">Senha Inicial</label>
                             <input type="password" id="senhaNova" required placeholder="Mínimo 6 caracteres">
+                        </div>
+
+                        <!-- CAMPO NOVO: TIPO DE ACESSO -->
+                        <div class="input-group full-width">
+                            <label for="tipoAcesso">Tipo de Acesso no Sistema</label>
+                            <select id="tipoAcesso" style="padding: 12px; border: 1px solid #d1d5db; border-radius: 6px; background-color: #f9fafb; outline: none; font-size: 14px; width: 100%; cursor: pointer;">
+                                <option value="colaborador">Colaborador (App de Bater Ponto)</option>
+                                <option value="admin">Gestor (Acesso Total ao Painel Administrativo)</option>
+                            </select>
                         </div>
                         
                         <div class="input-group full-width divider">
@@ -68,7 +81,7 @@
                             <input type="number" id="horasDom" min="0" max="24" value="0" required>
                         </div>
                     </div>
-                    <button type="submit" class="btn-primary">Cadastrar Colaborador</button>
+                    <button type="submit" class="btn-primary">Cadastrar Usuário</button>
                 </form>
                 <p id="msgCadastro" class="alerta"></p>
             </div>

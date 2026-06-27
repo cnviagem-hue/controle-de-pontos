@@ -145,12 +145,7 @@
         </div>
     </main>
 
-    <script type="module">
-        import { auth, db } from './js/firebase-config.js';
-        import { signOut, getAuth, createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
-        import { doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
-
+    <script>
         const btnCadastro = document.getElementById('menu-cadastro');
         const btnRelatorios = document.getElementById('menu-relatorios');
         const btnConfig = document.getElementById('menu-config');
@@ -181,4 +176,25 @@
 
         if (btnCadastro) { btnCadastro.onclick = (e) => { e.preventDefault(); alternarTela(boxCadastro, liCadastro, 'Gestão de Pessoas'); }; }
         if (btnRelatorios) { btnRelatorios.onclick = (e) => { e.preventDefault(); alternarTela(boxRelatorios, liRelatorios, 'Relatórios e Fechamento'); }; }
-        if (btnConfig) {
+        if (btnConfig) { btnConfig.onclick = (e) => { e.preventDefault(); alternarTela(boxConfig, liConfig, 'Configurações do Sistema'); }; }
+        if (btnSair) { btnSair.onclick = (e) => { e.preventDefault(); window.location.href = 'index.html'; }; }
+
+        // CAPTURA DO GPS PAI
+        const btnCapturarGps = document.getElementById('btnCapturarGps');
+        if (btnCapturarGps) {
+            btnCapturarGps.onclick = function() {
+                if (!navigator.geolocation) { alert("Seu navegador não suporta geolocalização."); return; }
+                btnCapturarGps.textContent = "⌛ Capturando...";
+                navigator.geolocation.getCurrentPosition(function(pos) {
+                    document.getElementById('latEmpresa').value = pos.coords.latitude;
+                    document.getElementById('lngEmpresa').value = pos.coords.longitude;
+                    btnCapturarGps.textContent = "📍 Obter Localização Atual";
+                }, function() {
+                    alert("Ative o GPS.");
+                    btnCapturarGps.textContent = "📍 Obter Localização Atual";
+                });
+            };
+        }
+    </script>
+</body>
+</html>

@@ -1,116 +1,135 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
 * {
     margin: 0;
     padding: 0;
     box-sizing: border-box;
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    font-family: 'Inter', sans-serif;
 }
 
 body {
-    background-color: #f4f7f6;
-    color: #333;
+    background-color: #f0f2f5;
+    color: #1e293b;
     display: flex;
     flex-direction: column;
     align-items: center;
-    padding: 20px;
+    padding: 40px 20px;
 }
 
-/* Formatação das Caixas Principais */
-.login-container, main {
+/* Container Global */
+.container {
     background: #ffffff;
-    padding: 30px;
-    border-radius: 10px;
-    box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+    padding: 40px;
+    border-radius: 12px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.05);
     width: 100%;
-    max-width: 500px;
-    margin-top: 20px;
+    max-width: 600px;
+}
+
+/* Área da Logo */
+.brand {
+    text-align: center;
+    margin-bottom: 30px;
+}
+
+.brand img {
+    width: 70px;
+    margin-bottom: 15px;
+}
+
+.brand h1 {
+    font-size: 24px;
+    color: #0f172a;
+    font-weight: 700;
+}
+
+.brand p {
+    color: #64748b;
+    font-size: 14px;
 }
 
 /* Cabeçalho do Admin */
 header {
-    width: 100%;
-    max-width: 500px;
     display: flex;
     justify-content: space-between;
     align-items: center;
+    margin-bottom: 30px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+header h1 {
+    font-size: 20px;
+    color: #0f172a;
+}
+
+h2 {
+    font-size: 18px;
     margin-bottom: 20px;
-    background: #ffffff;
-    padding: 15px 30px;
-    border-radius: 10px;
-    box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+    color: #334155;
 }
 
-h1, h2, h3 {
-    color: #2c3e50;
-    margin-bottom: 15px;
+/* Organizando o Formulário em Grade */
+.form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 15px;
 }
 
-/* Formulários e Inputs */
-form {
+.full-width {
+    grid-column: 1 / -1;
+}
+
+.input-group {
     display: flex;
     flex-direction: column;
 }
 
 label {
-    margin-bottom: 5px;
-    font-weight: 600;
-    font-size: 14px;
-    color: #555;
+    margin-bottom: 6px;
+    font-weight: 500;
+    font-size: 13px;
+    color: #475569;
 }
 
 input {
-    padding: 12px;
-    margin-bottom: 15px;
-    border: 1px solid #ddd;
-    border-radius: 6px;
-    font-size: 15px;
-    background-color: #fafafa;
-    transition: border-color 0.3s;
+    padding: 10px 14px;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    font-size: 14px;
+    background-color: #f8fafc;
+    transition: all 0.2s ease;
 }
 
 input:focus {
-    border-color: #3498db;
+    border-color: #3b82f6;
+    background-color: #ffffff;
     outline: none;
-    background-color: #fff;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
 }
 
-/* Botões Modernos */
+/* Botões */
 button {
-    background-color: #3498db;
+    background-color: #3b82f6;
     color: white;
     border: none;
     padding: 12px;
-    border-radius: 6px;
-    font-size: 16px;
-    font-weight: bold;
+    border-radius: 8px;
+    font-size: 15px;
+    font-weight: 600;
     cursor: pointer;
-    transition: background 0.3s, transform 0.1s;
+    transition: background 0.2s;
+    width: 100%;
     margin-top: 10px;
 }
 
 button:hover {
-    background-color: #2980b9;
+    background-color: #2563eb;
 }
 
-button:active {
-    transform: scale(0.98);
-}
-
-/* Botão de Sair Vermelho */
 #btnSair {
-    background-color: #e74c3c;
-    padding: 8px 15px;
-    font-size: 14px;
-    margin-top: 0;
-}
-
-#btnSair:hover {
-    background-color: #c0392b;
-}
-
-/* Linha divisória */
-hr {
-    border: 0;
-    height: 1px;
-    background: #eee;
-    margin: 30px 0;
-}
+    background-color: #ef4444;
+    width: auto;
+    padding: 8px 16px;
+    font-size: 13px;
+    margin

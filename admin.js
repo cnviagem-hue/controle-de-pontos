@@ -3,86 +3,85 @@ import { signOut, getAuth, createUserWithEmailAndPassword } from "https://www.gs
 import { doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
 
+// ==========================================
+// CONFIGURAÇÃO DOS MENUS DE NAVEGAÇÃO
+// ==========================================
+const btnCadastro = document.getElementById('menu-cadastro');
+const btnRelatorios = document.getElementById('menu-relatorios');
+const btnConfig = document.getElementById('menu-config');
 const btnSair = document.getElementById('btnSair');
-
-if (btnSair) {
-    btnSair.addEventListener('click', async (e) => {
-        e.preventDefault();
-        try {
-            await signOut(auth);
-            window.location.href = 'index.html';
-        } catch (error) {
-            console.error("Erro ao sair:", error);
-        }
-    });
-}
-
-// ==========================================
-// NAVEGAÇÃO DOS MENUS (Ajustado para os IDs corretos)
-// ==========================================
-const menuCadastro = document.getElementById('menu-cadastro');
-const menuRelatorios = document.getElementById('menu-relatorios');
-const menuConfig = document.getElementById('menu-config');
 
 const liCadastro = document.getElementById('li-cadastro');
 const liRelatorios = document.getElementById('li-relatorios');
 const liConfig = document.getElementById('li-config');
 
-const secCadastro = document.getElementById('sec-cadastro');
-const secRelatorios = document.getElementById('sec-relatorios');
-const secConfig = document.getElementById('sec-config');
-const tituloPagina = document.getElementById('titulo-pagina');
+const boxCadastro = document.getElementById('sec-cadastro');
+const boxRelatorios = document.getElementById('sec-relatorios');
+const boxConfig = document.getElementById('sec-config');
+const txtTitulo = document.getElementById('titulo-pagina');
 
-function ocultarTelas() {
-    if (secCadastro) secCadastro.style.display = 'none';
-    if (secRelatorios) secRelatorios.style.display = 'none';
-    if (secConfig) secConfig.style.display = 'none';
+function resetarNavegacao() {
+    if (boxCadastro) boxCadastro.style.display = 'none';
+    if (boxRelatorios) boxRelatorios.style.display = 'none';
+    if (boxConfig) boxConfig.style.display = 'none';
     
     if (liCadastro) liCadastro.classList.remove('active');
     if (liRelatorios) liRelatorios.classList.remove('active');
     if (liConfig) liConfig.classList.remove('active');
 }
 
-if (menuCadastro) {
-    menuCadastro.addEventListener('click', (e) => {
-        e.preventDefault();
-        ocultarTelas();
-        if (secCadastro) secCadastro.style.display = 'block';
+if (btnCadastro) {
+    btnCadastro.addEventListener('click', function(evento) {
+        evento.preventDefault();
+        resetarNavegacao();
+        if (boxCadastro) boxCadastro.style.display = 'block';
         if (liCadastro) liCadastro.classList.add('active');
-        if (tituloPagina) tituloPagina.textContent = 'Gestão de Pessoas e Acessos';
+        if (txtTitulo) txtTitulo.textContent = 'Gestão de Pessoas e Acessos';
     });
 }
 
-if (menuRelatorios) {
-    menuRelatorios.addEventListener('click', (e) => {
-        e.preventDefault();
-        ocultarTelas();
-        if (secRelatorios) secRelatorios.style.display = 'block';
+if (btnRelatorios) {
+    btnRelatorios.addEventListener('click', function(evento) {
+        evento.preventDefault();
+        resetarNavegacao();
+        if (boxRelatorios) boxRelatorios.style.display = 'block';
         if (liRelatorios) liRelatorios.classList.add('active');
-        if (tituloPagina) tituloPagina.textContent = 'Relatórios e Fechamento';
+        if (txtTitulo) txtTitulo.textContent = 'Relatórios e Fechamento';
     });
 }
 
-if (menuConfig) {
-    menuConfig.addEventListener('click', (e) => {
-        e.preventDefault();
-        ocultarTelas();
-        if (secConfig) secConfig.style.display = 'block';
+if (btnConfig) {
+    btnConfig.addEventListener('click', function(evento) {
+        evento.preventDefault();
+        resetarNavegacao();
+        if (boxConfig) boxConfig.style.display = 'block';
         if (liConfig) liConfig.classList.add('active');
-        if (tituloPagina) tituloPagina.textContent = 'Configurações do Sistema';
+        if (txtTitulo) txtTitulo.textContent = 'Configurações do Sistema';
         carregarConfiguracoes();
     });
 }
 
+if (btnSair) {
+    btnSair.addEventListener('click', async function(evento) {
+        evento.preventDefault();
+        try {
+            await signOut(auth);
+            window.location.href = 'index.html';
+        } catch (erro) {
+            console.error("Erro ao sair:", erro);
+        }
+    });
+}
+
 // ==========================================
-// LÓGICA DE CADASTRO DE USUÁRIO
+// PROCESSO DE CADASTRO DE USUÁRIOS
 // ==========================================
 const cadastroForm = document.getElementById('cadastroForm');
 const msgCadastro = document.getElementById('msgCadastro');
 
 if (cadastroForm) {
-    cadastroForm.addEventListener('submit', async (e) => {
-        e.preventDefault();
+    cadastroForm.addEventListener('submit', async function(evento) {
+        evento.preventDefault();
         if (msgCadastro) {
             msgCadastro.style.display = 'block';
             msgCadastro.style.color = '#3b82f6';
@@ -117,18 +116,18 @@ if (cadastroForm) {
                 msgCadastro.textContent = 'Usuário cadastrado com sucesso!';
             }
             cadastroForm.reset();
-            setTimeout(() => { if (msgCadastro) msgCadastro.style.display = 'none'; }, 4000);
-        } catch (error) {
+            setTimeout(function() { if (msgCadastro) msgCadastro.style.display = 'none'; }, 4000);
+        } catch (erro) {
             if (msgCadastro) {
                 msgCadastro.style.color = '#dc2626';
-                msgCadastro.textContent = 'Erro: ' + error.message;
+                msgCadastro.textContent = 'Erro: ' + erro.message;
             }
         }
     });
 }
 
 // ==========================================
-// LÓGICA DE CONFIGURAÇÕES (GEOLOCALIZAÇÃO)
+// PROCESSO DE CONFIGURAÇÃO (GEOLOCALIZAÇÃO)
 // ==========================================
 const configForm = document.getElementById('configForm');
 const msgConfig = document.getElementById('msgConfig');
@@ -142,18 +141,18 @@ async function carregarConfiguracoes() {
             if (document.getElementById('lngEmpresa')) document.getElementById('lngEmpresa').value = data.longitude || '';
             if (document.getElementById('raioPermitido')) document.getElementById('raioPermitido').value = data.raio || 50;
         }
-    } catch (error) {
-        console.error("Erro ao carregar configurações", error);
+    } catch (erro) {
+        console.error("Erro ao obter dados de config:", erro);
     }
 }
 
 if (configForm) {
-    configForm.addEventListener('submit', async (e) => {
-        e.preventDefault();
+    configForm.addEventListener('submit', async function(evento) {
+        evento.preventDefault();
         if (msgConfig) {
             msgConfig.style.display = 'block';
             msgConfig.style.color = '#3b82f6';
-            msgConfig.textContent = 'Salvando...';
+            msgConfig.textContent = 'Gravando...';
         }
 
         const lat = document.getElementById('latEmpresa').value;
@@ -168,13 +167,13 @@ if (configForm) {
             });
             if (msgConfig) {
                 msgConfig.style.color = '#16a34a';
-                msgConfig.textContent = 'Configurações salvas com sucesso!';
+                msgConfig.textContent = 'Configurações gravadas!';
             }
-            setTimeout(() => { if (msgConfig) msgConfig.style.display = 'none'; }, 4000);
-        } catch (error) {
+            setTimeout(function() { if (msgConfig) msgConfig.style.display = 'none'; }, 4000);
+        } catch (erro) {
             if (msgConfig) {
                 msgConfig.style.color = '#dc2626';
-                msgConfig.textContent = 'Erro ao salvar: ' + error.message;
+                msgConfig.textContent = 'Erro ao gravar: ' + erro.message;
             }
         }
     });

@@ -42,6 +42,7 @@
         .btn-secundario:hover { background-color: #2563eb; }
         .divider { margin-top: 20px; border-top: 1px solid #e2e8f0; padding-top: 20px; color: #0f172a; }
         
+        /* TABELA */
         .table-responsive { width: 100%; overflow-x: auto; margin-top: 16px; }
         .colab-table { width: 100%; border-collapse: collapse; text-align: left; font-size: 0.9rem; }
         .colab-table th { background-color: #f1f5f9; color: #475569; padding: 12px; font-weight: 600; border-bottom: 2px solid #e2e8f0; }
@@ -50,14 +51,38 @@
         .badge.ativo { background-color: #dcfce7; color: #15803d; }
         .badge.bloqueado { background-color: #fee2e2; color: #ef4444; }
         
-        .actions-cell { display: flex; gap: 8px; }
+        .actions-cell { display: flex; gap: 6px; flex-wrap: wrap; }
         .btn-action { border: none; padding: 6px 10px; border-radius: 6px; font-size: 0.8rem; font-weight: 600; cursor: pointer; transition: background 0.2s; }
         .btn-action.edit { background-color: #e0f2fe; color: #0369a1; }
-        .btn-action.block { background-color: #fee2e2; color: #b91c1c; }
+        .btn-action.block { background-color: #fef3c7; color: #b45309; }
         .btn-action.activate { background-color: #dcfce7; color: #166534; }
+        .btn-action.delete { background-color: #fee2e2; color: #b91c1c; } /* Estilo do botão excluir */
 
+        /* TOAST */
         .toast-notification { position: fixed; bottom: 24px; right: 24px; background-color: #0f172a; color: #ffffff; padding: 16px 24px; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.15); display: flex; align-items: center; gap: 12px; font-size: 0.9rem; font-weight: 500; transform: translateY(100px); opacity: 0; transition: all 0.3s cubic-bezier(0.68, -0.55, 0.27, 1.55); z-index: 9999; border-left: 4px solid #10b981; }
         .toast-notification.show { transform: translateY(0); opacity: 1; }
+
+        /* LAYOUT TOP PARA O POP-UP (MODAL PREMIUM UI) */
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.4); backdrop-filter: blur(4px); display: flex; align-items: center; justify-content: center; z-index: 10000; opacity: 0; pointer-events: none; transition: opacity 0.25s ease; }
+        .modal-overlay.show { opacity: 1; pointer-events: auto; }
+        .modal-box { background: #ffffff; padding: 28px; border-radius: 16px; max-width: 420px; width: calc(100% - 32px); box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04); transform: scale(0.9); transition: transform 0.25s ease; text-align: center; }
+        .modal-overlay.show .modal-box { transform: scale(1); }
+        
+        .modal-icon { font-size: 2.5rem; margin-bottom: 12px; display: inline-block; }
+        .modal-icon.danger { color: #ef4444; }
+        .modal-icon.info { color: #3b82f6; }
+        
+        .modal-box h4 { font-size: 1.25rem; font-weight: 700; color: #0f172a; margin-bottom: 8px; }
+        .modal-box p { font-size: 0.95rem; color: #64748b; margin-bottom: 24px; line-height: 1.5; }
+        
+        .modal-buttons { display: flex; gap: 12px; justify-content: center; }
+        .btn-modal { padding: 12px 20px; border-radius: 8px; font-size: 0.9rem; font-weight: 600; border: none; cursor: pointer; transition: background 0.2s; width: 100%; }
+        .btn-modal.cancel { background-color: #f1f5f9; color: #475569; }
+        .btn-modal.cancel:hover { background-color: #e2e8f0; }
+        .btn-modal.confirm-del { background-color: #ef4444; color: white; }
+        .btn-modal.confirm-del:hover { background-color: #dc2626; }
+        .btn-modal.confirm-save { background-color: #3b82f6; color: white; }
+        .btn-modal.confirm-save:hover { background-color: #2563eb; }
 
         @media (max-width: 768px) {
             body { flex-direction: column; }
@@ -138,7 +163,6 @@
                         </div>
                         <button type="submit" class="btn-primary">Cadastrar Usuário</button>
                     </form>
-                    <div id="msgCadastro" class="alerta"></div>
                 </div>
 
                 <div class="card">
@@ -188,7 +212,7 @@
                         <div class="input-group full-width">
                             <button type="button" id="btnCapturarGps" class="btn-secundario">📍 Obter Localização Atual</button>
                         </div>
-                        <div class="input-group"><label for="latEmpresa">Latitude</label><input type="text" id="latEmpresa" placeholder="Aguardando GPS..." required readonly></div>
+                        <div class="input-group"><label graders for="latEmpresa">Latitude</label><input type="text" id="latEmpresa" placeholder="Aguardando GPS..." required readonly></div>
                         <div class="input-group"><label for="lngEmpresa">Longitude</label><input type="text" id="lngEmpresa" placeholder="Aguardando GPS..." required readonly></div>
                         <div class="input-group full-width">
                             <label for="raioPermitido">Raio de Tolerância (metros)</label>
@@ -197,11 +221,22 @@
                     </div>
                     <button type="submit" class="btn-primary" style="background-color: #3b82f6;">Salvar Configurações</button>
                 </form>
-                <div id="msgConfig" class="alerta"></div>
             </div>
 
         </div>
     </main>
+
+    <div id="modalConfirmacao" class="modal-overlay">
+        <div class="modal-box">
+            <span id="modalIcon" class="modal-icon danger">⚠️</span>
+            <h4 id="modalTitulo">Confirmação</h4>
+            <p id="modalTexto">Tem certeza que deseja realizar esta ação?</p>
+            <div class="modal-buttons">
+                <button id="btnModalCancelar" class="btn-modal cancel">Cancelar</button>
+                <button id="btnModalConfirmar" class="btn-modal confirm-del">Confirmar</button>
+            </div>
+        </div>
+    </div>
 
     <div id="toastNotification" class="toast-notification">
         <span id="toastMessage">Aviso</span>
@@ -210,10 +245,10 @@
     <script type="module">
         import { auth, db } from './js/firebase-config.js';
         import { signOut, getAuth, createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
-        import { doc, setDoc, getDoc, collection, getDocs, updateDoc } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
+        import { doc, setDoc, getDoc, collection, getDocs, updateDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
 
-        // Navegação das Abas
+        // Elementos da interface
         const btnCadastro = document.getElementById('menu-cadastro');
         const btnRelatorios = document.getElementById('menu-relatorios');
         const btnConfig = document.getElementById('menu-config');
@@ -229,19 +264,26 @@
         const boxConfig = document.getElementById('sec-config');
         const txtTitulo = document.getElementById('titulo-pagina');
 
+        // Elementos da Modal Customizada
+        const modal = document.getElementById('modalConfirmacao');
+        const modalIcon = document.getElementById('modalIcon');
+        const modalTitulo = document.getElementById('modalTitulo');
+        const modalTexto = document.getElementById('modalTexto');
+        const btnModalCancelar = document.getElementById('btnModalCancelar');
+        const btnModalConfirmar = document.getElementById('btnModalConfirmar');
+
+        let acaoConfirmarGlobal = null;
+
         function alternarTela(telaVisivel, liAtivo, textoTitulo) {
             boxCadastro.style.display = 'none';
             boxRelatorios.style.display = 'none';
             boxConfig.style.display = 'none';
-            
             liCadastro.classList.remove('active');
             liRelatorios.classList.remove('active');
             liConfig.classList.remove('active');
 
             telaVisivel.style.display = 'flex';
-            if(telaVisivel === boxRelatorios || telaVisivel === boxConfig) {
-                telaVisivel.style.display = 'block';
-            }
+            if(telaVisivel === boxRelatorios || telaVisivel === boxConfig) { telaVisivel.style.display = 'block'; }
             liAtivo.classList.add('active');
             txtTitulo.textContent = textoTitulo;
         }
@@ -259,6 +301,25 @@
             setTimeout(() => { toast.classList.remove('show'); }, 3500);
         }
 
+        // GERENCIADOR DA MODAL TOP DE LINHA
+        function abrirModalUI(titulo, texto, icone, classeBotao, callbackConfirmar) {
+            modalTitulo.textContent = titulo;
+            modalTexto.textContent = texto;
+            modalIcon.textContent = icone;
+            modalIcon.className = `modal-icon ${classeBotao === 'confirm-del' ? 'danger' : 'info'}`;
+            btnModalConfirmar.className = `btn-modal ${classeBotao}`;
+            acaoConfirmarGlobal = callbackConfirmar;
+            modal.classList.add('show');
+        }
+
+        btnModalCancelar.onclick = () => { modal.classList.remove('show'); acaoConfirmarGlobal = null; };
+        btnModalConfirmar.onclick = async () => {
+            if(acaoConfirmarGlobal) {
+                await acaoConfirmarGlobal();
+            }
+            modal.classList.remove('show');
+        };
+
         btnCopiarLink.onclick = () => {
             const linkColaborador = window.location.origin + "/colaborador.html";
             navigator.clipboard.writeText(linkColaborador).then(() => {
@@ -266,7 +327,7 @@
             });
         };
 
-        // GPS do admin
+        // GPS
         const btnCapturarGps = document.getElementById('btnCapturarGps');
         if (btnCapturarGps) {
             btnCapturarGps.onclick = () => {
@@ -282,10 +343,7 @@
             };
         }
 
-        // SALVAR CONFIGURAÇÕES DA EMPRESA
-        const configForm = document.getElementById('configForm');
-        const msgConfig = document.getElementById('msgConfig');
-
+        // CARREGAR E SALVAR CONFIGURAÇÕES
         async function carregarConfiguracoes() {
             try {
                 const docRef = await getDoc(doc(db, "sistema", "configGeral"));
@@ -299,6 +357,7 @@
             } catch (err) { console.error(err); }
         }
 
+        const configForm = document.getElementById('configForm');
         if (configForm) {
             configForm.onsubmit = async (e) => {
                 e.preventDefault();
@@ -314,7 +373,7 @@
             };
         }
 
-        // REAL-TIME: RENDERIZAR TABELA DE COLABORADORES
+        // RENDERIZAR TABELA COM EXCLUIR, BLOQUEAR E DISPOSITIVO
         const tabelaBody = document.getElementById('tabelaColaboradoresBody');
 
         async function listarColaboradores() {
@@ -331,61 +390,104 @@
                 querySnapshot.forEach((usuarioDoc) => {
                     const u = usuarioDoc.data();
                     const uid = usuarioDoc.id;
+                    
+                    // Proteção contra registros com campos vazios (evita o undefined)
+                    const nomeExibir = u.nome || "Usuário de Teste Antigo";
+                    const emailExibir = u.email || "sem_email@banco.com";
+
                     const statusText = u.status !== "bloqueado" ? "Ativo" : "Bloqueado";
                     const badgeClass = u.status !== "bloqueado" ? "ativo" : "bloqueado";
                     const btnBlockText = u.status !== "bloqueado" ? "🔒 Bloquear" : "🔓 Ativar";
-                    const btnBlockClass = u.status !== "bloqueado" ? "block" : "activate";
 
                     const tr = document.createElement('tr');
                     tr.innerHTML = `
-                        <td><strong>${u.nome}</strong></td>
-                        <td>${u.email}</td>
-                        <td><span style="text-transform: capitalize;">${u.dispositivoPermitido || 'celular'}</span></td>
+                        <td><strong>${nomeExibir}</strong></td>
+                        <td>${emailExibir}</td>
+                        <td><span style="text-transform: capitalize; font-weight:600;">${u.dispositivoPermitido || 'celular'}</span></td>
                         <td><span class="badge ${badgeClass}">${statusText}</span></td>
                         <td class="actions-cell">
-                            <button class="btn-action edit" data-uid="${uid}" data-nome="${u.nome}">✏️ Disp</button>
-                            <button class="btn-action ${btnBlockClass}" data-uid="${uid}" data-status="${u.status || 'ativo'}">${btnBlockText}</button>
+                            <button class="btn-action edit" data-uid="${uid}" data-nome="${nomeExibir}">✏️ Disp</button>
+                            <button class="btn-action block" data-uid="${uid}" data-status="${u.status || 'ativo'}">${btnBlockText}</button>
+                            <button class="btn-action delete" data-uid="${uid}" data-nome="${nomeExibir}">🗑️ Excluir</button>
                         </td>
                     `;
                     tabelaBody.appendChild(tr);
                 });
 
-                // Vincula eventos nos botões recém-criados
                 vincularCliquesTabela();
 
             } catch (err) { 
-                tabelaBody.innerHTML = '<tr><td colspan="5" style="text-align: center; color: #ef4444;">Erro ao ler banco.</td></tr>';
+                tabelaBody.innerHTML = '<tr><td colspan="5" style="text-align: center; color: #ef4444;">Erro ao carregar tabela.</td></tr>';
             }
         }
 
         function vincularCliquesTabela() {
-            // Botão Alterar Dispositivo Autorizado de forma rápida
+            // Alterar permissão de dispositivo (Disp)
             document.querySelectorAll('.btn-action.edit').forEach(btn => {
-                btn.onclick = async () => {
+                btn.onclick = () => {
                     const uid = btn.getAttribute('data-uid');
                     const nome = btn.getAttribute('data-nome');
-                    const novaPermissao = prompt(`Alterar dispositivo de ${nome} para:\nDigite: celular, pc ou ambos`).toLowerCase().trim();
                     
-                    if(['celular', 'pc', 'ambos'].includes(novaPermissao)) {
-                        await updateDoc(doc(db, "usuarios", uid), { dispositivoPermitido: novaPermissao });
-                        mostrarToast("Permissão alterada com sucesso!");
-                        listarColaboradores();
-                    } else if (novaPermissao !== "") {
-                        alert("Opção inválida! Digite apenas celular, pc ou ambos.");
-                    }
+                    // Abrimos a nossa modal ao invés do prompt feio!
+                    abrirModalUI(
+                        "Alterar Dispositivo", 
+                        `Escolha as novas permissões para ${nome}. Digite 'celular', 'pc' ou 'ambos' no campo abaixo se estivéssemos editando completo. Para este atalho rápido, deseja alterar para o modo oposto?`, 
+                        "⚙️", 
+                        "confirm-save",
+                        async () => {
+                            const permissaoAtual = btn.parentElement.parentElement.children[2].textContent.toLowerCase();
+                            const novaPerm = permissaoAtual === "celular" ? "pc" : "celular";
+                            await updateDoc(doc(db, "usuarios", uid), { dispositivoPermitido: novaPerm });
+                            mostrarToast(`Permissão de ${nome} alterada para ${novaPerm}!`);
+                            listarColaboradores();
+                        }
+                    );
                 };
             });
 
-            // Botão Bloquear/Ativar
-            document.querySelectorAll('.btn-action.block, .btn-action.activate').forEach(btn => {
-                btn.onclick = async () => {
+            // Bloquear / Ativar
+            document.querySelectorAll('.btn-action.block').forEach(btn => {
+                btn.onclick = () => {
                     const uid = btn.getAttribute('data-uid');
                     const statusAtual = btn.getAttribute('data-status');
                     const novoStatus = statusAtual === "bloqueado" ? "ativo" : "bloqueado";
 
-                    await updateDoc(doc(db, "usuarios", uid), { status: novoStatus });
-                    mostrarToast(novoStatus === "bloqueado" ? "Usuário bloqueado!" : "Usuário ativado com sucesso!");
-                    listarColaboradores();
+                    abrirModalUI(
+                        novoStatus === "bloqueado" ? "Bloquear Usuário?" : "Ativar Usuário?",
+                        `Tem certeza que deseja alterar o status deste colaborador?`,
+                        "🔒",
+                        novoStatus === "bloqueado" ? "confirm-del" : "confirm-save",
+                        async () => {
+                            await updateDoc(doc(db, "usuarios", uid), { status: novoStatus });
+                            mostrarToast(novoStatus === "bloqueado" ? "Usuário suspenso!" : "Usuário reativado!");
+                            listarColaboradores();
+                        }
+                    );
+                };
+            });
+
+            // BOTÃO DE EXCLUIR OPERACIONAL COM CORREÇÃO DE LEITURA
+            document.querySelectorAll('.btn-action.delete').forEach(btn => {
+                btn.onclick = () => {
+                    const uid = btn.getAttribute('data-uid');
+                    const nome = btn.getAttribute('data-nome');
+
+                    // MODAL PREMIUM UI DESIGN NO LOGOUT/EXCLUSÃO
+                    abrirModalUI(
+                        "Excluir Registro?",
+                        `Deseja deletar ${nome} permanentemente do banco de dados? Esta ação não pode ser desfeita.`,
+                        "🗑️",
+                        "confirm-del",
+                        async () => {
+                            try {
+                                await deleteDoc(doc(db, "usuarios", uid));
+                                mostrarToast("Colaborador removido com sucesso!");
+                                listarColaboradores();
+                            } catch (err) {
+                                mostrarToast("Erro ao deletar: " + err.message, "#ef4444");
+                            }
+                        }
+                    );
                 };
             });
         }
@@ -426,7 +528,6 @@
             };
         }
 
-        // Executa ao carregar a página pela primeira vez
         listarColaboradores();
     </script>
 </body>

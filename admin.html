@@ -35,8 +35,12 @@
         
         .btn-primary { background-color: #f97316; color: white; border: none; padding: 14px; border-radius: 8px; font-weight: 600; cursor: pointer; width: 100%; margin-top: 24px; font-size: 1rem; transition: background 0.2s; }
         .btn-primary:hover { background-color: #ea580c; }
+        .btn-secundario { background-color: #3b82f6; color: white; border: none; padding: 10px 15px; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 0.9rem; transition: background 0.2s; margin-bottom: 10px; width: fit-content; }
+        .btn-secundario:hover { background-color: #2563eb; }
         .divider { margin-top: 20px; border-top: 1px solid #e2e8f0; padding-top: 20px; color: #0f172a; }
         
+        .alerta { margin-top: 15px; padding: 12px; border-radius: 6px; font-size: 0.95rem; font-weight: 500; display: none; text-align: center; }
+
         @media (max-width: 768px) {
             body { flex-direction: column; }
             .sidebar { width: 100%; padding: 16px; }
@@ -55,7 +59,6 @@
 </head>
 <body>
     
-    <!-- MENU LATERAL -->
     <aside class="sidebar">
         <div class="sidebar-header">
             <h2>Ponto Web</h2>
@@ -67,7 +70,6 @@
         </ul>
     </aside>
 
-    <!-- ÁREA CENTRAL -->
     <main class="main-content">
         <header class="topbar">
             <h1 id="titulo-pagina">Gestão de Pessoas</h1>
@@ -76,7 +78,6 @@
 
         <div class="content-area">
             
-            <!-- TELA 1: CADASTRO -->
             <div id="sec-cadastro" class="card">
                 <div class="card-header"><h3>+ Novo Usuário</h3></div>
                 <form id="cadastroForm">
@@ -100,12 +101,15 @@
                                 <option value="admin">Gestor (Acesso Painel)</option>
                             </select>
                         </div>
+                        <div class="input-group full-width divider"><h4>Carga Horária Diária (Horas)</h4></div>
+                        <div class="input-group"><label for="horasSegSex">Segunda a Sexta</label><input type="number" id="horasSegSex" value="8" required></div>
+                        <div class="input-group"><label for="horasSab">Sábado</label><input type="number" id="horasSab" value="4" required></div>
                     </div>
                     <button type="submit" class="btn-primary">Cadastrar Usuário</button>
                 </form>
+                <div id="msgCadastro" class="alerta"></div>
             </div>
 
-            <!-- TELA 2: RELATÓRIOS -->
             <div id="sec-relatorios" class="card" style="display: none;">
                 <div class="card-header"><h3>Filtro de Registros</h3></div>
                 <div class="card-body">
@@ -118,70 +122,29 @@
                 </div>
             </div>
 
-            <!-- TELA 3: CONFIGURAÇÕES -->
             <div id="sec-config" class="card" style="display: none;">
                 <div class="card-header"><h3>Configuração de Localização</h3></div>
                 <form id="configForm">
+                    <p style="color: #64748b; margin-bottom: 15px;">Clique no botão abaixo estando fisicamente na empresa para preencher as coordenadas automaticamente:</p>
+                    
+                    <button type="button" id="btnCapturarGps" class="btn-secundario">📍 Obter Localização Atual</button>
+                    
                     <div class="form-grid">
-                        <div class="input-group"><label for="latEmpresa">Latitude</label><input type="text" id="latEmpresa" placeholder="-17.7441"></div>
-                        <div class="input-group"><label for="lngEmpresa">Longitude</label><input type="text" id="lngEmpresa" placeholder="-48.6253"></div>
+                        <div class="input-group"><label for="latEmpresa">Latitude</label><input type="text" id="latEmpresa" placeholder="Carregando..." required readonly></div>
+                        <div class="input-group"><label for="lngEmpresa">Longitude</label><input type="text" id="lngEmpresa" placeholder="Carregando..." required readonly></div>
+                        <div class="input-group full-width">
+                            <label for="raioPermitido">Raio de Tolerância (metros)</label>
+                            <input type="number" id="raioPermitido" value="50" required>
+                        </div>
                     </div>
                     <button type="submit" class="btn-primary" style="background-color: #3b82f6;">Salvar Configurações</button>
                 </form>
+                <div id="msgConfig" class="alerta"></div>
             </div>
 
         </div>
     </main>
 
-    <!-- Mudamos o script para ler de forma direta, ignorando o arquivo antigo temporariamente -->
-    <script>
-        const btnCadastro = document.getElementById('menu-cadastro');
-        const btnRelatorios = document.getElementById('menu-relatorios');
-        const btnConfig = document.getElementById('menu-config');
-
-        const liCadastro = document.getElementById('li-cadastro');
-        const liRelatorios = document.getElementById('li-relatorios');
-        const liConfig = document.getElementById('li-config');
-
-        const boxCadastro = document.getElementById('sec-cadastro');
-        const boxRelatorios = document.getElementById('sec-relatorios');
-        const boxConfig = document.getElementById('sec-config');
-        const txtTitulo = document.getElementById('titulo-pagina');
-
-        function alternarTela(telaVisivel, liAtivo, textoTitulo) {
-            if (boxCadastro) boxCadastro.style.display = 'none';
-            if (boxRelatorios) boxRelatorios.style.display = 'none';
-            if (boxConfig) boxConfig.style.display = 'none';
-            
-            if (liCadastro) liCadastro.classList.remove('active');
-            if (liRelatorios) liRelatorios.classList.remove('active');
-            if (liConfig) liConfig.classList.remove('active');
-
-            if (telaVisivel) telaVisivel.style.display = 'block';
-            if (liAtivo) liAtivo.classList.add('active');
-            if (txtTitulo) txtTitulo.textContent = textoTitulo;
-        }
-
-        if (btnCadastro) {
-            btnCadastro.onclick = function(e) {
-                e.preventDefault();
-                alternarTela(boxCadastro, liCadastro, 'Gestão de Pessoas');
-            };
-        }
-
-        if (btnRelatorios) {
-            btnRelatorios.onclick = function(e) {
-                e.preventDefault();
-                alternarTela(boxRelatorios, liRelatorios, 'Relatórios e Fechamento');
-            };
-        }
-
-        if (btnConfig) {
-            btnConfig.onclick = function(e) {
-                e.preventDefault();
-                alternarTela(boxConfig, liConfig, 'Configurações do Sistema');
-            };
-        }
-    </script>
+    <script type="module" src="js/admin.js?v=gps_ok"></script>
 </body>
 </html>

@@ -1,18 +1,19 @@
 import { auth, db } from './firebase-config.js';
 import { signOut, getAuth, createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
 import { doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
 
-// Pegando elementos do Menu
+// Pegando elementos do Menu usando os IDs corretos
 const btnCadastro = document.getElementById('menu-cadastro');
 const btnRelatorios = document.getElementById('menu-relatorios');
 const btnConfig = document.getElementById('menu-config');
 const btnSair = document.getElementById('btnSair');
 
+// Elementos de lista (li)
 const liCadastro = document.getElementById('li-cadastro');
 const liRelatorios = document.getElementById('li-relatorios');
 const liConfig = document.getElementById('li-config');
 
+// Caixas de conteúdo
 const boxCadastro = document.getElementById('sec-cadastro');
 const boxRelatorios = document.getElementById('sec-relatorios');
 const boxConfig = document.getElementById('sec-config');
@@ -32,39 +33,56 @@ function alternarTela(telaVisivel, liAtivo, textoTitulo) {
     if (txtTitulo) txtTitulo.textContent = textoTitulo;
 }
 
-if (btnCadastro) { btnCadastro.onclick = (e) => { e.preventDefault(); alternarTela(boxCadastro, liCadastro, 'Gestão de Pessoas'); }; }
-if (btnRelatorios) { btnRelatorios.onclick = (e) => { e.preventDefault(); alternarTela(boxRelatorios, liRelatorios, 'Relatórios e Fechamento'); }; }
-if (btnConfig) { 
-    btnConfig.onclick = (e) => { 
-        e.preventDefault(); 
-        alternarTela(boxConfig, liConfig, 'Configurações do Sistema'); 
+if (btnCadastro) {
+    btnCadastro.onclick = function(e) {
+        e.preventDefault();
+        alternarTela(boxCadastro, liCadastro, 'Gestão de Pessoas');
+    };
+}
+
+if (btnRelatorios) {
+    btnRelatorios.onclick = function(e) {
+        e.preventDefault();
+        alternarTela(boxRelatorios, liRelatorios, 'Relatórios e Fechamento');
+    };
+}
+
+if (btnConfig) {
+    btnConfig.onclick = function(e) {
+        e.preventDefault();
+        alternarTela(boxConfig, liConfig, 'Configurações do Sistema');
         carregarConfiguracoes();
-    }; 
+    };
 }
 
 if (btnSair) {
-    btnSair.onclick = async (e) => {
+    btnSair.onclick = async function(e) {
         e.preventDefault();
-        try { await signOut(auth); window.location.href = 'index.html'; } catch (err) { console.error(err); }
+        try {
+            await signOut(auth);
+            window.location.href = 'index.html';
+        } catch (error) {
+            console.error("Erro ao sair:", error);
+        }
     };
 }
 
 // ==========================================
-// FUNÇÃO MÁGICA: CAPTURAR GPS ATUAL
+// FUNÇÃO: CAPTURAR GPS ATUAL
 // ==========================================
 const btnCapturarGps = document.getElementById('btnCapturarGps');
 if (btnCapturarGps) {
-    btnCapturarGps.onclick = () => {
+    btnCapturarGps.onclick = function() {
         if (!navigator.geolocation) {
             alert("Seu navegador não suporta geolocalização.");
             return;
         }
         btnCapturarGps.textContent = "⌛ Capturando...";
-        navigator.geolocation.getCurrentPosition((posicao) => {
+        navigator.geolocation.getCurrentPosition(function(posicao) {
             document.getElementById('latEmpresa').value = posicao.coords.latitude;
             document.getElementById('lngEmpresa').value = posicao.coords.longitude;
             btnCapturarGps.textContent = "📍 Obter Localização Atual";
-        }, (erro) => {
+        }, function(erro) {
             alert("Erro ao obter localização. Permita o acesso ao GPS.");
             btnCapturarGps.textContent = "📍 Obter Localização Atual";
         });
@@ -72,7 +90,7 @@ if (btnCapturarGps) {
 }
 
 // ==========================================
-// GRAVAR CONFIGURAÇÕES NO BANCO
+// CARREGAR E GRAVAR CONFIGURAÇÕES (FIRESTORE)
 // ==========================================
 const configForm = document.getElementById('configForm');
 const msgConfig = document.getElementById('msgConfig');
@@ -86,11 +104,13 @@ async function carregarConfiguracoes() {
             document.getElementById('lngEmpresa').value = dados.longitude || '';
             document.getElementById('raioPermitido').value = dados.raio || 50;
         }
-    } catch (err) { console.error(err); }
+    } catch (err) { 
+        console.error("Erro ao carregar configs:", err); 
+    }
 }
 
 if (configForm) {
-    configForm.onsubmit = async (e) => {
+    configForm.onsubmit = async function(e) {
         e.preventDefault();
         msgConfig.style.display = "block";
         msgConfig.style.backgroundColor = "#dbeafe";
@@ -110,19 +130,19 @@ if (configForm) {
         } catch (err) {
             msgConfig.style.backgroundColor = "#fee2e2";
             msgConfig.style.color = "#b91c1c";
-            msgConfig.textContent = "Erro: " + err.message;
+            msgConfig.textContent = "Erro ao salvar: " + err.message;
         }
     };
 }
 
 // ==========================================
-// CADASTRO DE USUÁRIOS
+// CADASTRO DE USUÁRIOS (AUTH + FIRESTORE)
 // ==========================================
 const cadastroForm = document.getElementById('cadastroForm');
 const msgCadastro = document.getElementById('msgCadastro');
 
 if (cadastroForm) {
-    cadastroForm.onsubmit = async (e) => {
+    cadastroForm.onsubmit = async function(e) {
         e.preventDefault();
         msgCadastro.style.display = "block";
         msgCadastro.style.backgroundColor = "#dbeafe";
@@ -137,10 +157,10 @@ if (cadastroForm) {
         const sab = document.getElementById('horasSab').value;
 
         try {
-            const app2 = initializeApp(auth.app.options, 'AppCadastro');
-            const auth2 = getAuth(app2);
-            const cred = await createUserWithEmailAndPassword(auth2, email, senha);
+            // Criando no Auth normal (Se deslogar o admin, depois ajustamos o fluxo secundário)
+            const cred = await createUserWithEmailAndPassword(auth, email, senha);
 
+            // Salvando detalhes adicionais no banco
             await setDoc(doc(db, "usuarios", cred.user.uid), {
                 nome: nome,
                 email: email,
@@ -149,7 +169,6 @@ if (cadastroForm) {
                 dataCadastro: new Date().toISOString()
             });
 
-            await signOut(auth2);
             msgCadastro.style.backgroundColor = "#dcfce7";
             msgCadastro.style.color = "#15803d";
             msgCadastro.textContent = "Usuário cadastrado com sucesso!";

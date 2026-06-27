@@ -1,20 +1,18 @@
-import { auth, db } from './firebase-config.js';
-import { signOut, getAuth, createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
-import { doc, setDoc } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
+import { auth } from './firebase-config.js';
+import { signOut } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
 
-// Captura de Elementos do Menu
+// Pegando elementos do Menu
 const btnCadastro = document.getElementById('menu-cadastro');
 const btnRelatorios = document.getElementById('menu-relatorios');
 const btnConfig = document.getElementById('menu-config');
 const btnSair = document.getElementById('btnSair');
 
-// Itens de lista do menu para efeito visual activo
+// Elementos de lista (li)
 const liCadastro = document.getElementById('li-cadastro');
 const liRelatorios = document.getElementById('li-relatorios');
 const liConfig = document.getElementById('li-config');
 
-// Caixas de conteúdo das telas
+// Caixas de conteúdo
 const boxCadastro = document.getElementById('sec-cadastro');
 const boxRelatorios = document.getElementById('sec-relatorios');
 const boxConfig = document.getElementById('sec-config');
@@ -37,7 +35,7 @@ function alternarTela(telaVisivel, liAtivo, textoTitulo) {
 if (btnCadastro) {
     btnCadastro.onclick = function(e) {
         e.preventDefault();
-        alternarTela(boxCadastro, liCadastro, 'Gestão de Pessoas e Acessos');
+        alternarTela(boxCadastro, liCadastro, 'Gestão de Pessoas');
     };
 }
 

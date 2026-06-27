@@ -42,7 +42,6 @@
         .btn-secundario:hover { background-color: #2563eb; }
         .divider { margin-top: 20px; border-top: 1px solid #e2e8f0; padding-top: 20px; color: #0f172a; }
         
-        /* ESTILIZAÇÃO DA TABELA DE COLABORADORES */
         .table-responsive { width: 100%; overflow-x: auto; margin-top: 16px; }
         .colab-table { width: 100%; border-collapse: collapse; text-align: left; font-size: 0.9rem; }
         .colab-table th { background-color: #f1f5f9; color: #475569; padding: 12px; font-weight: 600; border-bottom: 2px solid #e2e8f0; }
@@ -55,10 +54,8 @@
         .btn-action { border: none; padding: 6px 10px; border-radius: 6px; font-size: 0.8rem; font-weight: 600; cursor: pointer; transition: background 0.2s; }
         .btn-action.edit { background-color: #e0f2fe; color: #0369a1; }
         .btn-action.block { background-color: #fee2e2; color: #b91c1c; }
-        .btn-action.activate { background-color: #dcfce7; color: #166534; }
         .btn-action.password { background-color: #f1f5f9; color: #475569; }
 
-        /* POP-UP MODERNO (TOAST NOTIFICATION) */
         .toast-notification { position: fixed; bottom: 24px; right: 24px; background-color: #0f172a; color: #ffffff; padding: 16px 24px; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.15); display: flex; align-items: center; gap: 12px; font-size: 0.9rem; font-weight: 500; transform: translateY(100px); opacity: 0; transition: all 0.3s cubic-bezier(0.68, -0.55, 0.27, 1.55); z-index: 9999; border-left: 4px solid #10b981; }
         .toast-notification.show { transform: translateY(0); opacity: 1; }
         .toast-icon { font-size: 1.25rem; }
@@ -82,6 +79,7 @@
 </head>
 <body>
     
+    <!-- MENU LATERAL -->
     <aside class="sidebar">
         <div>
             <div class="sidebar-header">
@@ -96,6 +94,7 @@
         </div>
     </aside>
 
+    <!-- ÁREA CENTRAL -->
     <main class="main-content">
         <header class="topbar">
             <h1 id="titulo-pagina">Gestão de Pessoas</h1>
@@ -104,6 +103,7 @@
 
         <div class="content-area">
             
+            <!-- SEÇÃO 1: PESSOAL -->
             <div id="sec-cadastro" style="display: flex; flex-direction: column; gap: 24px; width: 100%;">
                 <div class="card">
                     <div class="card-header"><h3>+ Novo Usuário</h3></div>
@@ -121,13 +121,24 @@
                                 <label for="senhaNova">Senha Inicial</label>
                                 <input type="password" id="senhaNova" required placeholder="Mínimo 6 dígitos">
                             </div>
-                            <div class="input-group full-width">
+                            <div class="input-group">
                                 <label for="tipoAcesso">Tipo de Acesso</label>
                                 <select id="tipoAcesso">
                                     <option value="colaborador">Colaborador (App de Ponto)</option>
                                     <option value="admin">Gestor (Acesso Painel)</option>
                                 </select>
                             </div>
+                            
+                            <!-- CHAVE SELETORA PEDIDA: CONFIGURAÇÃO DE DISPOSITIVOS -->
+                            <div class="input-group">
+                                <label for="dispositivoPermitido">Dispositivo Autorizado</label>
+                                <select id="dispositivoPermitido">
+                                    <option value="celular">Apenas Celular</option>
+                                    <option value="pc">Apenas PC</option>
+                                    <option value="ambos">Celular e PC</option>
+                                </select>
+                            </div>
+
                             <div class="input-group full-width divider"><h4>Carga Horária Diária (Horas)</h4></div>
                             <div class="input-group"><label for="horasSegSex">Segunda a Sexta</label><input type="number" id="horasSegSex" value="8" required></div>
                             <div class="input-group"><label for="horasSab">Sábado</label><input type="number" id="horasSab" value="4" required></div>
@@ -144,7 +155,7 @@
                                 <tr>
                                     <th>Nome</th>
                                     <th>E-mail</th>
-                                    <th>Acesso</th>
+                                    <th>Permissão</th>
                                     <th>Status</th>
                                     <th>Ações</th>
                                 </tr>
@@ -153,12 +164,11 @@
                                 <tr>
                                     <td>João da Silva</td>
                                     <td>joao@empresa.com</td>
-                                    <td>Colaborador</td>
+                                    <td>Apenas Celular</td>
                                     <td><span class="badge ativo">Ativo</span></td>
                                     <td class="actions-cell">
-                                        <button class="btn-action edit" onclick="alert('Editar em breve...')">✏️ Editar</button>
-                                        <button class="btn-action block" onclick="alert('Bloquear em breve...')">🔒 Bloquear</button>
-                                        <button class="btn-action password" onclick="alert('Senha atual: 123456\nPara alterar use o Firebase Auth.')">🔑 Senha</button>
+                                        <button class="btn-action edit">✏️ Editar</button>
+                                        <button class="btn-action block">🔒 Bloquear</button>
                                     </td>
                                 </tr>
                             </tbody>
@@ -167,6 +177,7 @@
                 </div>
             </div>
 
+            <!-- TELA 2: RELATÓRIOS -->
             <div id="sec-relatorios" class="card" style="display: none;">
                 <div class="card-header"><h3>Filtro de Registros</h3></div>
                 <div class="card-body">
@@ -179,14 +190,20 @@
                 </div>
             </div>
 
+            <!-- TELA 3: CONFIGURAÇÕES -->
             <div id="sec-config" class="card" style="display: none;">
-                <div class="card-header"><h3>Configuração de Localização</h3></div>
+                <div class="card-header"><h3>Configuração da Empresa</h3></div>
                 <form id="configForm">
-                    <p style="color: #64748b; margin-bottom: 15px;">Clique no botão abaixo estando fisicamente na empresa para preencher as coordenadas automaticamente:</p>
-                    
-                    <button type="button" id="btnCapturarGps" class="btn-secundario">📍 Obter Localização Atual</button>
-                    
                     <div class="form-grid">
+                        <!-- CAMPO PARA O ADM COLOCAR O NOME DA EMPRESA -->
+                        <div class="input-group full-width">
+                            <label for="nomeEmpresa">Nome da Empresa (Aparecerá para o funcionário)</label>
+                            <input type="text" id="nomeEmpresa" required placeholder="Ex: Mercado Central">
+                        </div>
+                        <div class="input-group full-width divider"><h4>Cerca Virtual Antifraude</h4></div>
+                        <div class="input-group full-width">
+                            <button type="button" id="btnCapturarGps" class="btn-secundario">📍 Obter Localização Atual</button>
+                        </div>
                         <div class="input-group"><label for="latEmpresa">Latitude</label><input type="text" id="latEmpresa" placeholder="Aguardando GPS..." required readonly></div>
                         <div class="input-group"><label for="lngEmpresa">Longitude</label><input type="text" id="lngEmpresa" placeholder="Aguardando GPS..." required readonly></div>
                         <div class="input-group full-width">
@@ -242,10 +259,8 @@
         btnCadastro.onclick = function() { alternarTela(boxCadastro, liCadastro, 'Gestão de Pessoas'); };
         btnRelatorios.onclick = function() { alternarTela(boxRelatorios, liRelatorios, 'Relatórios e Fechamento'); };
         btnConfig.onclick = function() { alternarTela(boxConfig, liConfig, 'Configurações do Sistema'); };
-        
         btnSair.onclick = function() { window.location.href = 'index.html'; };
 
-        // FUNÇÃO DO POP-UP CUSTOMIZADO (TOAST)
         function mostrarToast(mensagem) {
             const toast = document.getElementById('toastNotification');
             document.getElementById('toastMessage').textContent = mensagem;
@@ -253,19 +268,16 @@
             setTimeout(() => { toast.classList.remove('show'); }, 3500);
         }
 
-        // AÇÃO DE COPIAR SEM POP-UP DO NAVEGADOR
         btnCopiarLink.onclick = function() {
             const urlBase = window.location.origin;
             const linkColaborador = urlBase + "/colaborador.html";
-            
             navigator.clipboard.writeText(linkColaborador).then(function() {
-                mostrarToast("Link do aplicativo copiado! Envie no WhatsApp.");
+                mostrarToast("Link do app copiado! Envie para a equipe.");
             }).catch(function() {
-                mostrarToast("Erro ao copiar link automaticamente.");
+                mostrarToast("Erro ao copiar link.");
             });
         };
 
-        // GPS do admin
         const btnCapturarGps = document.getElementById('btnCapturarGps');
         if (btnCapturarGps) {
             btnCapturarGps.onclick = function() {
@@ -275,7 +287,7 @@
                     document.getElementById('lngEmpresa').value = pos.coords.longitude;
                     btnCapturarGps.textContent = "📍 Obter Localização Atual";
                 }, function() {
-                    alert("Ative o GPS do seu dispositivo.");
+                    alert("Ative o GPS.");
                     btnCapturarGps.textContent = "📍 Obter Localização Atual";
                 });
             };

@@ -6,7 +6,8 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebas
 const btnSair = document.getElementById('btnSair');
 
 if (btnSair) {
-    btnSair.addEventListener('click', async () => {
+    btnSair.addEventListener('click', async (e) => {
+        e.preventDefault();
         try {
             await signOut(auth);
             window.location.href = 'index.html';
@@ -17,11 +18,15 @@ if (btnSair) {
 }
 
 // ==========================================
-// NAVEGAÇÃO DOS MENUS (SPA)
+// NAVEGAÇÃO DOS MENUS (Ajustado para os IDs corretos)
 // ==========================================
 const menuCadastro = document.getElementById('menu-cadastro');
 const menuRelatorios = document.getElementById('menu-relatorios');
 const menuConfig = document.getElementById('menu-config');
+
+const liCadastro = document.getElementById('li-cadastro');
+const liRelatorios = document.getElementById('li-relatorios');
+const liConfig = document.getElementById('li-config');
 
 const secCadastro = document.getElementById('sec-cadastro');
 const secRelatorios = document.getElementById('sec-relatorios');
@@ -32,34 +37,38 @@ function ocultarTelas() {
     if (secCadastro) secCadastro.style.display = 'none';
     if (secRelatorios) secRelatorios.style.display = 'none';
     if (secConfig) secConfig.style.display = 'none';
-    if (menuCadastro) menuCadastro.classList.remove('active');
-    if (menuRelatorios) menuRelatorios.classList.remove('active');
-    if (menuConfig) menuConfig.classList.remove('active');
+    
+    if (liCadastro) liCadastro.classList.remove('active');
+    if (liRelatorios) liRelatorios.classList.remove('active');
+    if (liConfig) liConfig.classList.remove('active');
 }
 
 if (menuCadastro) {
     menuCadastro.addEventListener('click', (e) => {
-        e.preventDefault(); ocultarTelas();
+        e.preventDefault();
+        ocultarTelas();
         if (secCadastro) secCadastro.style.display = 'block';
-        menuCadastro.classList.add('active');
+        if (liCadastro) liCadastro.classList.add('active');
         if (tituloPagina) tituloPagina.textContent = 'Gestão de Pessoas e Acessos';
     });
 }
 
 if (menuRelatorios) {
     menuRelatorios.addEventListener('click', (e) => {
-        e.preventDefault(); ocultarTelas();
+        e.preventDefault();
+        ocultarTelas();
         if (secRelatorios) secRelatorios.style.display = 'block';
-        menuRelatorios.classList.add('active');
+        if (liRelatorios) liRelatorios.classList.add('active');
         if (tituloPagina) tituloPagina.textContent = 'Relatórios e Fechamento';
     });
 }
 
 if (menuConfig) {
     menuConfig.addEventListener('click', (e) => {
-        e.preventDefault(); ocultarTelas();
+        e.preventDefault();
+        ocultarTelas();
         if (secConfig) secConfig.style.display = 'block';
-        menuConfig.classList.add('active');
+        if (liConfig) liConfig.classList.add('active');
         if (tituloPagina) tituloPagina.textContent = 'Configurações do Sistema';
         carregarConfiguracoes();
     });

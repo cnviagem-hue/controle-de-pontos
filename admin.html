@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Painel Administrativo - Controle de Ponto</title>
+</head>
+<body>
+    <header>
+        <h1>Painel do Gestor</h1>
+        <button id="btnSair">Sair do Sistema</button>
+    </header>
+
+    <main>
+        <section class="cadastro-section">
+            <h2>Ficha Cadastral do Colaborador</h2>
+            <form id="cadastroForm">
+                <label for="nome">Nome Completo:</label>
+                <input type="text" id="nome" required placeholder="Nome do funcionário"><br><br>
+
+                <label for="emailNovo">E-mail de Acesso:</label>
+                <input type="email" id="emailNovo" required placeholder="exemplo@empresa.com"><br><br>
+
+                <label for="senhaNova">Senha Inicial:</label>
+                <input type="password" id="senhaNova" required placeholder="Mínimo 6 caracteres"><br><br>
+
+                <h3>Carga Horária Diária (Horas)</h3>
+                <label for="horasSegSex">Segunda a Sexta:</label>
+                <input type="number" id="horasSegSex" min="0" max="24" value="8" required><br><br>
+
+                <label for="horasSab">Sábado:</label>
+                <input type="number" id="horasSab" min="0" max="24" value="4" required><br><br>
+
+                <label for="horasDom">Domingo:</label>
+                <input type="number" id="horasDom" min="0" max="24" value="0" required><br><br>
+
+                <button type="submit">Cadastrar Colaborador</button>
+            </form>
+            <p id="msgCadastro" style="display: none;"></p>
+        </section>
+
+        <hr>
+
+        <section class="relatorios-section">
+            <h2>Relatórios de Ponto</h2>
+            <p>Em breve: Filtros por dia, semana, mês e exportação para Excel colorido.</p>
+        </section>
+    </main>
+
+    <script type="module" src="js/admin.js"></script>
+</body>
+</html>

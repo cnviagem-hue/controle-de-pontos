@@ -1,7 +1,7 @@
 import { auth } from './firebase-config.js';
 import { signOut } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
 
-// Pegando elementos do Menu
+// Pegando elementos do Menu usando os IDs corretos
 const btnCadastro = document.getElementById('menu-cadastro');
 const btnRelatorios = document.getElementById('menu-relatorios');
 const btnConfig = document.getElementById('menu-config');
@@ -49,7 +49,7 @@ if (btnRelatorios) {
 if (btnConfig) {
     btnConfig.onclick = function(e) {
         e.preventDefault();
-        alternarTela(boxConfig, liConfig, 'Configurações do Sistema');
+        alternarTela(boxConfig, liConfig, 'Configurações do Systema');
     };
 }
 

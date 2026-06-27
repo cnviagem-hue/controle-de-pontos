@@ -5,8 +5,51 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Painel do Gestor - Controle de Ponto</title>
     <link rel="stylesheet" href="css/style.css">
+    <style>
+        /* Ajustes rápidos de emergência para garantir o visual perfeito no celular */
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; display: flex; min-height: 100vh; background-color: #f1f5f9; color: #1e293b; }
+        
+        .sidebar { width: 260px; background-color: #0f172a; color: #fff; padding: 20px; flex-shrink: 0; }
+        .sidebar-header { display: flex; align-items: center; gap: 10px; margin-bottom: 30px; padding-bottom: 15px; border-bottom: 1px solid #334155; }
+        .sidebar-header img { width: 32px; height: 32px; }
+        .sidebar-menu { list-style: none; }
+        .sidebar-menu li { margin-bottom: 8px; }
+        .sidebar-menu a { display: block; color: #94a3b8; text-decoration: none; padding: 12px; border-radius: 6px; font-weight: 500; transition: all 0.2s; }
+        .sidebar-menu li.active a, .sidebar-menu a:hover { background-color: #1e293b; color: #f97316; }
+        
+        .main-content { flex-grow: 1; display: flex; flex-direction: column; min-width: 0; }
+        .topbar { background-color: #fff; padding: 20px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #e2e8f0; }
+        .topbar h1 { font-size: 1.5rem; color: #0f172a; }
+        .btn-sair { background-color: #ef4444; color: #fff; border: none; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-weight: 500; }
+        
+        .content-area { padding: 25px; flex-grow: 1; }
+        .card { background: #fff; border-radius: 8px; border: 1px solid #e2e8f0; box-shadow: 0 1px 3px rgba(0,0,0,0.05); padding: 25px; max-width: 800px; }
+        .card-header { margin-bottom: 20px; padding-bottom: 10px; border-bottom: 1px solid #f1f5f9; }
+        .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+        .input-group { display: flex; flex-direction: column; gap: 6px; }
+        .input-group.full-width { grid-column: span 2; }
+        .input-group label { font-size: 0.875rem; font-weight: 600; color: #475569; }
+        .input-group input, .input-group select { padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.95rem; width: 100%; outline: none; }
+        .input-group input:focus { border-color: #f97316; }
+        .btn-primary { background-color: #f97316; color: white; border: none; padding: 12px; border-radius: 6px; font-weight: 600; cursor: pointer; width: 100%; margin-top: 15px; font-size: 1rem; }
+        .divider { margin-top: 15px; border-top: 1px solid #e2e8f0; padding-top: 15px; color: #0f172a; }
+        
+        /* RESPONSIVIDADE PARA CELULAR */
+        @media (max-width: 768px) {
+            body { flex-direction: column; }
+            .sidebar { width: 100%; padding: 15px; }
+            .sidebar-header { margin-bottom: 15px; }
+            .sidebar-menu { display: flex; justify-content: space-between; gap: 5px; }
+            .sidebar-menu a { padding: 8px; font-size: 0.85rem; text-align: center; }
+            .topbar { flex-direction: column; gap: 10px; text-align: center; }
+            .form-grid { grid-template-columns: 1fr; }
+            .input-group.full-width { grid-column: span 1; }
+            .content-area { padding: 15px; }
+        }
+    </style>
 </head>
-<body class="dashboard-body">
+<body>
     
     <aside class="sidebar">
         <div class="sidebar-header">
@@ -14,25 +57,23 @@
             <h2>Ponto Web</h2>
         </div>
         <ul class="sidebar-menu">
-            <li id="li-cadastro" class="active"><a href="#" id="menu-cadastro">👥 Cadastro de Pessoal</a></li>
+            <li id="li-cadastro" class="active"><a href="#" id="menu-cadastro">👥 Pessoal</a></li>
             <li id="li-relatorios"><a href="#" id="menu-relatorios">📊 Relatórios</a></li>
-            <li id="li-config"><a href="#" id="menu-config">⚙️ Configurações</a></li>
+            <li id="li-config"><a href="#" id="menu-config">⚙️ Configs</a></li>
         </ul>
     </aside>
 
     <main class="main-content">
         <header class="topbar">
-            <h1 id="titulo-pagina">Gestão de Pessoas e Acessos</h1>
-            <button id="btnSair" class="btn-sair">Sair da Conta ➔</button>
+            <h1 id="titulo-pagina">Gestão de Pessoas</h1>
+            <button id="btnSair" class="btn-sair">Sair ➔</button>
         </header>
 
         <div class="content-area">
             
             <div id="sec-cadastro" class="card">
-                <div class="card-header">
-                    <h3>+ Novo Usuário</h3>
-                </div>
-                <form id="cadastroForm" class="card-body">
+                <div class="card-header"><h3>+ Novo Usuário</h3></div>
+                <form id="cadastroForm">
                     <div class="form-grid">
                         <div class="input-group full-width">
                             <label for="nome">Nome Completo</label>
@@ -44,63 +85,49 @@
                         </div>
                         <div class="input-group">
                             <label for="senhaNova">Senha Inicial</label>
-                            <input type="password" id="senhaNova" required placeholder="Mínimo 6 caracteres">
+                            <input type="password" id="senhaNova" required placeholder="Mínimo 6 dígitos">
                         </div>
                         <div class="input-group full-width">
                             <label for="tipoAcesso">Tipo de Acesso</label>
-                            <select id="tipoAcesso" style="padding: 12px; border: 1px solid #d1d5db; border-radius: 6px; width: 100%;">
-                                <option value="colaborador">Colaborador (App de Bater Ponto)</option>
+                            <select id="tipoAcesso">
+                                <option value="colaborador">Colaborador (App de Ponto)</option>
                                 <option value="admin">Gestor (Acesso Painel)</option>
                             </select>
                         </div>
+                        <div class="input-group full-width divider"><h4>Carga Horária Diária (Horas)</h4></div>
+                        <div class="input-group"><label for="horasSegSex">Segunda a Sexta</label><input type="number" id="horasSegSex" value="8" required></div>
+                        <div class="input-group"><label for="horasSab">Sábado</label><input type="number" id="horasSab" value="4" required></div>
                     </div>
-                    <button type="submit" class="btn-primary" style="margin-top: 20px;">Cadastrar Usuário</button>
+                    <button type="submit" class="btn-primary">Cadastrar Usuário</button>
                 </form>
-                <p id="msgCadastro" class="alerta"></p>
             </div>
 
             <div id="sec-relatorios" class="card" style="display: none;">
-                <div class="card-header">
-                    <h3>Filtro de Registros</h3>
-                </div>
+                <div class="card-header"><h3>Filtro de Registros</h3></div>
                 <div class="card-body">
                     <p style="color: #64748b; margin-bottom: 20px;">Selecione o período para gerar o relatório.</p>
                     <div class="form-grid">
-                        <div class="input-group">
-                            <label>Data Início</label>
-                            <input type="date" id="dataInicio">
-                        </div>
-                        <div class="input-group">
-                            <label>Data Fim</label>
-                            <input type="date" id="dataFim">
-                        </div>
+                        <div class="input-group"><label>Data Início</label><input type="date" id="dataInicio"></div>
+                        <div class="input-group"><label>Data Fim</label><input type="date" id="dataFim"></div>
                     </div>
-                    <button id="btnGerarRelatorio" class="btn-primary" style="background-color: #10b981; margin-top: 20px;">Gerar e Baixar Excel</button>
+                    <button id="btnGerarRelatorio" class="btn-primary" style="background-color: #10b981;">Gerar e Baixar Excel</button>
                 </div>
             </div>
 
             <div id="sec-config" class="card" style="display: none;">
-                <div class="card-header">
-                    <h3>Configuração Antifraude (Geolocalização)</h3>
-                </div>
-                <form id="configForm" class="card-body">
+                <div class="card-header"><h3>Configuração de Localização</h3></div>
+                <form id="configForm">
                     <div class="form-grid">
-                        <div class="input-group">
-                            <label for="latEmpresa">Latitude</label>
-                            <input type="text" id="latEmpresa" required>
-                        </div>
-                        <div class="input-group">
-                            <label for="lngEmpresa">Longitude</label>
-                            <input type="text" id="lngEmpresa" required>
-                        </div>
+                        <div class="input-group"><label for="latEmpresa">Latitude</label><input type="text" id="latEmpresa" placeholder="-17.7441"></div>
+                        <div class="input-group"><label for="lngEmpresa">Longitude</label><input type="text" id="lngEmpresa" placeholder="-48.6253"></div>
                     </div>
-                    <button type="submit" class="btn-primary" style="background-color: #3b82f6; margin-top: 20px;">Salvar Configurações</button>
+                    <button type="submit" class="btn-primary" style="background-color: #3b82f6;">Salvar Configurações</button>
                 </form>
             </div>
 
         </div>
     </main>
 
-    <script type="module" src="js/admin.js?v=999"></script>
+    <script type="module" src="js/admin.js?v=celular_ok"></script>
 </body>
 </html>

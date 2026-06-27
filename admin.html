@@ -54,11 +54,10 @@
         .btn-action { border: none; padding: 6px 10px; border-radius: 6px; font-size: 0.8rem; font-weight: 600; cursor: pointer; transition: background 0.2s; }
         .btn-action.edit { background-color: #e0f2fe; color: #0369a1; }
         .btn-action.block { background-color: #fee2e2; color: #b91c1c; }
-        .btn-action.password { background-color: #f1f5f9; color: #475569; }
+        .btn-action.activate { background-color: #dcfce7; color: #166534; }
 
         .toast-notification { position: fixed; bottom: 24px; right: 24px; background-color: #0f172a; color: #ffffff; padding: 16px 24px; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.15); display: flex; align-items: center; gap: 12px; font-size: 0.9rem; font-weight: 500; transform: translateY(100px); opacity: 0; transition: all 0.3s cubic-bezier(0.68, -0.55, 0.27, 1.55); z-index: 9999; border-left: 4px solid #10b981; }
         .toast-notification.show { transform: translateY(0); opacity: 1; }
-        .toast-icon { font-size: 1.25rem; }
 
         @media (max-width: 768px) {
             body { flex-direction: column; }
@@ -79,7 +78,6 @@
 </head>
 <body>
     
-    <!-- MENU LATERAL -->
     <aside class="sidebar">
         <div>
             <div class="sidebar-header">
@@ -94,7 +92,6 @@
         </div>
     </aside>
 
-    <!-- ÁREA CENTRAL -->
     <main class="main-content">
         <header class="topbar">
             <h1 id="titulo-pagina">Gestão de Pessoas</h1>
@@ -103,7 +100,6 @@
 
         <div class="content-area">
             
-            <!-- SEÇÃO 1: PESSOAL -->
             <div id="sec-cadastro" style="display: flex; flex-direction: column; gap: 24px; width: 100%;">
                 <div class="card">
                     <div class="card-header"><h3>+ Novo Usuário</h3></div>
@@ -128,8 +124,6 @@
                                     <option value="admin">Gestor (Acesso Painel)</option>
                                 </select>
                             </div>
-                            
-                            <!-- CHAVE SELETORA PEDIDA: CONFIGURAÇÃO DE DISPOSITIVOS -->
                             <div class="input-group">
                                 <label for="dispositivoPermitido">Dispositivo Autorizado</label>
                                 <select id="dispositivoPermitido">
@@ -138,13 +132,13 @@
                                     <option value="ambos">Celular e PC</option>
                                 </select>
                             </div>
-
                             <div class="input-group full-width divider"><h4>Carga Horária Diária (Horas)</h4></div>
                             <div class="input-group"><label for="horasSegSex">Segunda a Sexta</label><input type="number" id="horasSegSex" value="8" required></div>
                             <div class="input-group"><label for="horasSab">Sábado</label><input type="number" id="horasSab" value="4" required></div>
                         </div>
                         <button type="submit" class="btn-primary">Cadastrar Usuário</button>
                     </form>
+                    <div id="msgCadastro" class="alerta"></div>
                 </div>
 
                 <div class="card">
@@ -162,14 +156,7 @@
                             </thead>
                             <tbody id="tabelaColaboradoresBody">
                                 <tr>
-                                    <td>João da Silva</td>
-                                    <td>joao@empresa.com</td>
-                                    <td>Apenas Celular</td>
-                                    <td><span class="badge ativo">Ativo</span></td>
-                                    <td class="actions-cell">
-                                        <button class="btn-action edit">✏️ Editar</button>
-                                        <button class="btn-action block">🔒 Bloquear</button>
-                                    </td>
+                                    <td colspan="5" style="text-align: center; color: #64748b;">Carregando equipe do Firebase...</td>
                                 </tr>
                             </tbody>
                         </table>
@@ -177,7 +164,6 @@
                 </div>
             </div>
 
-            <!-- TELA 2: RELATÓRIOS -->
             <div id="sec-relatorios" class="card" style="display: none;">
                 <div class="card-header"><h3>Filtro de Registros</h3></div>
                 <div class="card-body">
@@ -190,12 +176,10 @@
                 </div>
             </div>
 
-            <!-- TELA 3: CONFIGURAÇÕES -->
             <div id="sec-config" class="card" style="display: none;">
                 <div class="card-header"><h3>Configuração da Empresa</h3></div>
                 <form id="configForm">
                     <div class="form-grid">
-                        <!-- CAMPO PARA O ADM COLOCAR O NOME DA EMPRESA -->
                         <div class="input-group full-width">
                             <label for="nomeEmpresa">Nome da Empresa (Aparecerá para o funcionário)</label>
                             <input type="text" id="nomeEmpresa" required placeholder="Ex: Mercado Central">
@@ -213,17 +197,23 @@
                     </div>
                     <button type="submit" class="btn-primary" style="background-color: #3b82f6;">Salvar Configurações</button>
                 </form>
+                <div id="msgConfig" class="alerta"></div>
             </div>
 
         </div>
     </main>
 
     <div id="toastNotification" class="toast-notification">
-        <span class="toast-icon">✨</span>
-        <span id="toastMessage">Link copiado com sucesso!</span>
+        <span id="toastMessage">Aviso</span>
     </div>
 
-    <script>
+    <script type="module">
+        import { auth, db } from './js/firebase-config.js';
+        import { signOut, getAuth, createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
+        import { doc, setDoc, getDoc, collection, getDocs, updateDoc } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
+
+        // Navegação das Abas
         const btnCadastro = document.getElementById('menu-cadastro');
         const btnRelatorios = document.getElementById('menu-relatorios');
         const btnConfig = document.getElementById('menu-config');
@@ -256,42 +246,188 @@
             txtTitulo.textContent = textoTitulo;
         }
 
-        btnCadastro.onclick = function() { alternarTela(boxCadastro, liCadastro, 'Gestão de Pessoas'); };
-        btnRelatorios.onclick = function() { alternarTela(boxRelatorios, liRelatorios, 'Relatórios e Fechamento'); };
-        btnConfig.onclick = function() { alternarTela(boxConfig, liConfig, 'Configurações do Sistema'); };
-        btnSair.onclick = function() { window.location.href = 'index.html'; };
+        btnCadastro.onclick = () => alternarTela(boxCadastro, liCadastro, 'Gestão de Pessoas');
+        btnRelatorios.onclick = () => alternarTela(boxRelatorios, liRelatorios, 'Relatórios e Fechamento');
+        btnConfig.onclick = () => { alternarTela(boxConfig, liConfig, 'Configurações do Sistema'); carregarConfiguracoes(); };
+        btnSair.onclick = async () => { await signOut(auth); window.location.href = 'index.html'; };
 
-        function mostrarToast(mensagem) {
+        function mostrarToast(mensagem, corBorda = "#10b981") {
             const toast = document.getElementById('toastNotification');
+            toast.style.borderLeft = `4px solid ${corBorda}`;
             document.getElementById('toastMessage').textContent = mensagem;
             toast.classList.add('show');
             setTimeout(() => { toast.classList.remove('show'); }, 3500);
         }
 
-        btnCopiarLink.onclick = function() {
-            const urlBase = window.location.origin;
-            const linkColaborador = urlBase + "/colaborador.html";
-            navigator.clipboard.writeText(linkColaborador).then(function() {
+        btnCopiarLink.onclick = () => {
+            const linkColaborador = window.location.origin + "/colaborador.html";
+            navigator.clipboard.writeText(linkColaborador).then(() => {
                 mostrarToast("Link do app copiado! Envie para a equipe.");
-            }).catch(function() {
-                mostrarToast("Erro ao copiar link.");
             });
         };
 
+        // GPS do admin
         const btnCapturarGps = document.getElementById('btnCapturarGps');
         if (btnCapturarGps) {
-            btnCapturarGps.onclick = function() {
+            btnCapturarGps.onclick = () => {
                 btnCapturarGps.textContent = "⌛ Capturando...";
-                navigator.geolocation.getCurrentPosition(function(pos) {
+                navigator.geolocation.getCurrentPosition((pos) => {
                     document.getElementById('latEmpresa').value = pos.coords.latitude;
                     document.getElementById('lngEmpresa').value = pos.coords.longitude;
                     btnCapturarGps.textContent = "📍 Obter Localização Atual";
-                }, function() {
-                    alert("Ative o GPS.");
+                }, () => {
+                    alert("Ative seu GPS.");
                     btnCapturarGps.textContent = "📍 Obter Localização Atual";
                 });
             };
         }
+
+        // SALVAR CONFIGURAÇÕES DA EMPRESA
+        const configForm = document.getElementById('configForm');
+        const msgConfig = document.getElementById('msgConfig');
+
+        async function carregarConfiguracoes() {
+            try {
+                const docRef = await getDoc(doc(db, "sistema", "configGeral"));
+                if (docRef.exists()) {
+                    const dados = docRef.data();
+                    document.getElementById('nomeEmpresa').value = dados.nomeEmpresa || '';
+                    document.getElementById('latEmpresa').value = dados.latitude || '';
+                    document.getElementById('lngEmpresa').value = dados.longitude || '';
+                    document.getElementById('raioPermitido').value = dados.raio || 50;
+                }
+            } catch (err) { console.error(err); }
+        }
+
+        if (configForm) {
+            configForm.onsubmit = async (e) => {
+                e.preventDefault();
+                try {
+                    await setDoc(doc(db, "sistema", "configGeral"), {
+                        nomeEmpresa: document.getElementById('nomeEmpresa').value.trim(),
+                        latitude: Number(document.getElementById('latEmpresa').value),
+                        longitude: Number(document.getElementById('lngEmpresa').value),
+                        raio: Number(document.getElementById('raioPermitido').value)
+                    });
+                    mostrarToast("Configurações salvas com sucesso!");
+                } catch (err) { mostrarToast("Erro ao salvar: " + err.message, "#ef4444"); }
+            };
+        }
+
+        // REAL-TIME: RENDERIZAR TABELA DE COLABORADORES
+        const tabelaBody = document.getElementById('tabelaColaboradoresBody');
+
+        async function listarColaboradores() {
+            tabelaBody.innerHTML = '<tr><td colspan="5" style="text-align: center;">Buscando equipe atualizada...</td></tr>';
+            try {
+                const querySnapshot = await getDocs(collection(db, "usuarios"));
+                tabelaBody.innerHTML = '';
+                
+                if(querySnapshot.empty) {
+                    tabelaBody.innerHTML = '<tr><td colspan="5" style="text-align: center; color: #64748b;">Nenhum usuário cadastrado.</td></tr>';
+                    return;
+                }
+
+                querySnapshot.forEach((usuarioDoc) => {
+                    const u = usuarioDoc.data();
+                    const uid = usuarioDoc.id;
+                    const statusText = u.status !== "bloqueado" ? "Ativo" : "Bloqueado";
+                    const badgeClass = u.status !== "bloqueado" ? "ativo" : "bloqueado";
+                    const btnBlockText = u.status !== "bloqueado" ? "🔒 Bloquear" : "🔓 Ativar";
+                    const btnBlockClass = u.status !== "bloqueado" ? "block" : "activate";
+
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td><strong>${u.nome}</strong></td>
+                        <td>${u.email}</td>
+                        <td><span style="text-transform: capitalize;">${u.dispositivoPermitido || 'celular'}</span></td>
+                        <td><span class="badge ${badgeClass}">${statusText}</span></td>
+                        <td class="actions-cell">
+                            <button class="btn-action edit" data-uid="${uid}" data-nome="${u.nome}">✏️ Disp</button>
+                            <button class="btn-action ${btnBlockClass}" data-uid="${uid}" data-status="${u.status || 'ativo'}">${btnBlockText}</button>
+                        </td>
+                    `;
+                    tabelaBody.appendChild(tr);
+                });
+
+                // Vincula eventos nos botões recém-criados
+                vincularCliquesTabela();
+
+            } catch (err) { 
+                tabelaBody.innerHTML = '<tr><td colspan="5" style="text-align: center; color: #ef4444;">Erro ao ler banco.</td></tr>';
+            }
+        }
+
+        function vincularCliquesTabela() {
+            // Botão Alterar Dispositivo Autorizado de forma rápida
+            document.querySelectorAll('.btn-action.edit').forEach(btn => {
+                btn.onclick = async () => {
+                    const uid = btn.getAttribute('data-uid');
+                    const nome = btn.getAttribute('data-nome');
+                    const novaPermissao = prompt(`Alterar dispositivo de ${nome} para:\nDigite: celular, pc ou ambos`).toLowerCase().trim();
+                    
+                    if(['celular', 'pc', 'ambos'].includes(novaPermissao)) {
+                        await updateDoc(doc(db, "usuarios", uid), { dispositivoPermitido: novaPermissao });
+                        mostrarToast("Permissão alterada com sucesso!");
+                        listarColaboradores();
+                    } else if (novaPermissao !== "") {
+                        alert("Opção inválida! Digite apenas celular, pc ou ambos.");
+                    }
+                };
+            });
+
+            // Botão Bloquear/Ativar
+            document.querySelectorAll('.btn-action.block, .btn-action.activate').forEach(btn => {
+                btn.onclick = async () => {
+                    const uid = btn.getAttribute('data-uid');
+                    const statusAtual = btn.getAttribute('data-status');
+                    const novoStatus = statusAtual === "bloqueado" ? "ativo" : "bloqueado";
+
+                    await updateDoc(doc(db, "usuarios", uid), { status: novoStatus });
+                    mostrarToast(novoStatus === "bloqueado" ? "Usuário bloqueado!" : "Usuário ativado com sucesso!");
+                    listarColaboradores();
+                };
+            });
+        }
+
+        // CADASTRAR USUÁRIO NO FIREBASE
+        const cadastroForm = document.getElementById('cadastroForm');
+        if (cadastroForm) {
+            cadastroForm.onsubmit = async (e) => {
+                e.preventDefault();
+                const nome = document.getElementById('nome').value.trim();
+                const email = document.getElementById('emailNovo').value.trim();
+                const senha = document.getElementById('senhaNova').value;
+                const tipo = document.getElementById('tipoAcesso').value;
+                const dispositivo = document.getElementById('dispositivoPermitido').value;
+                const segSex = document.getElementById('horasSegSex').value;
+                const sab = document.getElementById('horasSab').value;
+
+                try {
+                    const app2 = initializeApp(auth.app.options, 'AppCadastro');
+                    const auth2 = getAuth(app2);
+                    const cred = await createUserWithEmailAndPassword(auth2, email, senha);
+
+                    await setDoc(doc(db, "usuarios", cred.user.uid), {
+                        nome: nome,
+                        email: email,
+                        tipo: tipo,
+                        dispositivoPermitido: dispositivo,
+                        status: "ativo",
+                        cargaHoraria: { segSex: Number(segSex), sabado: Number(sab), domingo: 0 },
+                        dataCadastro: new Date().toISOString()
+                    });
+
+                    await signOut(auth2);
+                    mostrarToast("Usuário cadastrado com sucesso!");
+                    cadastroForm.reset();
+                    listarColaboradores();
+                } catch (err) { mostrarToast("Erro ao cadastrar: " + err.message, "#ef4444"); }
+            };
+        }
+
+        // Executa ao carregar a página pela primeira vez
+        listarColaboradores();
     </script>
 </body>
 </html>

@@ -16,7 +16,6 @@
         .sidebar-menu a { display: block; color: #94a3b8; text-decoration: none; padding: 12px; border-radius: 8px; font-weight: 500; transition: all 0.2s; cursor: pointer; }
         .sidebar-menu li.active a, .sidebar-menu a:hover { background-color: #1e293b; color: #f97316; }
         
-        /* Botão de copiar link no menu */
         .btn-copiar-link { background-color: #1e293b; border: 1px dashed #f97316; color: #f97316; padding: 12px; border-radius: 8px; text-align: center; font-size: 0.85rem; font-weight: 600; cursor: pointer; margin-top: 20px; transition: all 0.2s; }
         .btn-copiar-link:hover { background-color: #f97316; color: #fff; }
 
@@ -25,7 +24,7 @@
         .topbar h1 { font-size: 1.5rem; font-weight: 600; color: #0f172a; }
         .btn-sair { background-color: #ef4444; color: #fff; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 0.9rem; }
         
-        .content-area { padding: 32px; flex-grow: 1; overflow-y: auto; }
+        .content-area { padding: 32px; flex-grow: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 24px; }
         .card { background: #fff; border-radius: 12px; border: 1px solid #e2e8f0; box-shadow: 0 1px 3px rgba(0,0,0,0.05); padding: 32px; max-width: 900px; width: 100%; }
         .card-header { margin-bottom: 24px; padding-bottom: 12px; border-bottom: 1px solid #f1f5f9; }
         .card-header h3 { font-size: 1.25rem; color: #0f172a; }
@@ -43,7 +42,26 @@
         .btn-secundario:hover { background-color: #2563eb; }
         .divider { margin-top: 20px; border-top: 1px solid #e2e8f0; padding-top: 20px; color: #0f172a; }
         
-        .alerta { margin-top: 15px; padding: 12px; border-radius: 6px; font-size: 0.95rem; font-weight: 500; display: none; text-align: center; }
+        /* ESTILIZAÇÃO DA TABELA DE COLABORADORES */
+        .table-responsive { width: 100%; overflow-x: auto; margin-top: 16px; }
+        .colab-table { width: 100%; border-collapse: collapse; text-align: left; font-size: 0.9rem; }
+        .colab-table th { background-color: #f1f5f9; color: #475569; padding: 12px; font-weight: 600; border-bottom: 2px solid #e2e8f0; }
+        .colab-table td { padding: 12px; border-bottom: 1px solid #e2e8f0; color: #334155; vertical-align: middle; }
+        .badge { padding: 4px 8px; border-radius: 6px; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; }
+        .badge.ativo { background-color: #dcfce7; color: #15803d; }
+        .badge.bloqueado { background-color: #fee2e2; color: #ef4444; }
+        
+        .actions-cell { display: flex; gap: 8px; }
+        .btn-action { border: none; padding: 6px 10px; border-radius: 6px; font-size: 0.8rem; font-weight: 600; cursor: pointer; transition: background 0.2s; }
+        .btn-action.edit { background-color: #e0f2fe; color: #0369a1; }
+        .btn-action.block { background-color: #fee2e2; color: #b91c1c; }
+        .btn-action.activate { background-color: #dcfce7; color: #166534; }
+        .btn-action.password { background-color: #f1f5f9; color: #475569; }
+
+        /* POP-UP MODERNO (TOAST NOTIFICATION) */
+        .toast-notification { position: fixed; bottom: 24px; right: 24px; background-color: #0f172a; color: #ffffff; padding: 16px 24px; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.15); display: flex; align-items: center; gap: 12px; font-size: 0.9rem; font-weight: 500; transform: translateY(100px); opacity: 0; transition: all 0.3s cubic-bezier(0.68, -0.55, 0.27, 1.55); z-index: 9999; border-left: 4px solid #10b981; }
+        .toast-notification.show { transform: translateY(0); opacity: 1; }
+        .toast-icon { font-size: 1.25rem; }
 
         @media (max-width: 768px) {
             body { flex-direction: column; }
@@ -52,10 +70,10 @@
             .sidebar-menu { display: flex; justify-content: space-around; gap: 8px; }
             .sidebar-menu li { margin-bottom: 0; flex-grow: 1; }
             .sidebar-menu a { padding: 10px; font-size: 0.85rem; text-align: center; }
-            .btn-copiar-link { display: none; } /* Oculta no mobile do adm se necessário */
+            .btn-copiar-link { display: none; }
             .topbar { padding: 16px; flex-direction: column; gap: 12px; text-align: center; }
             .topbar h1 { font-size: 1.25rem; }
-            .content-area { padding: 16px; display: flex; justify-content: center; }
+            .content-area { padding: 16px; }
             .card { padding: 20px; }
             .form-grid { grid-template-columns: 1fr; gap: 16px; }
             .input-group.full-width { grid-column: span 1; }
@@ -86,36 +104,67 @@
 
         <div class="content-area">
             
-            <div id="sec-cadastro" class="card">
-                <div class="card-header"><h3>+ Novo Usuário</h3></div>
-                <form id="cadastroForm">
-                    <div class="form-grid">
-                        <div class="input-group full-width">
-                            <label for="nome">Nome Completo</label>
-                            <input type="text" id="nome" required placeholder="Ex: João da Silva">
+            <div id="sec-cadastro" style="display: flex; flex-direction: column; gap: 24px; width: 100%;">
+                <div class="card">
+                    <div class="card-header"><h3>+ Novo Usuário</h3></div>
+                    <form id="cadastroForm">
+                        <div class="form-grid">
+                            <div class="input-group full-width">
+                                <label for="nome">Nome Completo</label>
+                                <input type="text" id="nome" required placeholder="Ex: João da Silva">
+                            </div>
+                            <div class="input-group">
+                                <label for="emailNovo">E-mail de Acesso</label>
+                                <input type="email" id="emailNovo" required placeholder="joao@empresa.com">
+                            </div>
+                            <div class="input-group">
+                                <label for="senhaNova">Senha Inicial</label>
+                                <input type="password" id="senhaNova" required placeholder="Mínimo 6 dígitos">
+                            </div>
+                            <div class="input-group full-width">
+                                <label for="tipoAcesso">Tipo de Acesso</label>
+                                <select id="tipoAcesso">
+                                    <option value="colaborador">Colaborador (App de Ponto)</option>
+                                    <option value="admin">Gestor (Acesso Painel)</option>
+                                </select>
+                            </div>
+                            <div class="input-group full-width divider"><h4>Carga Horária Diária (Horas)</h4></div>
+                            <div class="input-group"><label for="horasSegSex">Segunda a Sexta</label><input type="number" id="horasSegSex" value="8" required></div>
+                            <div class="input-group"><label for="horasSab">Sábado</label><input type="number" id="horasSab" value="4" required></div>
                         </div>
-                        <div class="input-group">
-                            <label for="emailNovo">E-mail de Acesso</label>
-                            <input type="email" id="emailNovo" required placeholder="joao@empresa.com">
-                        </div>
-                        <div class="input-group">
-                            <label for="senhaNova">Senha Inicial</label>
-                            <input type="password" id="senhaNova" required placeholder="Mínimo 6 dígitos">
-                        </div>
-                        <div class="input-group full-width">
-                            <label for="tipoAcesso">Tipo de Acesso</label>
-                            <select id="tipoAcesso">
-                                <option value="colaborador">Colaborador (App de Ponto)</option>
-                                <option value="admin">Gestor (Acesso Painel)</option>
-                            </select>
-                        </div>
-                        <div class="input-group full-width divider"><h4>Carga Horária Diária (Horas)</h4></div>
-                        <div class="input-group"><label for="horasSegSex">Segunda a Sexta</label><input type="number" id="horasSegSex" value="8" required></div>
-                        <div class="input-group"><label for="horasSab">Sábado</label><input type="number" id="horasSab" value="4" required></div>
+                        <button type="submit" class="btn-primary">Cadastrar Usuário</button>
+                    </form>
+                </div>
+
+                <div class="card">
+                    <div class="card-header"><h3>Equipe Cadastrada</h3></div>
+                    <div class="table-responsive">
+                        <table class="colab-table">
+                            <thead>
+                                <tr>
+                                    <th>Nome</th>
+                                    <th>E-mail</th>
+                                    <th>Acesso</th>
+                                    <th>Status</th>
+                                    <th>Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tabelaColaboradoresBody">
+                                <tr>
+                                    <td>João da Silva</td>
+                                    <td>joao@empresa.com</td>
+                                    <td>Colaborador</td>
+                                    <td><span class="badge ativo">Ativo</span></td>
+                                    <td class="actions-cell">
+                                        <button class="btn-action edit" onclick="alert('Editar em breve...')">✏️ Editar</button>
+                                        <button class="btn-action block" onclick="alert('Bloquear em breve...')">🔒 Bloquear</button>
+                                        <button class="btn-action password" onclick="alert('Senha atual: 123456\nPara alterar use o Firebase Auth.')">🔑 Senha</button>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
                     </div>
-                    <button type="submit" class="btn-primary">Cadastrar Usuário</button>
-                </form>
-                <div id="msgCadastro" class="alerta"></div>
+                </div>
             </div>
 
             <div id="sec-relatorios" class="card" style="display: none;">
@@ -147,11 +196,15 @@
                     </div>
                     <button type="submit" class="btn-primary" style="background-color: #3b82f6;">Salvar Configurações</button>
                 </form>
-                <div id="msgConfig" class="alerta"></div>
             </div>
 
         </div>
     </main>
+
+    <div id="toastNotification" class="toast-notification">
+        <span class="toast-icon">✨</span>
+        <span id="toastMessage">Link copiado com sucesso!</span>
+    </div>
 
     <script>
         const btnCadastro = document.getElementById('menu-cadastro');
@@ -178,7 +231,10 @@
             liRelatorios.classList.remove('active');
             liConfig.classList.remove('active');
 
-            telaVisivel.style.display = 'block';
+            telaVisivel.style.display = 'flex';
+            if(telaVisivel === boxRelatorios || telaVisivel === boxConfig) {
+                telaVisivel.style.display = 'block';
+            }
             liAtivo.classList.add('active');
             txtTitulo.textContent = textoTitulo;
         }
@@ -189,16 +245,23 @@
         
         btnSair.onclick = function() { window.location.href = 'index.html'; };
 
-        // AÇÃO INTELIGENTE DE COPIAR O LINK DO COLABORADOR
+        // FUNÇÃO DO POP-UP CUSTOMIZADO (TOAST)
+        function mostrarToast(mensagem) {
+            const toast = document.getElementById('toastNotification');
+            document.getElementById('toastMessage').textContent = mensagem;
+            toast.classList.add('show');
+            setTimeout(() => { toast.classList.remove('show'); }, 3500);
+        }
+
+        // AÇÃO DE COPIAR SEM POP-UP DO NAVEGADOR
         btnCopiarLink.onclick = function() {
-            // Descobre o domínio atual dinamicamente (Vercel ou local)
             const urlBase = window.location.origin;
             const linkColaborador = urlBase + "/colaborador.html";
             
             navigator.clipboard.writeText(linkColaborador).then(function() {
-                alert("Link do aplicativo copiado com sucesso!\nAgora é só enviar no WhatsApp do colaborador:\n" + linkColaborador);
+                mostrarToast("Link do aplicativo copiado! Envie no WhatsApp.");
             }).catch(function() {
-                alert("Erro ao copiar automaticamente. Link do App: " + linkColaborador);
+                mostrarToast("Erro ao copiar link automaticamente.");
             });
         };
 

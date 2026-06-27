@@ -3,307 +3,101 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Painel do Gestor - Controle de Ponto</title>
+    <title>Registro de Ponto - Ponto Web</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
-        body { font-family: 'Segoe UI', Arial, sans-serif; display: flex; min-height: 100vh; background-color: #f8fafc; color: #1e293b; }
-        
-        .sidebar { width: 260px; background-color: #0f172a; color: #fff; padding: 24px 16px; flex-shrink: 0; }
-        .sidebar-header { display: flex; align-items: center; gap: 12px; margin-bottom: 32px; padding-bottom: 16px; border-bottom: 1px solid #334155; }
-        .sidebar-header h2 { font-size: 1.25rem; font-weight: 600; color: #f8fafc; }
-        .sidebar-menu { list-style: none; }
-        .sidebar-menu li { margin-bottom: 8px; }
-        .sidebar-menu a { display: block; color: #94a3b8; text-decoration: none; padding: 12px; border-radius: 8px; font-weight: 500; transition: all 0.2s; }
-        .sidebar-menu li.active a, .sidebar-menu a:hover { background-color: #1e293b; color: #f97316; }
-        
-        .main-content { flex-grow: 1; display: flex; flex-direction: column; min-width: 0; }
-        .topbar { background-color: #fff; padding: 20px 32px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #e2e8f0; }
-        .topbar h1 { font-size: 1.5rem; font-weight: 600; color: #0f172a; }
-        .btn-sair { background-color: #ef4444; color: #fff; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 0.9rem; }
-        
-        .content-area { padding: 32px; flex-grow: 1; overflow-y: auto; }
-        .card { background: #fff; border-radius: 12px; border: 1px solid #e2e8f0; box-shadow: 0 1px 3px rgba(0,0,0,0.05); padding: 32px; max-width: 800px; width: 100%; }
-        .card-header { margin-bottom: 24px; padding-bottom: 12px; border-bottom: 1px solid #f1f5f9; }
-        .card-header h3 { font-size: 1.25rem; color: #0f172a; }
-        
-        .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
-        .input-group { display: flex; flex-direction: column; gap: 8px; }
-        .input-group.full-width { grid-column: span 2; }
-        .input-group label { font-size: 0.875rem; font-weight: 600; color: #475569; }
-        .input-group input, .input-group select { padding: 12px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 0.95rem; width: 100%; outline: none; background-color: #f8fafc; }
-        .input-group input:focus, .input-group select:focus { border-color: #f97316; background-color: #fff; }
-        
-        .btn-primary { background-color: #f97316; color: white; border: none; padding: 14px; border-radius: 8px; font-weight: 600; cursor: pointer; width: 100%; margin-top: 24px; font-size: 1rem; transition: background 0.2s; }
-        .btn-primary:hover { background-color: #ea580c; }
-        .btn-secundario { background-color: #3b82f6; color: white; border: none; padding: 10px 15px; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 0.9rem; transition: background 0.2s; margin-bottom: 10px; width: fit-content; }
-        .btn-secundario:hover { background-color: #2563eb; }
-        .divider { margin-top: 20px; border-top: 1px solid #e2e8f0; padding-top: 20px; color: #0f172a; }
-        
-        .alerta { margin-top: 15px; padding: 12px; border-radius: 6px; font-size: 0.95rem; font-weight: 500; display: none; text-align: center; }
+        body { font-family: 'Segoe UI', Arial, sans-serif; background-color: #f1f5f9; color: #1e293b; display: flex; flex-direction: column; min-height: 100vh; align-items: center; justify-content: center; padding: 16px; }
 
-        @media (max-width: 768px) {
-            body { flex-direction: column; }
-            .sidebar { width: 100%; padding: 16px; }
-            .sidebar-header { margin-bottom: 16px; justify-content: center; }
-            .sidebar-menu { display: flex; justify-content: space-around; gap: 8px; }
-            .sidebar-menu li { margin-bottom: 0; flex-grow: 1; }
-            .sidebar-menu a { padding: 10px; font-size: 0.85rem; text-align: center; }
-            .topbar { padding: 16px; flex-direction: column; gap: 12px; text-align: center; }
-            .topbar h1 { font-size: 1.25rem; }
-            .content-area { padding: 16px; display: flex; justify-content: center; }
-            .card { padding: 20px; }
-            .form-grid { grid-template-columns: 1fr; gap: 16px; }
-            .input-group.full-width { grid-column: span 1; }
-        }
+        .app-container { max-width: 450px; width: 100%; background: #ffffff; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); border: 1px solid #e2e8f0; padding: 24px; display: flex; flex-direction: column; gap: 24px; text-align: center; }
+        
+        /* TOPO COM LOGO E SAIR */
+        .app-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #f1f5f9; padding-bottom: 16px; }
+        .app-header h2 { font-size: 1.15rem; font-weight: 700; color: #0f172a; }
+        .btn-sair { background: #fee2e2; color: #ef4444; border: none; padding: 6px 12px; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 0.85rem; }
+
+        /* BOX DO RELÓGIO DIGITAL */
+        .clock-box { background: #0f172a; color: #ffffff; padding: 24px; border-radius: 16px; box-shadow: inset 0 2px 4px rgba(0,0,0,0.2); }
+        .clock-box .date { font-size: 0.9rem; color: #94a3b8; font-weight: 500; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px; }
+        .clock-box .time { font-size: 2.5rem; font-weight: 700; font-family: monospace; color: #f97316; }
+
+        /* STATUS DA CERCA VIRTUAL */
+        .status-gps { padding: 12px; border-radius: 12px; font-size: 0.9rem; font-weight: 600; display: flex; align-items: center; justify-content: center; gap: 8px; background-color: #fef3c7; color: #d97706; }
+        
+        /* GRADE DOS 4 BOTÕES DE PONTO */
+        .ponto-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+        .btn-ponto { background: #f8fafc; border: 2px solid #e2e8f0; border-radius: 14px; padding: 20px 12px; font-size: 0.95rem; font-weight: 700; color: #334155; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 8px; transition: all 0.2s; }
+        .btn-ponto span { font-size: 1.5rem; }
+        .btn-ponto:hover { border-color: #f97316; background: #fff7ed; }
+        
+        /* Estilos para marcar pontos batidos */
+        .btn-ponto.success { border-color: #10b981; background: #ecfdf5; color: #065f46; }
+
+        /* ALERTA DE STATUS */
+        .alerta { padding: 12px; border-radius: 10px; font-size: 0.9rem; font-weight: 500; display: none; }
     </style>
 </head>
 <body>
-    
-    <aside class="sidebar">
-        <div class="sidebar-header">
-            <h2>Ponto Web</h2>
-        </div>
-        <ul class="sidebar-menu">
-            <li id="li-cadastro" class="active"><a href="#" id="menu-cadastro">👥 Pessoal</a></li>
-            <li id="li-relatorios"><a href="#" id="menu-relatorios">📊 Relatórios</a></li>
-            <li id="li-config"><a href="#" id="menu-config">⚙️ Configs</a></li>
-        </ul>
-    </aside>
 
-    <main class="main-content">
-        <header class="topbar">
-            <h1 id="titulo-pagina">Gestão de Pessoas</h1>
-            <button id="btnSair" class="btn-sair">Sair ➔</button>
+    <div class="app-container">
+        <header class="app-header">
+            <h2>⏱️ Ponto Web Mobile</h2>
+            <button id="btnSair" class="btn-sair">Sair</button>
         </header>
 
-        <div class="content-area">
-            
-            <div id="sec-cadastro" class="card">
-                <div class="card-header"><h3>+ Novo Usuário</h3></div>
-                <form id="cadastroForm">
-                    <div class="form-grid">
-                        <div class="input-group full-width">
-                            <label for="nome">Nome Completo</label>
-                            <input type="text" id="nome" required placeholder="Ex: João da Silva">
-                        </div>
-                        <div class="input-group">
-                            <label for="emailNovo">E-mail de Acesso</label>
-                            <input type="email" id="emailNovo" required placeholder="joao@empresa.com">
-                        </div>
-                        <div class="input-group">
-                            <label for="senhaNova">Senha Inicial</label>
-                            <input type="password" id="senhaNova" required placeholder="Mínimo 6 dígitos">
-                        </div>
-                        <div class="input-group full-width">
-                            <label for="tipoAcesso">Tipo de Acesso</label>
-                            <select id="tipoAcesso">
-                                <option value="colaborador">Colaborador (App de Ponto)</option>
-                                <option value="admin">Gestor (Acesso Painel)</option>
-                            </select>
-                        </div>
-                        <div class="input-group full-width divider"><h4>Carga Horária Diária (Horas)</h4></div>
-                        <div class="input-group"><label for="horasSegSex">Segunda a Sexta</label><input type="number" id="horasSegSex" value="8" required></div>
-                        <div class="input-group"><label for="horasSab">Sábado</label><input type="number" id="horasSab" value="4" required></div>
-                    </div>
-                    <button type="submit" class="btn-primary">Cadastrar Usuário</button>
-                </form>
-                <div id="msgCadastro" class="alerta"></div>
-            </div>
-
-            <div id="sec-relatorios" class="card" style="display: none;">
-                <div class="card-header"><h3>Filtro de Registros</h3></div>
-                <div class="card-body">
-                    <p style="color: #64748b; margin-bottom: 20px;">Selecione o período para gerar o relatório.</p>
-                    <div class="form-grid">
-                        <div class="input-group"><label>Data Início</label><input type="date" id="dataInicio"></div>
-                        <div class="input-group"><label>Data Fim</label><input type="date" id="dataFim"></div>
-                    </div>
-                    <button id="btnGerarRelatorio" class="btn-primary" style="background-color: #10b981;">Gerar e Baixar Excel</button>
-                </div>
-            </div>
-
-            <div id="sec-config" class="card" style="display: none;">
-                <div class="card-header"><h3>Configuração de Localização</h3></div>
-                <form id="configForm">
-                    <p style="color: #64748b; margin-bottom: 15px;">Clique no botão abaixo estando fisicamente na empresa para preencher as coordenadas automaticamente:</p>
-                    
-                    <button type="button" id="btnCapturarGps" class="btn-secundario">📍 Obter Localização Atual</button>
-                    
-                    <div class="form-grid">
-                        <div class="input-group"><label for="latEmpresa">Latitude</label><input type="text" id="latEmpresa" placeholder="Aguardando GPS..." required readonly></div>
-                        <div class="input-group"><label for="lngEmpresa">Longitude</label><input type="text" id="lngEmpresa" placeholder="Aguardando GPS..." required readonly></div>
-                        <div class="input-group full-width">
-                            <label for="raioPermitido">Raio de Tolerância (metros)</label>
-                            <input type="number" id="raioPermitido" value="50" required>
-                        </div>
-                    </div>
-                    <button type="submit" class="btn-primary" style="background-color: #3b82f6;">Salvar Configurações</button>
-                </form>
-                <div id="msgConfig" class="alerta"></div>
-            </div>
-
+        <div class="clock-box">
+            <div id="txtData" class="date">Carregando data...</div>
+            <div id="txtRelogio" class="time">00:00:00</div>
         </div>
-    </main>
+
+        <div id="statusGps" class="status-gps">
+            <span>📍</span> Verificando sua localização...
+        </div>
+
+        <main class="ponto-grid">
+            <button id="btnEntrada" class="btn-ponto"><span>📥</span>Entrada</button>
+            <button id="btnAlmocoSai" class="btn-ponto"><span>☕</span>Saída Almoço</button>
+            <button id="btnAlmocoVolta" class="btn-ponto"><span>🍽️</span>Volta Almoço</button>
+            <button id="btnSaida" class="btn-ponto"><span>📤</span>Saída Final</button>
+        </main>
+
+        <div id="msgApp" class="alerta"></div>
+    </div>
 
     <script type="module">
         import { auth, db } from './js/firebase-config.js';
-        import { signOut, getAuth, createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
-        import { doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
+        import { signOut } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
+        import { doc, getDoc, setDoc, collection, addDoc } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
 
-        // Mapeamento de botões da interface
-        const btnCadastro = document.getElementById('menu-cadastro');
-        const btnRelatorios = document.getElementById('menu-relatorios');
-        const btnConfig = document.getElementById('menu-config');
-        const btnSair = document.getElementById('btnSair');
-
-        const liCadastro = document.getElementById('li-cadastro');
-        const liRelatorios = document.getElementById('li-relatorios');
-        const liConfig = document.getElementById('li-config');
-
-        const boxCadastro = document.getElementById('sec-cadastro');
-        const boxRelatorios = document.getElementById('sec-relatorios');
-        const boxConfig = document.getElementById('sec-config');
-        const txtTitulo = document.getElementById('titulo-pagina');
-
-        function alternarTela(telaVisivel, liAtivo, textoTitulo) {
-            if (boxCadastro) boxCadastro.style.display = 'none';
-            if (boxRelatorios) boxRelatorios.style.display = 'none';
-            if (boxConfig) boxConfig.style.display = 'none';
+        // 1. RELÓGIO DIGITAL ATUALIZADO EM TEMPO REAL
+        function atualizarRelogio() {
+            const agora = new Date();
             
-            if (liCadastro) liCadastro.classList.remove('active');
-            if (liRelatorios) liRelatorios.classList.remove('active');
-            if (liConfig) liConfig.classList.remove('active');
-
-            if (telaVisivel) telaVisivel.style.display = 'block';
-            if (liAtivo) liAtivo.classList.add('active');
-            if (txtTitulo) txtTitulo.textContent = textoTitulo;
+            // Formatando a data por extenso em português
+            const opcoesData = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+            document.getElementById('txtData').textContent = agora.toLocaleDateString('pt-BR', opcoesData);
+            
+            // Formatando o relógio com dois dígitos
+            const horas = String(agora.getHours()).padStart(2, '0');
+            const minutos = String(agora.getMinutes()).padStart(2, '0');
+            const segundos = String(agora.getSeconds()).padStart(2, '0');
+            document.getElementById('txtRelogio').textContent = `${horas}:${minutos}:${segundos}`;
         }
+        setInterval(atualizarRelogio, 1000);
+        atualizarRelogio();
 
-        if (btnCadastro) { btnCadastro.onclick = (e) => { e.preventDefault(); alternarTela(boxCadastro, liCadastro, 'Gestão de Pessoas'); }; }
-        if (btnRelatorios) { btnRelatorios.onclick = (e) => { e.preventDefault(); alternarTela(boxRelatorios, liRelatorios, 'Relatórios e Fechamento'); }; }
-        if (btnConfig) { 
-            btnConfig.onclick = (e) => { 
-                e.preventDefault(); 
-                alternarTela(boxConfig, liConfig, 'Configurações do Sistema'); 
-                carregarConfiguracoes();
-            }; 
-        }
-
+        // 2. LOGOUT DO SISTEMA
+        const btnSair = document.getElementById('btnSair');
         if (btnSair) {
-            btnSair.onclick = async (e) => {
+            btnSair.onclick = async function(e) {
                 e.preventDefault();
-                try { await signOut(auth); window.location.href = 'index.html'; } catch (err) { console.error(err); }
-            };
-        }
-
-        // CAPTURA DO GPS
-        const btnCapturarGps = document.getElementById('btnCapturarGps');
-        if (btnCapturarGps) {
-            btnCapturarGps.onclick = function() {
-                if (!navigator.geolocation) {
-                    alert("Seu navegador não suporta geolocalização.");
-                    return;
-                }
-                btnCapturarGps.textContent = "⌛ Capturando...";
-                navigator.geolocation.getCurrentPosition(function(posicao) {
-                    document.getElementById('latEmpresa').value = posicao.coords.latitude;
-                    document.getElementById('lngEmpresa').value = posicao.coords.longitude;
-                    btnCapturarGps.textContent = "📍 Obter Localização Atual";
-                }, function(erro) {
-                    alert("Erro ao obter localização. Ative o GPS.");
-                    btnCapturarGps.textContent = "📍 Obter Localização Atual";
-                });
-            };
-        }
-
-        // CONFIGURAÇÕES - BUSCAR DO BANCO E SALVAR
-        const configForm = document.getElementById('configForm');
-        const msgConfig = document.getElementById('msgConfig');
-
-        async function carregarConfiguracoes() {
-            try {
-                const docRef = await getDoc(doc(db, "sistema", "configGeral"));
-                if (docRef.exists()) {
-                    const dados = docRef.data();
-                    document.getElementById('latEmpresa').value = dados.latitude || '';
-                    document.getElementById('lngEmpresa').value = dados.longitude || '';
-                    document.getElementById('raioPermitido').value = dados.raio || 50;
-                }
-            } catch (err) { console.error(err); }
-        }
-
-        if (configForm) {
-            configForm.onsubmit = async function(e) {
-                e.preventDefault(); // <-- EVITA QUE A PÁGINA APAGUE OS DADOS
-                msgConfig.style.display = "block";
-                msgConfig.style.backgroundColor = "#dbeafe";
-                msgConfig.style.color = "#2563eb";
-                msgConfig.textContent = "Salvando no Firebase...";
-
                 try {
-                    await setDoc(doc(db, "sistema", "configGeral"), {
-                        latitude: Number(document.getElementById('latEmpresa').value),
-                        longitude: Number(document.getElementById('lngEmpresa').value),
-                        raio: Number(document.getElementById('raioPermitido').value)
-                    });
-                    msgConfig.style.backgroundColor = "#dcfce7";
-                    msgConfig.style.color = "#15803d";
-                    msgConfig.textContent = "Configurações gravadas com sucesso!";
-                    setTimeout(() => msgConfig.style.display = "none", 4000);
-                } catch (err) {
-                    msgConfig.style.backgroundColor = "#fee2e2";
-                    msgConfig.style.color = "#b91c1c";
-                    msgConfig.textContent = "Erro: " + err.message;
-                }
+                    await signOut(auth);
+                    window.location.href = 'index.html';
+                } catch(err) { console.error(err); }
             };
         }
 
-        // CADASTRO DE USUÁRIOS - INTEGRADO AO BANCO
-        const cadastroForm = document.getElementById('cadastroForm');
-        const msgCadastro = document.getElementById('msgCadastro');
-
-        if (cadastroForm) {
-            cadastroForm.onsubmit = async function(e) {
-                e.preventDefault();
-                msgCadastro.style.display = "block";
-                msgCadastro.style.backgroundColor = "#dbeafe";
-                msgCadastro.style.color = "#2563eb";
-                msgCadastro.textContent = "Cadastrando usuário...";
-
-                const nome = document.getElementById('nome').value;
-                const email = document.getElementById('emailNovo').value;
-                const senha = document.getElementById('senhaNova').value;
-                const tipo = document.getElementById('tipoAcesso').value;
-                const segSex = document.getElementById('horasSegSex').value;
-                const sab = document.getElementById('horasSab').value;
-
-                try {
-                    const app2 = initializeApp(auth.app.options, 'AppCadastro');
-                    const auth2 = getAuth(app2);
-                    const cred = await createUserWithEmailAndPassword(auth2, email, senha);
-
-                    await setDoc(doc(db, "usuarios", cred.user.uid), {
-                        nome: nome,
-                        email: email,
-                        tipo: tipo,
-                        cargaHoraria: { segSex: Number(segSex), sabado: Number(sab), domingo: 0 },
-                        dataCadastro: new Date().toISOString()
-                    });
-
-                    await signOut(auth2);
-                    msgCadastro.style.backgroundColor = "#dcfce7";
-                    msgCadastro.style.color = "#15803d";
-                    msgCadastro.textContent = "Usuário cadastrado com sucesso!";
-                    cadastroForm.reset();
-                    setTimeout(() => msgCadastro.style.display = "none", 4000);
-                } catch (err) {
-                    msgCadastro.style.backgroundColor = "#fee2e2";
-                    msgCadastro.style.color = "#b91c1c";
-                    msgCadastro.textContent = "Erro: " + err.message;
-                }
-            };
-        }
+        // Os próximos passos serão incluir as regras da cerca virtual e gravação dos pontos!
     </script>
 </body>
 </html>

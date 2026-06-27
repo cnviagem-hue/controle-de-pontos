@@ -8,30 +8,27 @@
 </head>
 <body class="dashboard-body">
     
-    <!-- MENU LATERAL -->
     <aside class="sidebar">
         <div class="sidebar-header">
             <img src="https://cdn-icons-png.flaticon.com/512/2088/2088617.png" alt="Logo">
             <h2>Ponto Web</h2>
         </div>
         <ul class="sidebar-menu">
-            <li class="active"><a href="#">👥 Cadastro de Pessoal</a></li>
-            <li><a href="#">📊 Relatórios</a></li>
-            <li><a href="#">⚙️ Configurações</a></li>
+            <li id="menu-cadastro" class="active"><a href="#">👥 Cadastro de Pessoal</a></li>
+            <li id="menu-relatorios"><a href="#">📊 Relatórios</a></li>
+            <li id="menu-config"><a href="#">⚙️ Configurações</a></li>
         </ul>
     </aside>
 
-    <!-- ÁREA CENTRAL -->
     <main class="main-content">
-        <!-- CABEÇALHO DO CENTRO -->
         <header class="topbar">
-            <h1>Gestão de Pessoas e Acessos</h1>
+            <h1 id="titulo-pagina">Gestão de Pessoas e Acessos</h1>
             <button id="btnSair" class="btn-sair">Sair da Conta ➔</button>
         </header>
 
-        <!-- CONTEÚDO (O FORMULÁRIO) -->
         <div class="content-area">
-            <div class="card">
+            
+            <div id="sec-cadastro" class="card">
                 <div class="card-header">
                     <h3>+ Novo Usuário</h3>
                 </div>
@@ -53,12 +50,11 @@
                             <input type="password" id="senhaNova" required placeholder="Mínimo 6 caracteres">
                         </div>
 
-                        <!-- CAMPO NOVO: TIPO DE ACESSO -->
                         <div class="input-group full-width">
                             <label for="tipoAcesso">Tipo de Acesso no Sistema</label>
                             <select id="tipoAcesso" style="padding: 12px; border: 1px solid #d1d5db; border-radius: 6px; background-color: #f9fafb; outline: none; font-size: 14px; width: 100%; cursor: pointer;">
                                 <option value="colaborador">Colaborador (App de Bater Ponto)</option>
-                                <option value="admin">Gestor (Acesso Total ao Painel Administrativo)</option>
+                                <option value="admin">Gestor (Acesso Total ao Painel)</option>
                             </select>
                         </div>
                         
@@ -85,6 +81,56 @@
                 </form>
                 <p id="msgCadastro" class="alerta"></p>
             </div>
+
+            <div id="sec-relatorios" class="card" style="display: none;">
+                <div class="card-header">
+                    <h3>Filtro de Registros</h3>
+                </div>
+                <div class="card-body">
+                    <p style="color: #64748b; margin-bottom: 20px;">Selecione o período para gerar o relatório de horas e exportar para Excel.</p>
+                    <div class="form-grid">
+                        <div class="input-group">
+                            <label>Data Início</label>
+                            <input type="date" id="dataInicio">
+                        </div>
+                        <div class="input-group">
+                            <label>Data Fim</label>
+                            <input type="date" id="dataFim">
+                        </div>
+                    </div>
+                    <button id="btnGerarRelatorio" class="btn-primary" style="background-color: #10b981;">Gerar e Baixar Excel</button>
+                    </div>
+            </div>
+
+            <div id="sec-config" class="card" style="display: none;">
+                <div class="card-header">
+                    <h3>Configuração Antifraude (Geolocalização)</h3>
+                </div>
+                <form id="configForm" class="card-body">
+                    <p style="color: #64748b; margin-bottom: 20px;">Defina a coordenada exata da sua empresa. O colaborador só poderá bater o ponto se o celular dele estiver dentro do raio permitido.</p>
+                    
+                    <div class="form-grid">
+                        <div class="input-group">
+                            <label for="latEmpresa">Latitude da Empresa</label>
+                            <input type="text" id="latEmpresa" placeholder="-17.7441" required>
+                        </div>
+
+                        <div class="input-group">
+                            <label for="lngEmpresa">Longitude da Empresa</label>
+                            <input type="text" id="lngEmpresa" placeholder="-48.6253" required>
+                        </div>
+
+                        <div class="input-group full-width">
+                            <label for="raioPermitido">Raio de Tolerância (em metros)</label>
+                            <input type="number" id="raioPermitido" value="50" required>
+                            <small style="color: #9ca3af; margin-top: 5px;">Recomendado: 50 a 100 metros para cobrir calçada e estacionamento.</small>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn-primary" style="background-color: #3b82f6;">Salvar Configurações</button>
+                    <p id="msgConfig" class="alerta"></p>
+                </form>
+            </div>
+
         </div>
     </main>
 

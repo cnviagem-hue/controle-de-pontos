@@ -10,80 +10,212 @@
 
         .app-container { max-width: 450px; width: 100%; background: #ffffff; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); border: 1px solid #e2e8f0; padding: 24px; display: flex; flex-direction: column; gap: 24px; text-align: center; }
         
+        /* TOPO */
         .app-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #f1f5f9; padding-bottom: 16px; }
-        .app-header h2 { font-size: 1.15rem; font-weight: 700; color: #0f172a; }
+        .app-header h2 { font-size: 1.15rem; font-weight: 700; color: #0f172a; text-align: left; max-width: 75%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
         .btn-sair { background: #fee2e2; color: #ef4444; border: none; padding: 6px 12px; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 0.85rem; }
 
+        /* FORMULÁRIO DE LOGIN */
+        .login-box { display: flex; flex-direction: column; gap: 16px; text-align: left; }
+        .login-box h3 { font-size: 1.25rem; color: #0f172a; text-align: center; margin-bottom: 8px; }
+        .input-group { display: flex; flex-direction: column; gap: 6px; }
+        .input-group label { font-size: 0.85rem; font-weight: 600; color: #475569; }
+        .input-group input { padding: 12px; border: 1px solid #cbd5e1; border-radius: 10px; font-size: 1rem; outline: none; background-color: #f8fafc; }
+        .input-group input:focus { border-color: #f97316; background-color: #fff; }
+        .btn-login { background-color: #f97316; color: white; border: none; padding: 14px; border-radius: 10px; font-weight: 600; cursor: pointer; font-size: 1rem; margin-top: 8px; }
+        .btn-login:hover { background-color: #ea580c; }
+
+        /* PAINEL DE PONTO (OCULTO ANTES DO LOGIN) */
+        .ponto-box { display: none; flex-direction: column; gap: 24px; }
+
+        /* RELÓGIO */
         .clock-box { background: #0f172a; color: #ffffff; padding: 24px; border-radius: 16px; box-shadow: inset 0 2px 4px rgba(0,0,0,0.2); }
         .clock-box .date { font-size: 0.9rem; color: #94a3b8; font-weight: 500; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px; }
         .clock-box .time { font-size: 2.5rem; font-weight: 700; font-family: monospace; color: #f97316; }
 
+        /* STATUS GPS/APARELHO */
         .status-gps { padding: 12px; border-radius: 12px; font-size: 0.9rem; font-weight: 600; display: flex; align-items: center; justify-content: center; gap: 8px; background-color: #fef3c7; color: #d97706; }
         
+        /* BOTÕES */
         .ponto-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
         .btn-ponto { background: #f8fafc; border: 2px solid #e2e8f0; border-radius: 14px; padding: 20px 12px; font-size: 0.95rem; font-weight: 700; color: #334155; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 8px; transition: all 0.2s; }
         .btn-ponto span { font-size: 1.5rem; }
         .btn-ponto:hover { border-color: #f97316; background: #fff7ed; }
         
-        .btn-ponto.success { border-color: #10b981; background: #ecfdf5; color: #065f46; }
-        .alerta { padding: 12px; border-radius: 10px; font-size: 0.9rem; font-weight: 500; display: none; }
+        /* POP-UP MODERNO (TOAST) */
+        .toast-notification { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(100px); background-color: #0f172a; color: #ffffff; padding: 16px 24px; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.15); display: flex; align-items: center; gap: 12px; font-size: 0.9rem; font-weight: 500; opacity: 0; transition: all 0.3s ease; z-index: 9999; width: calc(100% - 32px); max-width: 400px; border-left: 4px solid #ef4444; }
+        .toast-notification.show { transform: translateX(-50%) translateY(0); opacity: 1; }
     </style>
 </head>
 <body>
 
     <div class="app-container">
         <header class="app-header">
-            <h2>⏱️ Ponto Web Mobile</h2>
-            <button id="btnSair" class="btn-sair">Sair</button>
+            <h2 id="appTitulo">⏱️ Ponto Web</h2>
+            <button id="btnSair" class="btn-sair" style="display: none;">Sair</button>
         </header>
 
-        <div class="clock-box">
-            <div id="txtData" class="date">Carregando data...</div>
-            <div id="txtRelogio" class="time">00:00:00</div>
+        <div id="areaLogin" class="login-box">
+            <h3>Acesso do Colaborador</h3>
+            <form id="loginForm">
+                <div class="input-group">
+                    <label for="email">E-mail Corporativo</label>
+                    <input type="email" id="email" required placeholder="seuemail@empresa.com">
+                </div>
+                <div class="input-group" style="margin-top: 12px;">
+                    <label for="senha">Senha de Acesso</label>
+                    <input type="password" id="senha" required placeholder="Digite sua senha">
+                </div>
+                <button type="submit" class="btn-login">Entrar no Aplicativo</button>
+            </form>
         </div>
 
-        <div id="statusGps" class="status-gps">
-            <span>📍</span> Verificando sua localização...
+        <div id="areaPonto" class="ponto-box">
+            <div class="clock-box">
+                <div id="txtData" class="date">Carregando data...</div>
+                <div id="txtRelogio" class="time">00:00:00</div>
+            </div>
+
+            <div id="statusGps" class="status-gps">
+                <span>📍</span> Validando dispositivo e GPS...
+            </div>
+
+            <main class="ponto-grid">
+                <button id="btnEntrada" class="btn-ponto"><span>📥</span>Entrada</button>
+                <button id="btnAlmocoSai" class="btn-ponto"><span>☕</span>Saída Almoço</button>
+                <button id="btnAlmocoVolta" class="btn-ponto"><span>🍽️</span>Volta Almoço</button>
+                <button id="btnSaida" class="btn-ponto"><span>📤</span>Saída Final</button>
+            </main>
         </div>
+    </div>
 
-        <main class="ponto-grid">
-            <button id="btnEntrada" class="btn-ponto"><span>📥</span>Entrada</button>
-            <button id="btnAlmocoSai" class="btn-ponto"><span>☕</span>Saída Almoço</button>
-            <button id="btnAlmocoVolta" class="btn-ponto"><span>🍽️</span>Volta Almoço</button>
-            <button id="btnSaida" class="btn-ponto"><span>📤</span>Saída Final</button>
-        </main>
-
-        <div id="msgApp" class="alerta"></div>
+    <div id="toastNotification" class="toast-notification">
+        <span id="toastMessage">Erro ao validar acesso.</span>
     </div>
 
     <script type="module">
         import { auth, db } from './js/firebase-config.js';
-        import { signOut } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
-        import { doc, getDoc, collection, addDoc } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
+        import { signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
+        import { doc, getDoc } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
 
-        // RELÓGIO DIGITAL DINÂMICO
+        const areaLogin = document.getElementById('areaLogin');
+        const areaPonto = document.getElementById('areaPonto');
+        const loginForm = document.getElementById('loginForm');
+        const btnSair = document.getElementById('btnSair');
+        const appTitulo = document.getElementById('appTitulo');
+        const statusGps = document.getElementById('statusGps');
+
+        let dadosUsuario = null;
+
+        // INICIALIZADOR DO RELÓGIO
         function atualizarRelogio() {
             const agora = new Date();
-            const opcoesData = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
-            document.getElementById('txtData').textContent = agora.toLocaleDateString('pt-BR', opcoesData);
-            
-            const horas = String(agora.getHours()).padStart(2, '0');
-            const minutos = String(agora.getMinutes()).padStart(2, '0');
-            const segundos = String(agora.getSeconds()).padStart(2, '0');
-            document.getElementById('txtRelogio').textContent = `${horas}:${minutos}:${segundos}`;
+            document.getElementById('txtData').textContent = agora.toLocaleDateString('pt-BR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+            document.getElementById('txtRelogio').textContent = `${String(agora.getHours()).padStart(2, '0')}:${String(agora.getMinutes()).padStart(2, '0')}:${String(agora.getSeconds()).padStart(2, '0')}`;
         }
         setInterval(atualizarRelogio, 1000);
         atualizarRelogio();
 
-        // SAIR DA CONTA
-        const btnSair = document.getElementById('btnSair');
-        if (btnSair) {
-            btnSair.onclick = async function(e) {
-                e.preventDefault();
-                try {
+        // TOAST CUSTOMIZADO
+        function exibirAviso(mensagem, corBorda = "#ef4444") {
+            const toast = document.getElementById('toastNotification');
+            toast.style.borderLeftColor = corBorda;
+            document.getElementById('toastMessage').textContent = mensaje || mensagem;
+            toast.classList.add('show');
+            setTimeout(() => { toast.classList.remove('show'); }, 4000);
+        }
+
+        // DETECTOR INTELIGENTE DE DISPOSITIVO (VERIFICA SE É CELULAR)
+        function verificarSeECelular() {
+            const assinatura = navigator.userAgent.toLowerCase();
+            return /mobi|android|iphone|ipad|blackberry|iemobile|opera mini/i.test(assinatura);
+        }
+
+        // MONITOR DE SESSÃO DO FIREBASE
+        onAuthStateChanged(auth, async (user) => {
+            if (user) {
+                // Carrega dados do usuário logado
+                const userDoc = await getDoc(doc(db, "usuarios", user.uid));
+                if (userDoc.exists()) {
+                    dadosUsuario = userDoc.data();
+                    
+                    // 1. ATUALIZA O TITULO COM O NOME DA EMPRESA SALVO NAS CONFIGS
+                    const configDoc = await getDoc(doc(db, "sistema", "configGeral"));
+                    if (configDoc.exists()) {
+                        appTitulo.textContent = configDoc.data().nomeEmpresa || "Sua Empresa";
+                    }
+
+                    // Alterna as telas visualmente
+                    areaLogin.style.display = 'none';
+                    areaPonto.style.display = 'flex';
+                    btnSair.style.display = 'block';
+
+                    // 2. VALIDAÇÃO DE DISPOSITIVOS SOLICITADA
+                    const eCelular = verificarSeECelular();
+                    const permissao = dadosUsuario.dispositivoPermitido || 'celular'; // Padrão seguro
+
+                    if (permissao === 'celular' && !eCelular) {
+                        statusGps.style.backgroundColor = "#fee2e2";
+                        statusGps.style.color = "#ef4444";
+                        statusGps.innerHTML = "❌ Bloqueado: Registro permitido apenas via Celular.";
+                        bloquearBotoesPonto(true);
+                        exibirAviso("Acesso bloqueado. Este usuário só pode bater ponto pelo Smartphone.");
+                    } else if (permissao === 'pc' && eCelular) {
+                        statusGps.style.backgroundColor = "#fee2e2";
+                        statusGps.style.color = "#ef4444";
+                        statusGps.innerHTML = "❌ Bloqueado: Registro permitido apenas via Computador.";
+                        bloquearBotoesPonto(true);
+                        exibirAviso("Acesso bloqueado. Este usuário só pode bater ponto pelo Computador.");
+                    } else {
+                        statusGps.style.backgroundColor = "#dcfce7";
+                        statusGps.style.color = "#15803d";
+                        statusGps.innerHTML = `✅ Dispositivo Autorizado (${eCelular ? 'Celular' : 'PC'})`;
+                        bloquearBotoesPonto(false);
+                    }
+
+                } else {
+                    exibirAviso("Cadastro não encontrado no sistema.");
                     await signOut(auth);
-                    window.location.href = 'index.html';
-                } catch(err) { console.error(err); }
+                }
+            } else {
+                // Deslogado - mostra login
+                areaLogin.style.display = 'flex';
+                areaPonto.style.display = 'none';
+                btnSair.style.display = 'none';
+                appTitulo.textContent = "⏱️ Ponto Web";
+            }
+        });
+
+        function bloquearBotoesPonto(status) {
+            const botoes = document.querySelectorAll('.btn-ponto');
+            botoes.forEach(b => b.disabled = status);
+        }
+
+        // SUBMIT DO FORMULÁRIO DE LOGIN
+        if (loginForm) {
+            loginForm.onsubmit = async (e) => {
+                e.preventDefault();
+                const email = document.getElementById('email').value.trim();
+                const senha = document.getElementById('senha').value;
+
+                try {
+                    await signInWithEmailAndPassword(auth, email, senha);
+                } catch (err) {
+                    console.error(err);
+                    if (err.code === 'auth/wrong-password' || err.code === 'auth/user-not-found') {
+                        exibirAviso("E-mail ou senha incorretos.");
+                    } else {
+                        exibirAviso("Erro ao acessar aplicativo: " + err.message);
+                    }
+                }
+            };
+        }
+
+        // SAÍDA DO APP
+        if (btnSair) {
+            btnSair.onclick = async (e) => {
+                e.preventDefault();
+                try { await signOut(auth); } catch(err) { console.error(err); }
             };
         }
     </script>

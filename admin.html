@@ -75,7 +75,6 @@
         .modal-box h4 { font-size: 1.25rem; font-weight: 700; color: #0f172a; margin-bottom: 8px; }
         .modal-box p { font-size: 0.95rem; color: #64748b; margin-bottom: 16px; line-height: 1.5; }
         
-        /* Container customizado para drops ou inputs injetados */
         .modal-custom-body { margin-bottom: 24px; text-align: left; }
         .modal-custom-body select { padding: 12px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 0.95rem; width: 100%; outline: none; background-color: #f8fafc; font-family: inherit; }
         .modal-custom-body select:focus { border-color: #3b82f6; background-color: #fff; }
@@ -236,9 +235,7 @@
             <span id="modalIcon" class="modal-icon info">⚙️</span>
             <h4 id="modalTitulo">Confirmação</h4>
             <p id="modalTexto">Tem certeza?</p>
-            
             <div id="modalCustomBody" class="modal-custom-body"></div>
-
             <div class="modal-buttons">
                 <button id="btnModalCancelar" class="btn-modal cancel">Cancelar</button>
                 <button id="btnModalConfirmar" class="btn-modal confirm-save">Confirmar</button>
@@ -269,4 +266,269 @@
         const boxCadastro = document.getElementById('sec-cadastro');
         const boxRelatorios = document.getElementById('sec-relatorios');
         const boxConfig = document.getElementById('sec-config');
-        const txtTitulo = document.getElementById('titulo-pagina
+        const txtTitulo = document.getElementById('titulo-pagina');
+
+        const modal = document.getElementById('modalConfirmacao');
+        const modalIcon = document.getElementById('modalIcon');
+        const modalTitulo = document.getElementById('modalTitulo');
+        const modalTexto = document.getElementById('modalTexto');
+        const modalCustomBody = document.getElementById('modalCustomBody');
+        const btnModalCancelar = document.getElementById('btnModalCancelar');
+        const btnModalConfirmar = document.getElementById('btnModalConfirmar');
+
+        let acaoConfirmarGlobal = null;
+
+        function alternarTela(telaVisivel, liAtivo, textoTitulo) {
+            boxCadastro.style.display = 'none';
+            boxRelatorios.style.display = 'none';
+            boxConfig.style.display = 'none';
+            liCadastro.classList.remove('active');
+            liRelatorios.classList.remove('active');
+            liConfig.classList.remove('active');
+
+            telaVisivel.style.display = 'flex';
+            if(telaVisivel === boxRelatorios || telaVisivel === boxConfig) { telaVisivel.style.display = 'block'; }
+            liAtivo.classList.add('active');
+            txtTitulo.textContent = textoTitulo;
+        }
+
+        btnCadastro.onclick = () => alternarTela(boxCadastro, liCadastro, 'Gestão de Pessoas');
+        btnRelatorios.onclick = () => alternarTela(boxRelatorios, liRelatorios, 'Relatórios e Fechamento');
+        btnConfig.onclick = () => { alternarTela(boxConfig, liConfig, 'Configurações do Sistema'); carregarConfiguracoes(); };
+        btnSair.onclick = async () => { await signOut(auth); window.location.href = 'index.html'; };
+
+        function mostrarToast(mensagem, corBorda = "#10b981") {
+            const toast = document.getElementById('toastNotification');
+            toast.style.borderLeft = `4px solid ${corBorda}`;
+            document.getElementById('toastMessage').textContent = mensagem;
+            toast.classList.add('show');
+            setTimeout(() => { toast.classList.remove('show'); }, 3500);
+        }
+
+        function abrirModalUI(titulo, texto, icone, classeBotao, callbackConfirmar, htmlCustomizado = "") {
+            modalTitulo.textContent = titulo;
+            modalTexto.textContent = texto;
+            modalIcon.textContent = icone;
+            modalIcon.className = `modal-icon ${classeBotao === 'confirm-del' ? 'danger' : 'info'}`;
+            btnModalConfirmar.className = `btn-modal ${classeBotao}`;
+            modalCustomBody.innerHTML = htmlCustomizado;
+            acaoConfirmarGlobal = callbackConfirmar;
+            modal.classList.add('show');
+        }
+
+        btnModalCancelar.onclick = () => { modal.classList.remove('show'); acaoConfirmarGlobal = null; };
+        btnModalConfirmar.onclick = async () => {
+            if(acaoConfirmarGlobal) { await acaoConfirmarGlobal(); }
+            modal.classList.remove('show');
+        };
+
+        btnCopiarLink.onclick = () => {
+            const linkColaborador = window.location.origin + "/colaborador.html";
+            navigator.clipboard.writeText(linkColaborador).then(() => {
+                mostrarToast("Link do app copiado! Envie para a equipe.");
+            });
+        };
+
+        if (document.getElementById('btnCapturarGps')) {
+            document.getElementById('btnCapturarGps').onclick = () => {
+                document.getElementById('btnCapturarGps').textContent = "⌛ Capturando...";
+                navigator.geolocation.getCurrentPosition((pos) => {
+                    document.getElementById('latEmpresa').value = pos.coords.latitude;
+                    document.getElementById('lngEmpresa').value = pos.coords.longitude;
+                    document.getElementById('btnCapturarGps').textContent = "📍 Obter Localização Atual";
+                }, () => {
+                    alert("Ative seu GPS.");
+                    document.getElementById('btnCapturarGps').textContent = "📍 Obter Localização Atual";
+                });
+            };
+        }
+
+        async function carregarConfiguracoes() {
+            try {
+                const docRef = await getDoc(doc(db, "sistema", "configGeral"));
+                if (docRef.exists()) {
+                    const dados = docRef.data();
+                    document.getElementById('nomeEmpresa').value = dados.nomeEmpresa || '';
+                    document.getElementById('latEmpresa').value = dados.latitude || '';
+                    document.getElementById('lngEmpresa').value = dados.longitude || '';
+                    document.getElementById('raioPermitido').value = dados.raio || 50;
+                }
+            } catch (err) { console.error(err); }
+        }
+
+        if (document.getElementById('configForm')) {
+            document.getElementById('configForm').onsubmit = async (e) => {
+                e.preventDefault();
+                try {
+                    await setDoc(doc(db, "sistema", "configGeral"), {
+                        nomeEmpresa: document.getElementById('nomeEmpresa').value.trim(),
+                        latitude: Number(document.getElementById('latEmpresa').value),
+                        longitude: Number(document.getElementById('lngEmpresa').value),
+                        raio: Number(document.getElementById('raioPermitido').value)
+                    });
+                    mostrarToast("Configurações salvas com sucesso!");
+                } catch (err) { mostrarToast("Erro ao salvar: " + err.message, "#ef4444"); }
+            };
+        }
+
+        const tabelaBody = document.getElementById('tabelaColaboradoresBody');
+
+        async function listarColaboradores() {
+            tabelaBody.innerHTML = '<tr><td colspan="5" style="text-align: center;">Buscando equipe atualizada...</td></tr>';
+            try {
+                const querySnapshot = await getDocs(collection(db, "usuarios"));
+                tabelaBody.innerHTML = '';
+                
+                if(querySnapshot.empty) {
+                    tabelaBody.innerHTML = '<tr><td colspan="5" style="text-align: center; color: #64748b;">Nenhum usuário cadastrado.</td></tr>';
+                    return;
+                }
+
+                querySnapshot.forEach((usuarioDoc) => {
+                    const u = usuarioDoc.data();
+                    const uid = usuarioDoc.id;
+                    
+                    const nomeExibir = u.nome || "Usuário de Teste Antigo";
+                    const emailExibir = u.email || "sem_email@banco.com";
+                    const dispPermissao = u.dispositivoPermitido || "celular";
+
+                    const statusText = u.status !== "bloqueado" ? "Ativo" : "Bloqueado";
+                    const badgeClass = u.status !== "bloqueado" ? "ativo" : "bloqueado";
+                    const btnBlockText = u.status !== "bloqueado" ? "🔒 Bloquear" : "🔓 Ativar";
+
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td><strong>${nomeExibir}</strong></td>
+                        <td>${emailExibir}</td>
+                        <td><span style="text-transform: capitalize; font-weight:600;">${dispPermissao}</span></td>
+                        <td><span class="badge ${badgeClass}">${statusText}</span></td>
+                        <td class="actions-cell">
+                            <button class="btn-action edit" data-uid="${uid}" data-nome="${nomeExibir}" data-disp="${dispPermissao}">✏️ Disp</button>
+                            <button class="btn-action block" data-uid="${uid}" data-status="${u.status || 'ativo'}">${btnBlockText}</button>
+                            <button class="btn-action delete" data-uid="${uid}" data-nome="${nomeExibir}">🗑️ Excluir</button>
+                        </td>
+                    `;
+                    tabelaBody.appendChild(tr);
+                });
+
+                vincularCliquesTabela();
+
+            } catch (err) { 
+                tabelaBody.innerHTML = '<tr><td colspan="5" style="text-align: center; color: #ef4444;">Erro ao carregar tabela.</td></tr>';
+            }
+        }
+
+        function vincularCliquesTabela() {
+            document.querySelectorAll('.btn-action.edit').forEach(btn => {
+                btn.onclick = () => {
+                    const uid = btn.getAttribute('data-uid');
+                    const nome = btn.getAttribute('data-nome');
+                    const dispAtual = btn.getAttribute('data-disp').toLowerCase().trim();
+                    
+                    const htmlSelect = `
+                        <select id="modalSelectDispositivo">
+                            <option value="celular" ${dispAtual === 'celular' ? 'selected' : ''}>📱 Apenas Celular</option>
+                            <option value="pc" ${dispAtual === 'pc' ? 'selected' : ''}>💻 Apenas PC</option>
+                            <option value="ambos" ${dispAtual === 'ambos' ? 'selected' : ''}>🔄 Celular e PC (Ambos)</option>
+                        </select>
+                    `;
+
+                    abrirModalUI(
+                        "Alterar Dispositivo", 
+                        `Selecione abaixo as novas permissões de hardware para o colaborador ${nome}:`, 
+                        "⚙️", 
+                        "confirm-save",
+                        async () => {
+                            const novaEscolha = document.getElementById('modalSelectDispositivo').value;
+                            await updateDoc(doc(db, "usuarios", uid), { dispositivoPermitido: novaEscolha });
+                            mostrarToast(`Acesso de ${nome} atualizado para: ${novaEscolha}!`);
+                            listarColaboradores();
+                        },
+                        htmlSelect
+                    );
+                };
+            });
+
+            document.querySelectorAll('.btn-action.block').forEach(btn => {
+                btn.onclick = () => {
+                    const uid = btn.getAttribute('data-uid');
+                    const statusAtual = btn.getAttribute('data-status');
+                    const novoStatus = statusAtual === "bloqueado" ? "ativo" : "bloqueado";
+
+                    abrirModalUI(
+                        novoStatus === "bloqueado" ? "Bloquear Usuário?" : "Ativar Usuário?",
+                        `Tem certeza que deseja alterar o status deste colaborador?`,
+                        "🔒",
+                        novoStatus === "bloqueado" ? "confirm-del" : "confirm-save",
+                        async () => {
+                            await updateDoc(doc(db, "usuarios", uid), { status: novoStatus });
+                            mostrarToast(novoStatus === "bloqueado" ? "Usuário suspenso!" : "Usuário reativado!");
+                            listarColaboradores();
+                        }
+                    );
+                };
+            });
+
+            document.querySelectorAll('.btn-action.delete').forEach(btn => {
+                btn.onclick = () => {
+                    const uid = btn.getAttribute('data-uid');
+                    const nome = btn.getAttribute('data-nome');
+
+                    abrirModalUI(
+                        "Excluir Registro?",
+                        `Deseja deletar ${nome} permanentemente do banco de dados? Esta ação não pode ser desfeita.`,
+                        "🗑️",
+                        "confirm-del",
+                        async () => {
+                            try {
+                                await deleteDoc(doc(db, "usuarios", uid));
+                                mostrarToast("Colaborador removido com sucesso!");
+                                listarColaboradores();
+                            } catch (err) {
+                                mostrarToast("Erro ao deletar: " + err.message, "#ef4444");
+                            }
+                        }
+                    );
+                };
+            });
+        }
+
+        const cadastroForm = document.getElementById('cadastroForm');
+        if (cadastroForm) {
+            cadastroForm.onsubmit = async (e) => {
+                e.preventDefault();
+                const nome = document.getElementById('nome').value.trim();
+                const email = document.getElementById('emailNovo').value.trim();
+                const senha = document.getElementById('senhaNova').value;
+                const tipo = document.getElementById('tipoAcesso').value;
+                const dispositivo = document.getElementById('dispositivoPermitido').value;
+                const segSex = document.getElementById('horasSegSex').value;
+                const sab = document.getElementById('horasSab').value;
+
+                try {
+                    const app2 = initializeApp(auth.app.options, 'AppCadastro');
+                    const auth2 = getAuth(app2);
+                    const cred = await createUserWithEmailAndPassword(auth2, email, senha);
+
+                    await setDoc(doc(db, "usuarios", cred.user.uid), {
+                        nome: nome,
+                        email: email,
+                        tipo: tipo,
+                        dispositivoPermitido: dispositivo,
+                        status: "ativo",
+                        cargaHoraria: { segSex: Number(segSex), sabado: Number(sab), domingo: 0 },
+                        dataCadastro: new Date().toISOString()
+                    });
+
+                    await signOut(auth2);
+                    mostrarToast("Usuário cadastrado com sucesso!");
+                    cadastroForm.reset();
+                    listarColaboradores();
+                } catch (err) { mostrarToast("Erro ao cadastrar: " + err.message, "#ef4444"); }
+            };
+        }
+
+        listarColaboradores();
+    </script>
+</body>
+</html>

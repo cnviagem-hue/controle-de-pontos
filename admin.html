@@ -32,52 +32,29 @@
                 <div class="card-header">
                     <h3>+ Novo Usuário</h3>
                 </div>
-                
                 <form id="cadastroForm" class="card-body">
                     <div class="form-grid">
                         <div class="input-group full-width">
                             <label for="nome">Nome Completo</label>
                             <input type="text" id="nome" required placeholder="Ex: João da Silva">
                         </div>
-
                         <div class="input-group">
                             <label for="emailNovo">E-mail de Acesso</label>
                             <input type="email" id="emailNovo" required placeholder="joao@empresa.com">
                         </div>
-
                         <div class="input-group">
                             <label for="senhaNova">Senha Inicial</label>
                             <input type="password" id="senhaNova" required placeholder="Mínimo 6 caracteres">
                         </div>
-
                         <div class="input-group full-width">
-                            <label for="tipoAcesso">Tipo de Acesso no Sistema</label>
-                            <select id="tipoAcesso" style="padding: 12px; border: 1px solid #d1d5db; border-radius: 6px; background-color: #f9fafb; outline: none; font-size: 14px; width: 100%; cursor: pointer;">
+                            <label for="tipoAcesso">Tipo de Acesso</label>
+                            <select id="tipoAcesso" style="padding: 12px; border: 1px solid #d1d5db; border-radius: 6px; width: 100%;">
                                 <option value="colaborador">Colaborador (App de Bater Ponto)</option>
-                                <option value="admin">Gestor (Acesso Total ao Painel)</option>
+                                <option value="admin">Gestor (Acesso Painel)</option>
                             </select>
                         </div>
-                        
-                        <div class="input-group full-width divider">
-                            <h4>Carga Horária Diária (Horas)</h4>
-                        </div>
-
-                        <div class="input-group">
-                            <label for="horasSegSex">Segunda a Sexta</label>
-                            <input type="number" id="horasSegSex" min="0" max="24" value="8" required>
-                        </div>
-
-                        <div class="input-group">
-                            <label for="horasSab">Sábado</label>
-                            <input type="number" id="horasSab" min="0" max="24" value="4" required>
-                        </div>
-
-                        <div class="input-group">
-                            <label for="horasDom">Domingo</label>
-                            <input type="number" id="horasDom" min="0" max="24" value="0" required>
-                        </div>
                     </div>
-                    <button type="submit" class="btn-primary">Cadastrar Usuário</button>
+                    <button type="submit" class="btn-primary" style="margin-top: 20px;">Cadastrar Usuário</button>
                 </form>
                 <p id="msgCadastro" class="alerta"></p>
             </div>
@@ -87,7 +64,7 @@
                     <h3>Filtro de Registros</h3>
                 </div>
                 <div class="card-body">
-                    <p style="color: #64748b; margin-bottom: 20px;">Selecione o período para gerar o relatório de horas e exportar para Excel.</p>
+                    <p style="color: #64748b; margin-bottom: 20px;">Selecione o período para gerar o relatório.</p>
                     <div class="form-grid">
                         <div class="input-group">
                             <label>Data Início</label>
@@ -98,7 +75,7 @@
                             <input type="date" id="dataFim">
                         </div>
                     </div>
-                    <button id="btnGerarRelatorio" class="btn-primary" style="background-color: #10b981;">Gerar e Baixar Excel</button>
+                    <button id="btnGerarRelatorio" class="btn-primary" style="background-color: #10b981; margin-top: 20px;">Gerar e Baixar Excel</button>
                 </div>
             </div>
 
@@ -107,33 +84,23 @@
                     <h3>Configuração Antifraude (Geolocalização)</h3>
                 </div>
                 <form id="configForm" class="card-body">
-                    <p style="color: #64748b; margin-bottom: 20px;">Defina a coordenada exata da sua empresa. O colaborador só poderá bater o ponto se o celular dele estiver dentro do raio permitido.</p>
-                    
                     <div class="form-grid">
                         <div class="input-group">
-                            <label for="latEmpresa">Latitude da Empresa</label>
-                            <input type="text" id="latEmpresa" placeholder="-17.7441" required>
+                            <label for="latEmpresa">Latitude</label>
+                            <input type="text" id="latEmpresa" required>
                         </div>
-
                         <div class="input-group">
-                            <label for="lngEmpresa">Longitude da Empresa</label>
-                            <input type="text" id="lngEmpresa" placeholder="-48.6253" required>
-                        </div>
-
-                        <div class="input-group full-width">
-                            <label for="raioPermitido">Raio de Tolerância (em metros)</label>
-                            <input type="number" id="raioPermitido" value="50" required>
-                            <small style="color: #9ca3af; margin-top: 5px;">Recomendado: 50 a 100 metros para cobrir calçada e estacionamento.</small>
+                            <label for="lngEmpresa">Longitude</label>
+                            <input type="text" id="lngEmpresa" required>
                         </div>
                     </div>
-                    <button type="submit" class="btn-primary" style="background-color: #3b82f6;">Salvar Configurações</button>
-                    <p id="msgConfig" class="alerta"></p>
+                    <button type="submit" class="btn-primary" style="background-color: #3b82f6; margin-top: 20px;">Salvar Configurações</button>
                 </form>
             </div>
 
         </div>
     </main>
 
-    <script type="module" src="js/admin.js?v=force_refresh_3"></script>
+    <script type="module" src="js/admin.js?v=999"></script>
 </body>
 </html>

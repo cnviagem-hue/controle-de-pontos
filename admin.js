@@ -138,7 +138,11 @@ function cadastrarUsuario(event) {
             senha: document.getElementById('cadSenha').value.trim(),
             foto: foto,
             permissao: document.getElementById('cadPermissao').value,
-            status: "ATIVO"
+            status: "ATIVO",
+            // Novas propriedades atreladas ao usuário para o controle de horas
+            cargaSegSex: document.getElementById('cadCargaSegSex').value || "08:00",
+            cargaSab: document.getElementById('cadCargaSab').value || "04:00",
+            cargaDom: document.getElementById('cadCargaDom').value || "00:00"
         };
 
         bancoUsuarios.push(novoUser);
@@ -148,6 +152,11 @@ function cadastrarUsuario(event) {
         sincronizarFiltrosColaboradores();
         
         document.getElementById('formUsuario').reset();
+        // Restaura valores padroes na interface
+        document.getElementById('cadCargaSegSex').value = "08:00";
+        document.getElementById('cadCargaSab').value = "04:00";
+        document.getElementById('cadCargaDom').value = "00:00";
+
         exibirAlertaTop("👥 Cadastrado", `Colaborador <strong>${novoUser.nome}</strong> registrado com sucesso!`);
     });
 }
@@ -200,6 +209,11 @@ function abrirModalEditarFicha(index) {
     document.getElementById('editFotoFile').value = ""; 
     document.getElementById('editPermissao').value = u.permissao;
 
+    // Popula a carga horária na ficha de edição
+    document.getElementById('editCargaSegSex').value = u.cargaSegSex || "08:00";
+    document.getElementById('editCargaSab').value = u.cargaSab || "04:00";
+    document.getElementById('editCargaDom').value = u.cargaDom || "00:00";
+
     new bootstrap.Modal(document.getElementById('modalEditarFicha')).show();
 }
 
@@ -216,6 +230,11 @@ function confirmarEdicaoFicha() {
         u.senha = document.getElementById('editSenha').value.trim();
         u.permissao = document.getElementById('editPermissao').value;
         
+        // Salva a carga horária editada
+        u.cargaSegSex = document.getElementById('editCargaSegSex').value || "08:00";
+        u.cargaSab = document.getElementById('editCargaSab').value || "04:00";
+        u.cargaDom = document.getElementById('editCargaDom').value || "00:00";
+
         if(novaFotoBase64) u.foto = novaFotoBase64;
 
         bancoUsuarios[usuarioSelecionadoId] = u;
@@ -396,7 +415,6 @@ function processarLogsLocalStorage() {
         const mAlmVolta = bolarTempoParaMinutos(r.almocoVolta);
         const mSaida = bolarTempoParaMinutos(r.saida);
         
-        // CÁLCULO PARCIAL PARA EXIBIÇÃO DE HORAS "EM TEMPO REAL" DO DIA DE HOJE
         let calcAlmIda = mAlmIda;
         let calcSaida = mSaida;
 
@@ -405,11 +423,9 @@ function processarLogsLocalStorage() {
             const agora = new Date();
             const mAtual = agora.getHours() * 60 + agora.getMinutes();
 
-            // Bateu entrada, mas não saiu para o almoço (Ponto aberto de manhã/tarde)
             if (mEntrada !== null && mAlmIda === null && mSaida === null) {
                 calcAlmIda = mAtual; 
             }
-            // Voltou do almoço, mas não bateu saída ainda (Ponto aberto final da tarde)
             if (mAlmVolta !== null && mSaida === null) {
                 calcSaida = mAtual;
             }
@@ -429,13 +445,25 @@ function processarLogsLocalStorage() {
         const objetoData = new Date(partesData[2], partesData[1] - 1, partesData[0]);
         const diaDaSemana = objetoData.getDay(); 
 
-        let cargaObrigatoriaDoDia = 480; 
-        if (diaDaSemana === 6) {
-            cargaObrigatoriaDoDia = 240; 
-        } else if (diaDaSemana === 0) {
-            cargaObrigatoriaDoDia = 0;   
+        // BUSCA A CARGA DO COLABORADOR ESPECÍFICO (substituindo o antigo código fixo)
+        const user = bancoUsuarios.find(u => String(u.id) === String(r.colaboradorId));
+        const cargaSegSex = user ? (user.cargaSegSex || "08:00") : "08:00";
+        const cargaSab = user ? (user.cargaSab || "04:00") : "04:00";
+        const cargaDom = user ? (user.cargaDom || "00:00") : "00:00";
+
+        let cargaObrigatoriaDoDia = 0; 
+        if (diaDaSemana === 6) { // Sábado
+            const minCalc = bolarTempoParaMinutos(cargaSab);
+            cargaObrigatoriaDoDia = minCalc !== null ? minCalc : 240;
+        } else if (diaDaSemana === 0) { // Domingo
+            const minCalc = bolarTempoParaMinutos(cargaDom);
+            cargaObrigatoriaDoDia = minCalc !== null ? minCalc : 0;
+        } else { // Segunda a Sexta
+            const minCalc = bolarTempoParaMinutos(cargaSegSex);
+            cargaObrigatoriaDoDia = minCalc !== null ? minCalc : 480;
         }
 
+        // Calcula a hora extra baseada na regra individual
         if(minutosTrabalhados > cargaObrigatoriaDoDia) {
             const extra = minutosTrabalhados - cargaObrigatoriaDoDia;
             r.minutosExtrasNum = extra;
@@ -737,11 +765,17 @@ function inicializarDadosFicticios() {
     const rawUsers = localStorage.getItem("banco_usuarios_ponto");
     if(!rawUsers || JSON.parse(rawUsers).length === 0) {
         bancoUsuarios = [
-            { id: "1", nome: "ADRIANA SANTARINE DE MENDONÇA DINIZ", cpf: "809.017.781-68", telefone: "(64) 98141-0002", email: "adrianasantarinediniz@gmail.com", senha: "Entrada123", foto: "https://ui-avatars.com/api/?name=Adriana+Diniz&background=f97316&color=fff", permissao: "Celular", status: "ATIVO" }
+            { id: "1", nome: "ADRIANA SANTARINE DE MENDONÇA DINIZ", cpf: "809.017.781-68", telefone: "(64) 98141-0002", email: "adrianasantarinediniz@gmail.com", senha: "Entrada123", foto: "https://ui-avatars.com/api/?name=Adriana+Diniz&background=f97316&color=fff", permissao: "Celular", status: "ATIVO", cargaSegSex: "08:00", cargaSab: "04:00", cargaDom: "00:00" }
         ];
         localStorage.setItem("banco_usuarios_ponto", JSON.stringify(bancoUsuarios));
     } else {
-        bancoUsuarios = JSON.parse(rawUsers);
+        // Mapeia para garantir que quem já estava no banco receba a propriedade de horas e não quebre
+        bancoUsuarios = JSON.parse(rawUsers).map(u => ({
+            ...u,
+            cargaSegSex: u.cargaSegSex || "08:00",
+            cargaSab: u.cargaSab || "04:00",
+            cargaDom: u.cargaDom || "00:00"
+        }));
     }
 
     const rawLogs = localStorage.getItem("historico_pontos_global");

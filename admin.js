@@ -13,9 +13,9 @@ function alternarAba(nomeAba) {
     document.getElementById(`conteudo-${nomeAba}`).classList.add('active');
 }
 
-function exibirAlertaTop(titulo, mensagem) {
+function exibirAlertaTop(titulo, message) {
     document.getElementById('modalTitulo').innerText = titulo;
-    document.getElementById('modalMensagem').innerHTML = mensagem;
+    document.getElementById('modalMensagem').innerHTML = message;
     new bootstrap.Modal(document.getElementById('modalFeedback')).show();
 }
 
@@ -62,13 +62,58 @@ function mascaraCEPHtml(input) {
     input.value = valor;
 }
 
-function cadastrarUsuario(event) {
+// OTIMIZADOR AUTOMÁTICO DE FOTO (Reduz tamanho, resolução e deixa super leve em Base64)
+function otimizarEConverterFoto(fileInputElement) {
+    return new Promise((resolve) => {
+        const file = fileInputElement.files[0];
+        if (!file) {
+            resolve(null);
+            return;
+        }
+        const reader = new FileReader();
+        reader.onload = function (event) {
+            const img = new Image();
+            img.onload = function () {
+                const canvas = document.createElement('canvas');
+                // Redimensiona para resolução leve de perfil (Ex: max 150x150)
+                const MAX_WIDTH = 150;
+                const MAX_HEIGHT = 150;
+                let width = img.width;
+                let height = img.height;
+
+                if (width > height) {
+                    if (width > MAX_WIDTH) {
+                        height *= MAX_WIDTH / width;
+                        width = MAX_WIDTH;
+                    }
+                } else {
+                    if (height > MAX_HEIGHT) {
+                        width *= MAX_HEIGHT / height;
+                        height = MAX_HEIGHT;
+                    }
+                }
+                canvas.width = width;
+                canvas.height = height;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0, width, height);
+                // Comprime a qualidade para 70% para ficar ultra-leve
+                const dataUrl = canvas.toDataURL('image/jpeg', 0.7);
+                resolve(dataUrl);
+            };
+            img.src = event.target.result;
+        };
+        reader.readAsDataURL(file);
+    });
+}
+
+async function cadastrarUsuario(event) {
     event.preventDefault();
     
-    let urlFoto = document.getElementById('cadFoto').value.trim();
-    // Se não colocar foto, gera um avatar bonito baseado no nome dele
-    if(!urlFoto) {
-        urlFoto = `https://ui-avatars.com/api/?name=${encodeURIComponent(document.getElementById('cadNome').value)}&background=f97316&color=fff`;
+    let fotoBase64 = await otimizarEConverterFoto(document.getElementById('cadFotoFile'));
+    
+    // Se o usuário não selecionou nenhuma foto, gera o avatar com as iniciais do nome de forma limpa
+    if(!fotoBase64) {
+        fotoBase64 = `https://ui-avatars.com/api/?name=${encodeURIComponent(document.getElementById('cadNome').value)}&background=f97316&color=fff`;
     }
     
     const novoUser = {
@@ -78,14 +123,13 @@ function cadastrarUsuario(event) {
         telefone: document.getElementById('cadTelefone').value.trim(),
         email: document.getElementById('cadEmail').value.trim(),
         senha: document.getElementById('cadSenha').value.trim(),
-        foto: urlFoto,
+        foto: fotoBase64,
         permissao: document.getElementById('cadPermissao').value,
         status: "ATIVO"
     };
 
     bancoUsuarios.push(novoUser);
     
-    // Sincroniza com o LocalStorage para a tela do colaborador conseguir ler em tempo real!
     localStorage.setItem("banco_usuarios_ponto", JSON.stringify(bancoUsuarios));
     
     renderizarTabela();
@@ -136,28 +180,29 @@ function abrirModalEditarFicha(id) {
     document.getElementById('editTelefone').value = u.telefone;
     document.getElementById('editEmail').value = u.email;
     document.getElementById('editSenha').value = u.senha;
-    document.getElementById('editFoto').value = u.foto.includes("ui-avatars.com") ? "" : u.foto;
+    document.getElementById('editFotoFile').value = ""; // Reseta o input do arquivo para novas alterações
     document.getElementById('editPermissao').value = u.permissao;
 
     new bootstrap.Modal(document.getElementById('modalEditarFicha')).show();
 }
 
-function confirmarEdicaoFicha() {
+async function confirmarEdicaoFicha() {
     const u = bancoUsuarios.find(x => x.id === usuarioSelecionadoId);
     if(!u) return;
 
-    let urlFoto = document.getElementById('editFoto').value.trim();
-    if(!urlFoto) {
-        urlFoto = `https://ui-avatars.com/api/?name=${encodeURIComponent(document.getElementById('editNome').value)}&background=f97316&color=fff`;
-    }
+    let novaFotoBase64 = await otimizarEConverterFoto(document.getElementById('editFotoFile'));
 
     u.nome = document.getElementById('editNome').value.trim();
     u.cpf = document.getElementById('editCpf').value.trim();
     u.telefone = document.getElementById('editTelefone').value.trim();
     u.email = document.getElementById('editEmail').value.trim();
     u.senha = document.getElementById('editSenha').value.trim();
-    u.foto = urlFoto;
     u.permissao = document.getElementById('editPermissao').value;
+    
+    // Altera a foto apenas se uma nova foto tiver sido upada
+    if(novaFotoBase64) {
+        u.foto = novaFotoBase64;
+    }
 
     localStorage.setItem("banco_usuarios_ponto", JSON.stringify(bancoUsuarios));
     bootstrap.Modal.getInstance(document.getElementById('modalEditarFicha')).hide();
@@ -252,7 +297,6 @@ function salvarConfiguracoes() {
     exibirAlertaTop("Configurações Salvas", "Cerca virtual salva com sucesso!");
 }
 
-// Resgata dados caso existam para persistência de teste local
 const dadosSalvos = localStorage.getItem("banco_usuarios_ponto");
 if(dadosSalvos) {
     bancoUsuarios = JSON.parse(dadosSalvos);

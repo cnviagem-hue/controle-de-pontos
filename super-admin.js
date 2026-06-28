@@ -1,4 +1,5 @@
 let empresaSelecionadaId = null;
+let empresaParaExcluir = null;
 let bancoEmpresas = JSON.parse(localStorage.getItem("banco_empresas_web")) || [];
 
 // Máscaras
@@ -39,7 +40,22 @@ function sairSuperAdmin() {
     window.location.href = "index.html";
 }
 
-// CRUD
+// FUNÇÕES DE POP-UP E CÓPIA
+function exibirAlertaTop(titulo, message) {
+    document.getElementById('modalTitulo').innerText = titulo;
+    document.getElementById('modalMensagem').innerHTML = `<p class="fs-6 text-secondary mb-0">${message}</p>`;
+    new bootstrap.Modal(document.getElementById('modalFeedback')).show();
+}
+
+function copiarLinkEmpresa() {
+    // O link de acesso da empresa é o login-admin.html
+    const linkEmpresa = window.location.origin + "/login-admin.html";
+    navigator.clipboard.writeText(linkEmpresa).then(() => {
+        exibirAlertaTop("🔗 Link Copiado", "O link do painel para o gestor da empresa foi copiado para a área de transferência.");
+    });
+}
+
+// CRUD EMPRESAS
 function cadastrarEmpresa(event) {
     event.preventDefault();
     
@@ -52,7 +68,7 @@ function cadastrarEmpresa(event) {
         email: document.getElementById("cadEmail").value.trim().toLowerCase(),
         senhaAtual: "mudar123",
         status: "ATIVO",
-        primeiroAcesso: true // Flag para forçar troca de senha no Admin
+        primeiroAcesso: true
     };
 
     bancoEmpresas.push(novaEmpresa);
@@ -60,7 +76,9 @@ function cadastrarEmpresa(event) {
     
     document.getElementById("formEmpresa").reset();
     renderTabelaEmpresas();
-    alert("Empresa cadastrada com sucesso! O acesso já está liberado.");
+    
+    // Substituindo o alert nativo feio pelo pop-up moderno
+    exibirAlertaTop("🏢 Cadastrado", `A empresa <strong>${novaEmpresa.nome}</strong> foi cadastrada com sucesso!<br>O acesso já está liberado.`);
 }
 
 function renderTabelaEmpresas() {
@@ -102,11 +120,36 @@ function bloquearEmpresa(index) {
 }
 
 function excluirEmpresa(index) {
-    if(confirm(`Tem certeza que deseja EXCLUIR a empresa ${bancoEmpresas[index].nome} de forma permanente?`)) {
-        bancoEmpresas.splice(index, 1);
-        localStorage.setItem("banco_empresas_web", JSON.stringify(bancoEmpresas));
-        renderTabelaEmpresas();
+    // Agora chama o modal moderno em vez do confirm() nativo
+    empresaParaExcluir = index;
+    document.getElementById('nomeEmpresaExclusao').innerText = bancoEmpresas[index].nome;
+    new bootstrap.Modal(document.getElementById('modalExclusao')).show();
+}
+
+function executarExclusaoDefinitiva() {
+    if (empresaParaExcluir === null) return;
+    
+    bancoEmpresas.splice(empresaParaExcluir, 1);
+    localStorage.setItem("banco_empresas_web", JSON.stringify(bancoEmpresas));
+    
+    // Fecha o modal de exclusão
+    const elementoModal = document.getElementById('modalExclusao');
+    const modalInstance = bootstrap.Modal.getInstance(elementoModal);
+    if(modalInstance) {
+        modalInstance.hide();
+    } else {
+        elementoModal.classList.remove('show');
+        elementoModal.style.display = 'none';
+        document.body.classList.remove('modal-open');
+        const backdrop = document.querySelector('.modal-backdrop');
+        if (backdrop) backdrop.remove();
     }
+
+    renderTabelaEmpresas();
+    
+    setTimeout(() => {
+        exibirAlertaTop("🗑️ Removido", "A empresa foi excluída da base de dados permanentemente.");
+    }, 300);
 }
 
 function abrirModalEditarEmpresa(index) {
@@ -135,4 +178,9 @@ function confirmarEdicaoEmpresa() {
     
     bootstrap.Modal.getInstance(document.getElementById("modalEditarEmpresa")).hide();
     renderTabelaEmpresas();
+    
+    // Alerta de sucesso moderno na edição
+    setTimeout(() => {
+        exibirAlertaTop("📝 Atualizado", "Os dados da empresa foram alterados com sucesso.");
+    }, 300);
 }

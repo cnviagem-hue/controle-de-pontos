@@ -9,76 +9,128 @@
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body { background-color: #f1f5f9; font-family: 'Segoe UI', Arial, sans-serif; display: flex; align-items: center; justify-content: center; min-height: 100vh; padding: 16px; }
         
-        .card-ponto { background: #ffffff; border-radius: 16px; box-shadow: 0 4px 25px rgba(15, 23, 42, 0.06); padding: 32px; border: 1px solid #e2e8f0; width: 100%; max-width: 450px; }
-        .brand-title { font-size: 1.5rem; font-weight: 700; color: #0f172a; text-align: center; margin-bottom: 24px; }
-        .sub-title { font-size: 0.9rem; color: #64748b; text-align: center; margin-top: -16px; margin-bottom: 32px; }
+        .container-colab { background: #ffffff; border-radius: 16px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05), 0 2px 4px -1px rgba(0,0,0,0.03); width: 100%; max-width: 480px; padding: 28px; border: 1px solid #e2e8f0; }
         
-        /* Telas separadas por IDs para controle de fluxo dinâmico */
-        .tela-secao { display: none; }
-        .tela-secao.active { display: block; }
+        .app-title { font-size: 1.4rem; font-weight: 700; color: #0f172a; text-align: center; margin-bottom: 24px; display: flex; align-items: center; justify-content: center; gap: 8px; }
+        .app-title span { color: #f97316; }
+
+        .secao-app { display: none; }
+        .secao-app.active { display: block; }
+
+        /* RELÓGIO DIGITAL ESPETACULAR */
+        .relogio-container { text-align: center; background: #0f172a; color: #fff; padding: 20px; border-radius: 12px; margin-bottom: 20px; box-shadow: inset 0 2px 4px rgba(0,0,0,0.2); }
+        .relogio-hora { font-size: 2.25rem; font-weight: 700; font-family: monospace; letter-spacing: 2px; color: #f97316; }
+        .relogio-data { font-size: 0.85rem; color: #94a3b8; margin-top: 4px; text-transform: capitalize; }
+
+        /* QUADROS DE REGISTRO DE PONTO (GRID TOPO) */
+        .grid-ponto-botoes { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-bottom: 20px; }
+        .card-ponto-click { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 14px; text-align: center; cursor: pointer; transition: all 0.2s ease; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; }
+        .card-ponto-click:hover { border-color: #f97316; background-color: #fff7ed; transform: translateY(-2px); }
+        .card-ponto-click .icon { font-size: 1.4rem; }
+        .card-ponto-click .label { font-size: 0.85rem; font-weight: 600; color: #334155; }
+
+        /* HISTÓRICO DE HOJE */
+        .historico-container { background: #f8fafc; border-radius: 12px; padding: 16px; border: 1px solid #e2e8f0; max-height: 180px; overflow-y: auto; }
+        .historico-titulo { font-size: 0.85rem; font-weight: 700; color: #475569; margin-bottom: 12px; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 1px solid #e2e8f0; padding-bottom: 6px; }
         
-        .btn-principal { background-color: #f97316; color: white; border: none; font-weight: 600; transition: background 0.2s; }
-        .btn-principal:hover { background-color: #ea580c; color: white; }
-        .btn-ponto { background-color: #10b981; color: white; border: none; font-weight: 700; padding: 16px; font-size: 1.1rem; border-radius: 12px; width: 100%; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2); }
-        .btn-ponto:hover { background-color: #059669; }
-        
-        .log-registro { background-color: #f8fafc; border-left: 4px solid #3b82f6; padding: 12px; border-radius: 4px; margin-top: 12px; font-size: 0.85rem; color: #334155; }
+        .log-registro { display: flex; align-items: center; justify-content: space-between; padding: 8px 0; border-bottom: 1px dashed #e2e8f0; font-size: 0.85rem; color: #334155; }
+        .log-registro:last-child { border-bottom: none; }
+        .log-registro .tipo { font-weight: 600; color: #0f172a; }
+        .log-registro .hora { font-family: monospace; font-weight: 700; color: #16a34a; }
+
+        .btn-logout { background: none; border: none; color: #94a3b8; font-size: 0.85rem; font-weight: 500; display: flex; align-items: center; gap: 4px; cursor: pointer; transition: color 0.2s; margin: 16px auto 0 auto; }
+        .btn-logout:hover { color: #ef4444; }
     </style>
 </head>
 <body>
 
-    <div class="card-ponto">
-        <div class="brand-title" id="nomeEmpresaColab">UniCesumar</div>
-        <div class="sub-title">Controle de Ponto Digital</div>
+    <div class="container-colab">
+        <div class="app-title">⏱️ Ponto<span>Web</span></div>
 
-        <div id="secao-login" class="tela-secao active">
+        <div id="secao-login" class="secao-app active">
             <form id="formLoginColab" onsubmit="executarLoginColaborador(event)">
                 <div class="mb-3">
-                    <label for="loginEmail" class="form-label small fw-medium text-secondary">E-mail Cadastrado</label>
-                    <input type="email" id="loginEmail" class="form-control" placeholder="seuemail@empresa.com" required>
+                    <label class="form-label small fw-semibold text-secondary">E-mail Corporativo</label>
+                    <input type="email" id="loginEmail" placeholder="Ex: nome@empresa.com" class="form-control" required>
                 </div>
                 <div class="mb-4">
-                    <label for="loginSenha" class="form-label small fw-medium text-secondary">Sua Senha</label>
-                    <input type="password" id="loginSenha" class="form-control" placeholder="******" required>
+                    <label class="form-label small fw-semibold text-secondary">Senha de Acesso</label>
+                    <input type="password" id="loginSenha" placeholder="Digite sua senha" class="form-control" required>
                 </div>
-                <button type="submit" class="btn btn-principal w-100 py-2.5 rounded-3">Entrar no Sistema</button>
+                <button type="submit" class="btn btn-primary w-100 py-2.5 fw-bold">Entrar na Área de Trabalho</button>
             </form>
         </div>
 
-        <div id="secao-horarios" class="tela-secao">
-            <div class="text-center mb-4">
-                <span class="badge bg-light text-dark border px-3 py-2 fs-6 fw-semibold mb-2" id="relogioDigital">00:00:00</span>
-                <p class="text-muted small mb-0" id="dataAtualStr">Carregando calendário...</p>
-                <p class="small mt-2 fw-medium text-primary">Olá, <span id="nomeFuncionarioConectado">Funcionário</span>!</p>
+        <div id="secao-horarios" class="secao-app">
+            
+            <div class="relogio-container">
+                <div id="relogioDigital" class="relogio-hora">00:00:00</div>
+                <div id="dataAtualStr" class="relogio-data">Carregando calendário...</div>
             </div>
 
-            <button type="button" class="btn btn-ponto mb-4" onclick="tentarRegistrarPonto()">
-                ⏱️ REGISTRAR PONTO AGORA
-            </button>
+            <div id="nomeFuncionarioConectado" class="mb-4"></div>
 
-            <div class="fw-bold small text-secondary uppercase mb-2">Histórico de Hoje:</div>
-            <div id="listaRegistrosHoje">
-                <div class="text-muted small text-center py-3" id="txtSemPontos">Nenhum ponto batido hoje.</div>
+            <div class="grid-ponto-botoes">
+                <div class="card-ponto-click" onclick="solicitarMarcacaoPonto('Entrada')">
+                    <span class="icon">🌅</span>
+                    <span class="label">Entrada</span>
+                </div>
+                <div class="card-ponto-click" onclick="solicitarMarcacaoPonto('Almoço Ida')">
+                    <span class="icon">🍽️</span>
+                    <span class="label">Almoço Ida</span>
+                </div>
+                <div class="card-ponto-click" onclick="solicitarMarcacaoPonto('Almoço Volta')">
+                    <span class="icon">💼</span>
+                    <span class="label">Almoço Volta</span>
+                </div>
+                <div class="card-ponto-click" onclick="solicitarMarcacaoPonto('Saída')">
+                    <span class="icon">🌌</span>
+                    <span class="label">Saída</span>
+                </div>
             </div>
 
-            <button type="button" class="btn btn-link btn-sm w-100 text-danger mt-4 text-decoration-none fw-medium" onclick="executarLogoutColaborador()">
-                ↩️ Sair / Trocar de Conta
+            <div class="historico-container">
+                <div class="historico-titulo">Registros Realizados Hoje</div>
+                <div id="listaRegistrosHoje">
+                    <div id="txtSemPontos" class="text-center text-muted small py-2">Nenhum ponto registrado hoje.</div>
+                </div>
+            </div>
+
+            <button type="button" class="btn-logout" onclick="executarLogoutColaborador()">
+                ➔ Sair da Conta
             </button>
         </div>
     </div>
 
-    <div class="modal fade" id="modalFeedbackColab" tabindex="-1" aria-hidden="true">
-      <div class="modal-dialog modal-dialog-centered" style="max-width: 400px;">
+    <div class="modal fade" id="modalConfirmarPonto" tabindex="-1" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered modal-sm">
         <div class="modal-content border-0 shadow-lg" style="border-radius:16px;">
-          <div class="modal-header bg-dark text-white py-3" style="border-top-left-radius:16px; border-top-right-radius:16px;">
-            <h5 class="modal-title d-flex align-items-center gap-2" id="modalColabTitulo">🔔 Aviso</h5>
+          <div class="modal-body p-4 text-center">
+            <div class="fs-1 mb-2">📌</div>
+            <h5 class="fw-bold text-dark mb-2">Confirmar Registro?</h5>
+            <p class="small text-secondary mb-4">Você deseja registrar seu ponto de <strong id="txtTipoPontoConfirmar" class="text-primary"></strong> agora?</p>
+            
+            <div class="d-flex gap-2 justify-content-center">
+                <button type="button" class="btn btn-light btn-sm px-3 fw-semibold" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary btn-sm px-4 fw-bold" onclick="confirmarEGravarPonto()">Confirmar</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal fade" id="modalFeedbackColab" tabindex="-1" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg" style="border-radius:16px;">
+          <div class="modal-header bg-dark text-white py-2.5" style="border-top-left-radius:16px; border-top-right-radius:16px;">
+            <h6 class="modal-title" id="modalColabTitulo">🔔 Aviso</h6>
             <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
           </div>
           <div class="modal-body p-4 text-center">
-            <p id="modalColabMensagem" class="fs-6 text-secondary mb-0"></p>
+            <p id="modalColabMensagem" class="small text-secondary mb-0"></p>
           </div>
           <div class="modal-footer border-0 pt-0 d-flex justify-content-center">
-            <button type="button" class="btn btn-primary px-4 btn-sm" data-bs-dismiss="modal">OK</button>
+            <button type="button" class="btn btn-primary btn-sm px-4" data-bs-dismiss="modal">Entendido</button>
           </div>
         </div>
       </div>

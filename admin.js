@@ -248,9 +248,7 @@ function solicitarExclusaoUsuario(index) {
     if(!u) return;
 
     usuarioSelecionadoId = idx;
-    
     document.getElementById('nomeUsuarioExclusao').innerText = u.nome;
-    
     new bootstrap.Modal(document.getElementById('modalExclusao')).show();
 }
 
@@ -317,6 +315,48 @@ function sincronizarFiltrosColaboradores() {
         select.innerHTML += `<option value="${u.id}">${u.nome}</option>`;
     });
     select.value = valorSelecionado;
+}
+
+// ADICIONADO: LÓGICA DE FILTROS RÁPIDOS (Hoje, Semana, 15 Dias, Mês)
+function aplicarFiltroRapido(tipo) {
+    const inputInicio = document.getElementById('filtroRelatorioInicio');
+    const inputFim = document.getElementById('filtroRelatorioFim');
+    
+    const hoje = new Date();
+    let inicio = new Date();
+    let fim = new Date();
+
+    const formatarDataInput = (data) => {
+        const ano = data.getFullYear();
+        const mes = String(data.getMonth() + 1).padStart(2, '0');
+        const dia = String(data.getDate()).padStart(2, '0');
+        return `${ano}-${mes}-${dia}`;
+    };
+
+    if (tipo === 'hoje') {
+        inicio = hoje;
+        fim = hoje;
+    } else if (tipo === 'semana') {
+        inicio.setDate(hoje.getDate() - 7);
+        fim = hoje;
+    } else if (tipo === '15dias') {
+        inicio.setDate(hoje.getDate() - 15);
+        fim = hoje;
+    } else if (tipo === 'mes') {
+        const mesVal = document.getElementById('filtroMesRapido').value;
+        if (!mesVal) return; 
+        const partes = mesVal.split('-');
+        const anoSelecionado = parseInt(partes[0], 10);
+        const mesSelecionado = parseInt(partes[1], 10);
+        
+        inicio = new Date(anoSelecionado, mesSelecionado - 1, 1);
+        fim = new Date(anoSelecionado, mesSelecionado, 0); 
+    }
+
+    inputInicio.value = formatarDataInput(inicio);
+    inputFim.value = formatarDataInput(fim);
+
+    filtrarRelatorioTela();
 }
 
 function processarLogsLocalStorage() {
@@ -524,7 +564,63 @@ function exportarPontosExcel() {
     XLSX.writeFile(workbook, `Espelho_Ponto_${colabNome.replace(/ /g, "_")}.xlsx`);
 }
 
-// ============== LÓGICA DE GEOLOCALIZAÇÃO =================
+async function buscarCoordenadasPorCEP() {
+    const cepInput = document.getElementById("cepBusca").value.replace(/\D/g, '');
+    const numInput = document.getElementById("numeroBusca").value.trim();
+
+    if (cepInput.length !== 8) {
+        exibirAlertaTop("⚠️ Aviso", "Por favor, digite um CEP válido com 8 dígitos.");
+        return;
+    }
+
+    const btn = document.getElementById("btnBuscarCep");
+    const textoOriginal = btn.innerText;
+    btn.innerText = "⏳ Buscando Endereço...";
+    btn.disabled = true;
+
+    try {
+        const resViaCep = await fetch(`https://viacep.com.br/ws/${cepInput}/json/`);
+        const dadosCep = await resViaCep.json();
+
+        if (dadosCep.erro) throw new Error("CEP não encontrado na base de dados.");
+
+        const enderecoCompleto = `${dadosCep.logradouro}${numInput ? ', ' + numInput : ''}, ${dadosCep.bairro}, ${dadosCep.localidade} - ${dadosCep.uf}`;
+        
+        btn.innerText = "⏳ Buscando Coordenadas...";
+
+        const query = encodeURIComponent(`${dadosCep.logradouro}, ${dadosCep.localidade}, ${dadosCep.uf}, Brazil`);
+        const resGeo = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${query}&limit=1`);
+        const dadosGeo = await resGeo.json();
+
+        if (dadosGeo.length > 0) {
+            document.getElementById("latitude").value = dadosGeo[0].lat;
+            document.getElementById("longitude").value = dadosGeo[0].lon;
+            document.getElementById("boxEndereco").style.display = "block";
+            document.getElementById("enderecoTexto").innerText = enderecoCompleto;
+            exibirAlertaTop("📍 Sucesso", "Endereço e coordenadas localizados com sucesso!");
+        } else {
+            const queryGenerica = encodeURIComponent(`${dadosCep.localidade}, ${dadosCep.uf}, Brazil`);
+            const resGeoGen = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${queryGenerica}&limit=1`);
+            const dadosGeoGen = await resGeoGen.json();
+
+            if(dadosGeoGen.length > 0) {
+                document.getElementById("latitude").value = dadosGeoGen[0].lat;
+                document.getElementById("longitude").value = dadosGeoGen[0].lon;
+                document.getElementById("boxEndereco").style.display = "block";
+                document.getElementById("enderecoTexto").innerText = `${enderecoCompleto} (Coordenada aproximada pela cidade)`;
+                exibirAlertaTop("📍 Sucesso Parcial", "Coordenadas aproximadas localizadas pela cidade.");
+            } else {
+                throw new Error("Não foi possível encontrar as coordenadas exatas para este CEP.");
+            }
+        }
+    } catch (error) {
+        exibirAlertaTop("⚠️ Erro", error.message || "Falha ao buscar dados de localização.");
+        document.getElementById("boxEndereco").style.display = "none";
+    } finally {
+        btn.innerText = textoOriginal;
+        btn.disabled = false;
+    }
+}
 
 function obterLocalizacaoAtual() {
     if (!navigator.geolocation) {
@@ -557,68 +653,6 @@ function obterLocalizacaoAtual() {
     );
 }
 
-async function buscarCoordenadasPorCEP() {
-    const cepInput = document.getElementById("cepBusca").value.replace(/\D/g, '');
-    const numInput = document.getElementById("numeroBusca").value.trim();
-
-    if (cepInput.length !== 8) {
-        exibirAlertaTop("⚠️ Aviso", "Por favor, digite um CEP válido com 8 dígitos.");
-        return;
-    }
-
-    const btn = document.getElementById("btnBuscarCep");
-    const textoOriginal = btn.innerText;
-    btn.innerText = "⏳ Buscando Endereço...";
-    btn.disabled = true;
-
-    try {
-        const resViaCep = await fetch(`https://viacep.com.br/ws/${cepInput}/json/`);
-        const dadosCep = await resViaCep.json();
-
-        if (dadosCep.erro) throw new Error("CEP não encontrado na base de dados.");
-
-        const enderecoCompleto = `${dadosCep.logradouro}${numInput ? ', ' + numInput : ''}, ${dadosCep.bairro}, ${dadosCep.localidade} - ${dadosCep.uf}`;
-        
-        btn.innerText = "⏳ Buscando Coordenadas...";
-
-        // Buscar coordenadas via Nominatim
-        const query = encodeURIComponent(`${dadosCep.logradouro}, ${dadosCep.localidade}, ${dadosCep.uf}, Brazil`);
-        const resGeo = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${query}&limit=1`);
-        const dadosGeo = await resGeo.json();
-
-        if (dadosGeo.length > 0) {
-            document.getElementById("latitude").value = dadosGeo[0].lat;
-            document.getElementById("longitude").value = dadosGeo[0].lon;
-            document.getElementById("boxEndereco").style.display = "block";
-            document.getElementById("enderecoTexto").innerText = enderecoCompleto;
-            exibirAlertaTop("📍 Sucesso", "Endereço e coordenadas localizados com sucesso!");
-        } else {
-            // Busca genérica pela cidade caso a rua falhe
-            const queryGenerica = encodeURIComponent(`${dadosCep.localidade}, ${dadosCep.uf}, Brazil`);
-            const resGeoGen = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${queryGenerica}&limit=1`);
-            const dadosGeoGen = await resGeoGen.json();
-
-            if(dadosGeoGen.length > 0) {
-                document.getElementById("latitude").value = dadosGeoGen[0].lat;
-                document.getElementById("longitude").value = dadosGeoGen[0].lon;
-                document.getElementById("boxEndereco").style.display = "block";
-                document.getElementById("enderecoTexto").innerText = `${enderecoCompleto} (Coordenada aproximada pela cidade)`;
-                exibirAlertaTop("📍 Sucesso Parcial", "Coordenadas aproximadas localizadas pela cidade.");
-            } else {
-                throw new Error("Não foi possível encontrar as coordenadas exatas para este CEP.");
-            }
-        }
-    } catch (error) {
-        exibirAlertaTop("⚠️ Erro", error.message || "Falha ao buscar dados de localização.");
-        document.getElementById("boxEndereco").style.display = "none";
-    } finally {
-        btn.innerText = textoOriginal;
-        btn.disabled = false;
-    }
-}
-
-// ============== SALVAMENTO DE CONFIGURAÇÕES =================
-
 function salvarConfiguracoes() {
     const configs = {
         nomeEmpresa: document.getElementById("nomeEmpresa").value,
@@ -630,7 +664,6 @@ function salvarConfiguracoes() {
         endereco: document.getElementById("enderecoTexto").innerText
     };
     
-    // Grava as coordenadas na memória do navegador para o uso do colaborador
     localStorage.setItem("configuracoes_empresa", JSON.stringify(configs));
 
     const btnSalvar = document.getElementById("btnSalvarConfigs");
@@ -678,12 +711,10 @@ function controlarCamposConfiguracao(bloquear) {
     document.getElementById("raioTolerancia").disabled = bloquear;
     document.getElementById("btnSalvarConfigs").disabled = bloquear;
     
-    // Habilita os botões de busca para o usuário quando ele clica em Editar
     document.getElementById("btnGpsConfigs").disabled = bloquear;
     document.getElementById("btnBuscarCep").disabled = bloquear;
 }
 
-// INICIALIZADOR GLOBAL
 function inicializarDadosFicticios() {
     const rawUsers = localStorage.getItem("banco_usuarios_ponto");
     if(!rawUsers || JSON.parse(rawUsers).length === 0) {

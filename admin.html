@@ -25,7 +25,7 @@
         .main-content { flex-grow: 1; margin-left: 260px; padding: 32px; min-width: 0; width: calc(100% - 260px); }
         .card-custom { background: #ffffff; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); padding: 32px; border: 1px solid #e2e8f0; width: 100%; max-width: 1100px; margin-bottom: 24px; }
         
-        .section-title { font-size: 1.15rem; font-weight: 600; color: #0f172a; margin-bottom: 24px; border-left: 4px solid #3b82f6; padding-left: 12px; }
+        .section-title { font-size: 1.15rem; font-weight: 600; color: #0f172a; margin-bottom: 24px; border-left: 4px solid #3b82f6; padding-left: 12px; display: flex; align-items: center; justify-content: space-between; }
         .endereco-box { background-color: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 15px; margin-top: 15px; display: none; }
         .endereco-titulo { color: #15803d; font-weight: bold; font-size: 0.9rem; margin-bottom: 3px; }
         
@@ -43,6 +43,9 @@
         .table th, .table td { white-space: nowrap; padding: 14px 16px; text-align: left; }
         
         .avatar-table { width: 32px; height: 32px; border-radius: 50%; object-fit: cover; background-color: #e2e8f0; }
+
+        /* ESTILO DO BOTÃO SALVAR COM TRANSIÇÃO DE CORES */
+        #btnSalvarConfigs { transition: all 0.3s ease-in-out; }
 
         @media (max-width: 768px) {
             body { flex-direction: column; }
@@ -155,7 +158,10 @@
 
         <div id="conteudo-configs" class="tab-content-section">
             <div class="card-custom">
-                <div class="section-title">Configuração da Empresa</div>
+                <div class="section-title">
+                    <span>Configuração da Empresa</span>
+                    <button type="button" class="btn btn-link btn-sm text-decoration-none p-0 fw-semibold" onclick="focarEdicaoConfigs()">✏️ Editar Parâmetros</button>
+                </div>
                 <div class="mb-4">
                     <label for="nomeEmpresa" class="form-label fw-medium small">Nome da Empresa</label>
                     <input type="text" id="nomeEmpresa" class="form-control" value="UniCesumar">
@@ -206,7 +212,7 @@
                     <input type="number" id="raioTolerancia" class="form-control" value="50">
                 </div>
 
-                <button type="button" class="btn btn-primary w-100 py-2 fw-bold" onclick="salvarConfiguracoes()">Salvar Configurações</button>
+                <button type="button" id="btnSalvarConfigs" class="btn btn-primary w-100 py-2 fw-bold" onclick="salvarConfiguracoes()">Salvar Configurações</button>
             </div>
         </div>
 

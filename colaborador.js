@@ -19,9 +19,21 @@ function inicializarRelogio() {
     }, 1000);
 }
 
+// CORREÇÃO E IMPLEMENTAÇÃO: Função para alternar a visibilidade da senha no login
+function toggleSenhaLogin(idInput, botao) {
+    const input = document.getElementById(idInput);
+    if(input.type === "password") {
+        input.type = "text";
+        botao.innerText = "🙈";
+    } else {
+        input.type = "password";
+        botao.innerText = "👁️";
+    }
+}
+
 function exibirAvisoColab(titulo, mensagem) {
     document.getElementById("modalColabTitulo").innerText = titulo;
-    document.getElementById("modalColabMensagem").innerHTML = mensagem;
+    document.getElementById("modalColabMensagem").innerHTML = message = mensagem;
     new bootstrap.Modal(document.getElementById("modalFeedbackColab")).show();
 }
 
@@ -36,15 +48,17 @@ function verificarSessaoExistente() {
     }
 }
 
-function ejecutarLoginColaborador(event) {
+// OTIMIZADO: Ajustado para buscar de forma precisa na base salva pelo Admin
+function executarLoginColaborador(event) {
     event.preventDefault();
     const email = document.getElementById("loginEmail").value.trim().toLowerCase();
     const senha = document.getElementById("loginSenha").value.trim();
 
+    // Captura o banco exato criado no painel administrativo
     const rawUsers = localStorage.getItem("banco_usuarios_ponto");
     const listaUsuarios = rawUsers ? JSON.parse(rawUsers) : [];
 
-    const encontrarUser = listaUsuarios.find(u => u.email.toLowerCase() === email && u.senha === senha);
+    const encontrarUser = listaUsuarios.find(u => u.email.trim().toLowerCase() === email && u.senha.toString().trim() === senha);
 
     if (encontrarUser) {
         if(encontrarUser.status === "BLOQUEADO") {
@@ -87,7 +101,6 @@ function solicitarMarcacaoPonto(tipo) {
     new bootstrap.Modal(document.getElementById("modalConfirmarPonto")).show();
 }
 
-// AJUSTE REALIZADO AQUI: Agora extrai a data (DD/MM/AAAA) e injeta no histórico e na estrutura para a futura integração do admin
 function confirmarEGravarPonto() {
     bootstrap.Modal.getInstance(document.getElementById("modalConfirmarPonto")).hide();
 
@@ -99,13 +112,12 @@ function confirmarEGravarPonto() {
     navigator.geolocation.getCurrentPosition(
         (position) => {
             const agora = new Date();
-            const dataInjetada = agora.toLocaleDateString("pt-BR"); // Formato DD/MM/AAAA
+            const dataInjetada = agora.toLocaleDateString("pt-BR"); 
             const horaMarcada = agora.toLocaleTimeString("pt-BR", { hour: '2-digit', minute: '2-digit' });
             
             const txtSemPontos = document.getElementById("txtSemPontos");
             if (txtSemPontos) txtSemPontos.style.display = "none";
 
-            // Renderiza na tela com a data incluída no meio do log de forma organizada
             const containerRegistros = document.getElementById("listaRegistrosHoje");
             const novoLog = document.createElement("div");
             novoLog.className = "log-registro";

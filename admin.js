@@ -62,7 +62,6 @@ function mascaraCEPHtml(input) {
     input.value = valor;
 }
 
-// OTIMIZADOR AUTOMÁTICO DE FOTO (Reduz tamanho, resolução e deixa super leve em Base64)
 function otimizarEConverterFoto(fileInputElement) {
     return new Promise((resolve) => {
         const file = fileInputElement.files[0];
@@ -106,13 +105,10 @@ function otimizarEConverterFoto(fileInputElement) {
 
 async function cadastrarUsuario(event) {
     event.preventDefault();
-    
     let fotoBase64 = await otimizarEConverterFoto(document.getElementById('cadFotoFile'));
-    
     if(!fotoBase64) {
         fotoBase64 = `https://ui-avatars.com/api/?name=${encodeURIComponent(document.getElementById('cadNome').value)}&background=f97316&color=fff`;
     }
-    
     const novoUser = {
         id: proximoIdUsuario,
         nome: document.getElementById('cadNome').value.trim(),
@@ -124,13 +120,10 @@ async function cadastrarUsuario(event) {
         permissao: document.getElementById('cadPermissao').value,
         status: "ATIVO"
     };
-
     bancoUsuarios.push(novoUser);
     localStorage.setItem("banco_usuarios_ponto", JSON.stringify(bancoUsuarios));
-    
     renderizarTabela();
     proximoIdUsuario++;
-    
     document.getElementById('formUsuario').reset();
     exibirAlertaTop("👥 Cadastrado", `Colaborador <strong>${novoUser.nome}</strong> registrado com sucesso!`);
 }
@@ -138,16 +131,13 @@ async function cadastrarUsuario(event) {
 function renderizarTabela() {
     const tabela = document.getElementById('tabelaEquipe');
     tabela.innerHTML = "";
-    
     if(bancoUsuarios.length === 0) {
         tabela.innerHTML = `<tr><td colspan="9" class="text-center text-muted small py-3">Nenhum funcionário cadastrado na base.</td></tr>`;
         return;
     }
-
     bancoUsuarios.forEach(u => {
         const badgeStatus = u.status === "ATIVO" ? 'bg-success-subtle text-success border border-success-subtle' : 'bg-danger-subtle text-danger border border-danger-subtle';
         const tr = document.createElement('tr');
-        
         tr.innerHTML = `
             <td><img src="${u.foto}" class="avatar-table" onerror="this.src='https://ui-avatars.com/api/?name=User&background=cbd5e1'"></td>
             <td class="fw-medium">${u.nome}</td>
@@ -170,7 +160,6 @@ function abrirModalEditarFicha(id) {
     usuarioSelecionadoId = id;
     const u = bancoUsuarios.find(x => x.id === id);
     if(!u) return;
-
     document.getElementById('editNome').value = u.nome;
     document.getElementById('editCpf').value = u.cpf;
     document.getElementById('editTelefone').value = u.telefone;
@@ -178,27 +167,20 @@ function abrirModalEditarFicha(id) {
     document.getElementById('editSenha').value = u.senha;
     document.getElementById('editFotoFile').value = ""; 
     document.getElementById('editPermissao').value = u.permissao;
-
     new bootstrap.Modal(document.getElementById('modalEditarFicha')).show();
 }
 
 async function confirmarEdicaoFicha() {
     const u = bancoUsuarios.find(x => x.id === usuarioSelecionadoId);
     if(!u) return;
-
     let novaFotoBase64 = await otimizarEConverterFoto(document.getElementById('editFotoFile'));
-
     u.nome = document.getElementById('editNome').value.trim();
     u.cpf = document.getElementById('editCpf').value.trim();
     u.telefone = document.getElementById('editTelefone').value.trim();
     u.email = document.getElementById('editEmail').value.trim();
     u.senha = document.getElementById('editSenha').value.trim();
     u.permissao = document.getElementById('editPermissao').value;
-    
-    if(novaFotoBase64) {
-        u.foto = novaFotoBase64;
-    }
-
+    if(novaFotoBase64) u.foto = novaFotoBase64;
     localStorage.setItem("banco_usuarios_ponto", JSON.stringify(bancoUsuarios));
     bootstrap.Modal.getInstance(document.getElementById('modalEditarFicha')).hide();
     renderizarTabela();
@@ -225,30 +207,24 @@ async function buscarCoordenadasPorCEP() {
     const numero = document.getElementById('numeroBusca').value.trim();
     const btnBuscar = document.getElementById('btnBuscarCep');
     const cep = inputCep.replace(/\D/g, '');
-    
     if (cep.length !== 8) {
         exibirAlertaTop("Erro", "CEP inválido.");
         return;
     }
-
     btnBuscar.disabled = true;
     btnBuscar.innerText = "Buscando...";
-
     try {
         const responseCep = await fetch(`https://viacep.com.br/ws/${cep}/json/`);
         const dadosCep = await responseCep.json();
-
         if (dadosCep.erro) {
             exibirAlertaTop("Erro", "CEP não localizado.");
             restaurarBotaoBusca();
             return;
         }
-
         let logradouroExtenso = `${dadosCep.logradouro}, ${numero} - ${dadosCep.bairro}, ${dadosCep.localidade} - ${dadosCep.uf}`;
         const urlGeocode = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(logradouroExtenso)}&limit=1`;
         const responseGeo = await fetch(urlGeocode, { headers: { 'User-Agent': 'PontoWeb/2.0' } });
         const dadosGeo = await responseGeo.json();
-
         if (dadosGeo && dadosGeo.length > 0) {
             document.getElementById('latitude').value = dadosGeo[0].lat;
             document.getElementById('longitude').value = dadosGeo[0].lon;
@@ -288,21 +264,13 @@ function obtenerLocalizacaoAtual() {
     );
 }
 
-// ALTERADO: Salva os dados, avisa visualmente e bloqueia todos os campos novamente
 function salvarConfiguracoes() {
     const btnSalvar = document.getElementById("btnSalvarConfigs");
-    
-    // Desabilita os campos novamente para proteger contra edições acidentais
     controlarCamposConfiguracao(true);
-
-    // Altera para o estado "Salvo" de sucesso (Verde)
     btnSalvar.classList.remove("btn-primary");
     btnSalvar.classList.add("btn-success");
     btnSalvar.innerText = "✓ Configurações Salvas com Sucesso!";
-    
     exibirAlertaTop("Configurações Salvas", "Cerca virtual e parâmetros da empresa gravados com segurança!");
-
-    // Retorna o botão ao estado azul padrão após 3 segundos (mas os campos seguem bloqueados)
     setTimeout(() => {
         btnSalvar.classList.remove("btn-success");
         btnSalvar.classList.add("btn-primary");
@@ -310,16 +278,13 @@ function salvarConfiguracoes() {
     }, 3000);
 }
 
-// NOVO: Destrava explicitamente os campos quando o botão de lápis/editar é acionado
 function focarEdicaoConfigs() {
-    controlarCamposConfiguracao(false); // Destrava todos os inputs
-    
+    controlarCamposConfiguracao(false);
     const inputNome = document.getElementById("nomeEmpresa");
     inputNome.focus();
     inputNome.select();
 }
 
-// NOVO: Função auxiliar para travar ou destravar o painel de configurações
 function controlarCamposConfiguracao(bloquear) {
     document.getElementById("nomeEmpresa").disabled = bloquear;
     document.getElementById("btnGpsConfigs").disabled = bloquear;

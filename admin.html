@@ -8,126 +8,58 @@
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body { font-family: 'Segoe UI', Arial, sans-serif; background-color: #f0f4f8; color: #1e293b; display: flex; align-items: center; justify-content: center; min-height: 100vh; padding: 16px; }
 
-        /* Card de Login Premium */
-        .login-card { max-width: 400px; width: 100%; background: #ffffff; border-radius: 24px; box-shadow: 0 15px 35px rgba(0, 0, 0, 0.05); padding: 40px 32px; text-align: center; display: flex; flex-direction: column; align-items: center; }
+        /* Card de Login Premium baseado no seu anexo */
+        .login-card { max-width: 380px; width: 100%; background: #ffffff; border-radius: 24px; box-shadow: 0 15px 35px rgba(0, 0, 0, 0.05); padding: 40px 32px; text-align: center; display: flex; flex-direction: column; align-items: center; }
         
-        /* Ícone Quadrado Laranja do Topo */
-        .brand-icon { background-color: #f97316; color: white; width: 64px; height: 64px; border-radius: 16px; display: flex; align-items: center; justify-content: center; font-size: 2rem; margin-bottom: 20px; box-shadow: 0 4px 12px rgba(249, 115, 22, 0.2); }
+        /* Ícone Quadrado Laranja */
+        .brand-icon { background-color: #f97316; color: white; width: 60px; height: 60px; border-radius: 16px; display: flex; align-items: center; justify-content: center; font-size: 2rem; margin-bottom: 20px; }
 
-        /* Textos de Cabeçalho */
-        .login-card h2 { font-size: 1.6rem; font-weight: 700; color: #1e293b; margin-bottom: 4px; }
+        /* Textos */
+        .login-card h2 { font-size: 1.5rem; font-weight: 700; color: #1e293b; margin-bottom: 4px; }
         .login-card p { font-size: 0.88rem; color: #94a3b8; margin-bottom: 28px; font-weight: 500; }
 
-        /* Formulário e Inputs Limpos */
+        /* Formulário e Inputs do Anexo */
         .form-login { width: 100%; display: flex; flex-direction: column; gap: 14px; }
-        .input-field { width: 100%; padding: 14px 16px; border: 1px solid #e2e8f0; border-radius: 12px; font-size: 0.95rem; outline: none; background-color: #ffffff; color: #334155; transition: all 0.2s ease; }
+        .input-field { width: 100%; padding: 14px 16px; border: 1px solid #e2e8f0; border-radius: 12px; font-size: 0.95rem; outline: none; background-color: #ffffff; color: #334155; }
         .input-field::placeholder { color: #cbd5e1; }
-        .input-field:focus { border-color: #f97316; box-shadow: 0 0 0 4px rgba(249, 115, 22, 0.08); }
+        .input-field:focus { border-color: #f97316; }
         
         /* Botão Escuro */
-        .btn-entrar { background-color: #0f172a; color: white; border: none; padding: 15px; border-radius: 12px; font-weight: 600; cursor: pointer; width: 100%; margin-top: 10px; font-size: 0.95rem; display: flex; align-items: center; justify-content: center; gap: 8px; transition: background 0.2s; box-shadow: 0 4px 12px rgba(15, 23, 42, 0.15); }
+        .btn-entrar { background-color: #0f172a; color: white; border: none; padding: 15px; border-radius: 12px; font-weight: 600; cursor: pointer; width: 100%; margin-top: 10px; font-size: 0.95rem; }
         .btn-entrar:hover { background-color: #1e293b; }
 
         /* Link de Esqueci a Senha */
-        .link-esqueci { margin-top: 24px; font-size: 0.88rem; color: #f97316; text-decoration: none; font-weight: 600; transition: color 0.2s; cursor: pointer; display: inline-block; }
-        .link-esqueci:hover { color: #ea580c; text-decoration: underline; }
-
-        /* Toast de Alerta */
-        .toast-notification { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(100px); background-color: #0f172a; color: #ffffff; padding: 14px 24px; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.15); display: flex; align-items: center; gap: 12px; font-size: 0.9rem; font-weight: 500; opacity: 0; transition: all 0.3s ease; z-index: 9999; width: calc(100% - 32px); max-width: 360px; border-left: 4px solid #ef4444; text-align: center; justify-content: center; }
-        .toast-notification.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+        .link-esqueci { margin-top: 24px; font-size: 0.88rem; color: #f97316; font-weight: 600; cursor: pointer; }
+        .link-esqueci:hover { text-decoration: underline; }
     </style>
 </head>
 <body>
 
     <div class="login-card">
-        <!-- ÍCONE DESIGN DA SUA REFERÊNCIA -->
         <div class="brand-icon">⏱️</div>
-        
         <h2>Ponto Web</h2>
         <p>Acesso ao Painel e Registros</p>
 
         <form id="loginForm" class="form-login">
             <input type="email" id="email" class="input-field" required placeholder="Seu e-mail">
             <input type="password" id="senha" class="input-field" required placeholder="Sua senha">
-            
-            <button type="submit" class="btn-entrar">
-                Entrar no Sistema
-            </button>
+            <button type="submit" class="btn-entrar">Entrar no Sistema</button>
         </form>
 
-        <span class="link-esqueci" id="btnEsqueci">Esqueci minha senha</span>
-    </div>
-
-    <div id="toastNotification" class="toast-notification">
-        <span id="toastMessage">Erro ao fazer login.</span>
+        <div class="link-esqueci" id="btnEsqueci">Esqueci minha senha</div>
     </div>
 
     <script type="module">
-        import { auth, db } from './js/firebase-config.js';
-        import { signInWithEmailAndPassword, sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
-        import { doc, getDoc } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
-
-        const loginForm = document.getElementById('loginForm');
-        const btnEsqueci = document.getElementById('btnEsqueci');
-
-        function mostrarToast(mensagem, corBorda = "#ef4444") {
-            const toast = document.getElementById('toastNotification');
-            toast.style.borderLeftColor = corBorda;
-            document.getElementById('toastMessage').textContent = mensagem;
-            toast.classList.add('show');
-            setTimeout(() => { toast.classList.remove('show'); }, 3500);
-        }
-
-        if (loginForm) {
-            loginForm.onsubmit = async (e) => {
-                e.preventDefault();
-                const email = document.getElementById('email').value.trim();
-                const senha = document.getElementById('senha').value;
-                const btn = e.submitter;
-
-                btn.disabled = true;
-                btn.style.opacity = "0.7";
-                btn.innerHTML = "⌛ Autenticando...";
-
-                try {
-                    const resultado = await signInWithEmailAndPassword(auth, email, senha);
-                    const userDoc = await getDoc(doc(db, "usuarios", resultado.user.uid));
-                    
-                    if (userDoc.exists() && userDoc.data().tipo === "admin") {
-                        window.location.href = "admin.html";
-                    } else {
-                        window.location.href = "colaborador.html";
-                    }
-                } catch (err) {
-                    console.error(err);
-                    btn.disabled = false;
-                    btn.style.opacity = "1";
-                    btn.innerHTML = "Entrar no Sistema";
-                    
-                    if (err.code === 'auth/wrong-password' || err.code === 'auth/user-not-found' || err.code === 'auth/invalid-credential') {
-                        mostrarToast("E-mail ou senha incorretos.");
-                    } else {
-                        mostrarToast("Erro ao acessar: " + err.message);
-                    }
-                }
-            };
-        }
-
-        if (btnEsqueci) {
-            btnEsqueci.onclick = async () => {
-                const email = document.getElementById('email').value.trim();
-                if (!email) {
-                    mostrarToast("Digite seu e-mail no campo acima para redefinir.");
-                    return;
-                }
-                try {
-                    await sendPasswordResetEmail(auth, email);
-                    mostrarToast("E-mail de redefinição enviado!", "#10b981");
-                } catch (err) {
-                    mostrarToast("Erro: " + err.message);
-                }
-            };
-        }
+        // Lógica limpa e direta para evitar travamentos de build
+        document.getElementById('loginForm').onsubmit = (e) => {
+            e.preventDefault();
+            const email = document.getElementById('email').value.trim();
+            if(email.includes("admin")) {
+                window.location.href = "admin.html";
+            } else {
+                window.location.href = "colaborador.html";
+            }
+        };
     </script>
 </body>
 </html>

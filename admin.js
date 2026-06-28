@@ -1,7 +1,6 @@
 let usuarioSelecionadoId = null;
 let proximoIdUsuario = 1;
 let bancoUsuarios = [];
-let registrosPontoGlobais = []; 
 
 function alternarAba(nomeAba) {
     document.getElementById('menu-pessoal').classList.remove('active');
@@ -209,13 +208,9 @@ function confirmarEdicaoFicha() {
 }
 
 function bolarTempoParaMinutos(strHora) {
-    if(!strDataFormatadaValida(strHora)) return null;
+    if(!strHora || strHora === "-" || !strHora.includes(":")) return null;
     const partes = strHora.split(':');
     return parseInt(partes[0], 10) * 60 + parseInt(partes[1], 10);
-}
-
-function strDataFormatadaValida(str) {
-    return str && str !== "-" && str.includes(":");
 }
 
 function formatarMinutosParaString(minutosTotais) {
@@ -250,7 +245,7 @@ function sincronizarFiltrosColaboradores() {
     select.value = valorSelecionado;
 }
 
-// ARQUITETURA MATEMÁTICA REAL DE PROCESSAMENTO DIÁRIO DE JORNADA CONTRATUAL
+// ARQUITETURA MATEMÁTICA CONTRATUAL: Segunda a Sexta (8h), Sábado (4h) e Domingo (DSR - Tudo Extra)
 function processarLogsLocalStorage() {
     const logsBrutos = JSON.parse(localStorage.getItem("historico_pontos_global") || "[]");
     const espelhosAgrupados = {};
@@ -266,6 +261,8 @@ function processarLogsLocalStorage() {
                 almocoIda: "-",
                 almocoVolta: "-",
                 saida: "-",
+                minutosTrabalhadosNum: 0,
+                minutosExtrasNum: 0,
                 horasTrabalhadas: "00:00",
                 horasExtras: "00:00"
             };
@@ -279,7 +276,6 @@ function processarLogsLocalStorage() {
 
     const listaFinal = Object.values(espelhosAgrupados);
 
-    // EXUTA AS CONTAS MATEMÁTICAS MINUTO A MINUTO BASEADO NO DIA DA SEMANA DO CONTRATO
     listaFinal.forEach(r => {
         let minutosTrabalhados = 0;
 
@@ -288,34 +284,33 @@ function processarLogsLocalStorage() {
         const mAlmVolta = bolarTempoParaMinutos(r.almocoVolta);
         const mSaida = bolarTempoParaMinutos(r.saida);
 
-        // Turno 1: Da Entrada até ir pro Almoço
         if(mEntrada !== null && mAlmIda !== null && mAlmIda > mEntrada) {
             minutosTrabalhados += (mAlmIda - mEntrada);
         }
-        // Turno 2: Do retorno do Almoço até a Saída final
         if(mAlmVolta !== null && mSaida !== null && mSaida > mAlmVolta) {
             minutosTrabalhados += (mSaida - mAlmVolta);
         }
 
+        r.minutosTrabalhadosNum = minutosTrabalhados;
         r.horasTrabalhadas = formatarMinutosParaString(minutosTrabalhados);
 
-        // Identifica matemática exata com base no dia da semana correspondente à data
         const partesData = r.data.split('/');
         const objetoData = new Date(partesData[2], partesData[1] - 1, partesData[0]);
-        const diaDaSemana = objetoData.getDay(); // 0 = Domingo, 1 = Segunda, ..., 6 = Sábado
+        const diaDaSemana = objetoData.getDay(); 
 
-        let cargaObrigatoriaDoDia = 480; // Padrão: 8 horas (Segunda a Sexta)
+        let cargaObrigatoriaDoDia = 480; // Segunda a Sexta = 8h
         if (diaDaSemana === 6) {
-            cargaObrigatoriaDoDia = 240; // Sábado: 4 horas obrigatórias
+            cargaObrigatoriaDoDia = 240; // Sábado = 4h
         } else if (diaDaSemana === 0) {
-            cargaObrigatoriaDoDia = 0; // Domingo: Não trabalha, tudo vira hora extra
+            cargaObrigatoriaDoDia = 0;   // Domingo = 0h (Tudo Extra)
         }
 
-        // Calcula saldo real
         if(minutosTrabalhados > cargaObrigatoriaDoDia) {
             const extra = minutosTrabalhados - cargaObrigatoriaDoDia;
+            r.minutosExtrasNum = extra;
             r.horasExtras = formatarMinutosParaString(extra);
         } else {
+            r.minutosExtrasNum = 0;
             r.horasExtras = "00:00";
         }
     });
@@ -323,6 +318,7 @@ function processarLogsLocalStorage() {
     return listaFinal;
 }
 
+// FILTRO AVANÇADO COM LINHA DE TOTAIS NO FINAL DA TABELA
 function filtrarRelatorioTela() {
     const filtroColab = document.getElementById('filtroRelatorioColaborador').value;
     const filtroInicio = document.getElementById('filtroRelatorioInicio').value;
@@ -356,7 +352,13 @@ function filtrarRelatorioTela() {
         return;
     }
 
+    let acumuladorTrabalhadas = 0;
+    let acumuladorExtras = 0;
+
     dadosConsolidados.forEach(r => {
+        acumuladorTrabalhadas += r.minutosTrabalhadosNum;
+        acumuladorExtras += r.minutosExtrasNum;
+
         const tr = document.createElement('tr');
         tr.innerHTML = `
             <td><strong>${r.data}</strong></td>
@@ -370,31 +372,78 @@ function filtrarRelatorioTela() {
         `;
         tabelaBody.appendChild(tr);
     });
+
+    // INCLUSÃO DA LINHA DE TOTAIS NO FINAL DA TABELA DA TELA
+    const trTotal = document.createElement('tr');
+    trTotal.style.backgroundColor = "#e5e7eb";
+    trTotal.className = "table-secondary fw-bold text-dark";
+    trTotal.innerHTML = `
+        <td colspan="6" class="text-end pe-3">TOTAL DO PERÍODO SELECIONADO:</td>
+        <td class="text-success fw-extrabold">${formatarMinutosParaString(acumuladorTrabalhadas)}</td>
+        <td class="text-danger fw-extrabold">${formatarMinutosParaString(acumuladorExtras)}</td>
+    `;
+    tabelaBody.appendChild(trTotal);
 }
 
 function exportarPontosExcel() {
     const filtroColab = document.getElementById('filtroRelatorioColaborador').value;
+    const filtroInicio = document.getElementById('filtroRelatorioInicio').value;
+    const filtroFim = document.getElementById('filtroRelatorioFim').value;
+    
     let dadosParaPlanilha = processarLogsLocalStorage();
     
     if (filtroColab !== "todos") {
         dadosParaPlanilha = dadosParaPlanilha.filter(r => r.colaboradorId == filtroColab);
     }
+    if (filtroInicio) {
+        const dInicio = new Date(filtroInicio + "T00:00:00");
+        dadosParaPlanilha = dadosParaPlanilha.filter(r => {
+            const p = r.data.split('/');
+            return new Date(p[2], p[1]-1, p[0]) >= dInicio;
+        });
+    }
+    if (filtroFim) {
+        const dFim = new Date(filtroFim + "T23:59:59");
+        dadosParaPlanilha = dadosParaPlanilha.filter(r => {
+            const p = r.data.split('/');
+            return new Date(p[2], p[1]-1, p[0]) <= dFim;
+        });
+    }
 
     if (dadosParaPlanilha.length === 0) {
-        exibirAlertaTop("Sem Dados", "Não há dados consolidados na folha ponto para exportar hoje.");
+        exibirAlertaTop("Sem Dados", "Não há dados consolidados para exportar.");
         return;
     }
 
-    const formatoExcel = dadosParaPlanilha.map(r => ({
-        "Data": r.data,
-        "Colaborador": r.nome,
-        "Entrada": r.entrada,
-        "Almoço Ida": r.almocoIda,
-        "Almoço Volta": r.almocoVolta,
-        "Saída": r.saida,
-        "Horas Trabalhadas": r.horasTrabalhadas,
-        "Horas Extras": r.horasExtras
-    }));
+    let somaTrab = 0;
+    let somaExtra = 0;
+
+    const formatoExcel = dadosParaPlanilha.map(r => {
+        somaTrab += r.minutosTrabalhadosNum;
+        somaExtra += r.minutosExtrasNum;
+        return {
+            "Data": r.data,
+            "Colaborador": r.nome,
+            "Entrada": r.entrada,
+            "Almoço Ida": r.almocoIda,
+            "Almoço Volta": r.almocoVolta,
+            "Saída": r.saida,
+            "Horas Trabalhadas": r.horasTrabalhadas,
+            "Horas Extras": r.horasExtras
+        };
+    });
+
+    // Adiciona a linha de totais na última linha do Excel exportado
+    formatoExcel.push({
+        "Data": "TOTAL GERAL",
+        "Colaborador": "",
+        "Entrada": "",
+        "Almoço Ida": "",
+        "Almoço Volta": "",
+        "Saída": "",
+        "Horas Trabalhadas": formatarMinutosParaString(somaTrab),
+        "Horas Extras": formatarMinutosParaString(somaExtra)
+    });
 
     const worksheet = XLSX.utils.json_to_sheet(formatoExcel);
     const workbook = XLSX.utils.book_new();
@@ -410,7 +459,7 @@ function inicializarDadosFicticios() {
         ];
         localStorage.setItem("banco_usuarios_ponto", JSON.stringify(bancoUsuarios));
         
-        // Simulação matemática perfeita: Adriana batendo ponto correto em um dia útil (24/06 - Quarta-feira)
+        // Mock de teste completo simulando 9h trabalhadas em um dia de semana (Carga: 8h -> Extra: 1h)
         localStorage.setItem("historico_pontos_global", JSON.stringify([
             { colaboradorId: 1, nome: "ADRIANA SANTARINE DE MENDONÇA DINIZ", data: "24/06/2026", tipo: "Entrada", hora: "08:00" },
             { colaboradorId: 1, nome: "ADRIANA SANTARINE DE MENDONÇA DINIZ", data: "24/06/2026", tipo: "Almoço Ida", hora: "12:00" },

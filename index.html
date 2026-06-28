@@ -3,236 +3,128 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ponto Web - Portal do Colaborador</title>
-    <!-- Bootstrap 5 CSS -->
+    <title>Super Admin - Ponto Web</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
-        body { 
-            background-color: #f4f7f6; 
-            font-family: 'Segoe UI', Arial, sans-serif; 
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+        body {
+            background-color: #020617; 
+            font-family: 'Segoe UI', Arial, sans-serif;
+            display: flex; align-items: center; justify-content: center;
+            min-height: 100vh; overflow: hidden; position: relative;
         }
 
-        .app-container {
-            width: 100%;
-            max-width: 450px;
-            padding: 15px;
+        body::before {
+            content: ""; position: absolute; top: -20%; left: -10%;
+            width: 500px; height: 500px;
+            background: radial-gradient(circle, rgba(16, 185, 129, 0.15) 0%, rgba(2,6,23,0) 70%);
+            border-radius: 50%; z-index: 0;
+        }
+        body::after {
+            content: ""; position: absolute; bottom: -20%; right: -10%;
+            width: 600px; height: 600px;
+            background: radial-gradient(circle, rgba(59,130,246,0.15) 0%, rgba(2,6,23,0) 70%);
+            border-radius: 50%; z-index: 0;
         }
 
-        .card-custom {
-            background: #ffffff;
-            border-radius: 12px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
-            padding: 40px 30px;
-            width: 100%;
-            border: 1px solid #eaeaea;
+        .login-wrapper { width: 100%; max-width: 420px; padding: 20px; z-index: 1; }
+        .login-card {
+            background: #ffffff; border-radius: 16px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.4); padding: 40px 32px; width: 100%; position: relative;
         }
 
-        /* LOGO ORIGINAL */
-        .logo-area { text-align: center; margin-bottom: 30px; }
-        .logo-area h2 { font-size: 2.2rem; color: #111827; font-weight: 900; letter-spacing: -0.5px; margin-bottom: 2px; }
-        .logo-area span { color: #f97316; }
-        .logo-area p { color: #6b7280; font-size: 0.95rem; font-weight: 500; }
+        .logo-area { text-align: center; margin-bottom: 32px; }
+        .logo-area h2 { font-size: 2.2rem; color: #0f172a; font-weight: 900; letter-spacing: -1px; margin-bottom: 4px; }
+        .logo-area span { color: #10b981; }
+        .badge-super { background-color: #10b981; color: white; padding: 4px 12px; border-radius: 12px; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; }
 
-        /* SEÇÕES */
-        #secao-login, #secao-horarios { display: none; }
-        #secao-login.active, #secao-horarios.active { display: block; }
-
-        /* INPUTS ORIGINAIS */
-        .form-label { font-weight: 700; font-size: 0.85rem; color: #111827; }
         .form-control {
-            background-color: #ffffff;
-            border: 1px solid #d1d5db;
-            padding: 12px 16px;
-            border-radius: 8px;
-            font-size: 0.95rem;
-            color: #374151;
+            background-color: #f8fafc; border: 1px solid #cbd5e1; padding: 14px 16px;
+            border-radius: 8px; font-size: 0.95rem; color: #334155; transition: all 0.2s;
         }
-        .form-control:focus { border-color: #f97316; box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.1); }
-        
-        .password-container { position: relative; display: flex; align-items: center; width: 100%; }
-        .password-container input { padding-right: 44px; width: 100%; }
-        .btn-toggle-eye { position: absolute; right: 12px; background: none; border: none; font-size: 1.1rem; cursor: pointer; color: #9ca3af; padding: 0; }
+        .form-control:focus {
+            background-color: #ffffff; border-color: #10b981; box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.1);
+        }
 
-        /* BOTÃO DE LOGIN LARANJA ORIGINAL */
+        .password-container { position: relative; display: flex; align-items: center; }
+        .password-container input { padding-right: 45px; }
+        .btn-toggle-eye {
+            position: absolute; right: 12px; background: none; border: none; font-size: 1.1rem; cursor: pointer; color: #94a3b8; transition: color 0.2s; padding: 0;
+        }
+        .btn-toggle-eye:hover { color: #10b981; }
+
         .btn-login {
-            background-color: #f97316;
-            color: #ffffff;
-            border: none;
-            padding: 14px;
-            border-radius: 8px;
-            font-weight: 700;
-            font-size: 1rem;
-            width: 100%;
-            margin-top: 10px;
-            transition: background-color 0.2s;
+            background-color: #0f172a; color: #ffffff; border: none; padding: 14px;
+            border-radius: 8px; font-weight: 700; font-size: 1rem; width: 100%; margin-top: 24px; transition: all 0.3s;
         }
-        .btn-login:hover { background-color: #ea580c; color: white; }
+        .btn-login:hover { background-color: #1e293b; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
 
-        /* BOTÕES DE PONTO ORIGINAIS */
-        .btn-ponto {
-            width: 100%;
-            padding: 14px;
-            border-radius: 8px;
-            font-weight: 700;
-            font-size: 1.05rem;
-            margin-bottom: 12px;
-            border: none;
-            color: white;
-            transition: opacity 0.2s;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        .alert-error {
+            display: none; background-color: #fef2f2; color: #ef4444; border: 1px solid #fca5a5;
+            padding: 10px; border-radius: 8px; font-size: 0.85rem; font-weight: 600; text-align: center; margin-bottom: 20px;
         }
-        .btn-ponto:hover { opacity: 0.9; color: white; }
-        
-        .btn-entrada { background-color: #22c55e; } /* Verde Original */
-        .btn-pausa-ida { background-color: #f59e0b; } /* Amarelo Original */
-        .btn-pausa-volta { background-color: #f97316; } /* Laranja Original */
-        .btn-saida { background-color: #ef4444; } /* Vermelho Original */
 
-        /* CAIXA DE HISTÓRICO ORIGINAL */
-        .historico-box { background-color: #f8fafc; border-radius: 8px; padding: 20px 16px; margin-top: 30px; border: 1px solid #e2e8f0; }
-        .historico-titulo { font-size: 0.8rem; font-weight: 700; color: #64748b; margin-bottom: 15px; text-transform: uppercase; }
-        
-        .log-registro { display: flex; justify-content: space-between; align-items: center; background: white; padding: 12px; border-radius: 6px; margin-bottom: 8px; border: 1px solid #e2e8f0; font-size: 0.9rem; }
-        .log-registro .tipo { font-weight: 700; color: #111827; }
-        .log-registro .data-log { color: #9ca3af; font-size: 0.85rem; }
-        .log-registro .hora { font-weight: 800; color: #111827; }
-
-        /* LINK ADMIN NO RODAPÉ DO LOGIN */
-        .link-admin {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            gap: 6px;
-            margin-top: 25px;
-            padding-top: 20px;
-            border-top: 1px solid #f3f4f6;
-            color: #9ca3af;
-            text-decoration: none;
-            font-size: 0.85rem;
-            font-weight: 600;
-        }
-        .link-admin:hover { color: #6b7280; }
-
-        .btn-logout { background: none; border: none; color: #ef4444; font-weight: 600; font-size: 0.9rem; width: 100%; padding: 12px; margin-top: 16px; text-decoration: underline; }
+        .footer-text { text-align: center; color: #64748b; font-size: 0.8rem; margin-top: 24px; font-weight: 500; }
     </style>
 </head>
 <body>
-
-    <div class="app-container">
-        
-        <!-- SEÇÃO 1: LOGIN -->
-        <div id="secao-login" class="card-custom active">
+    <div class="login-wrapper">
+        <div class="login-card">
             <div class="logo-area">
                 <h2>Ponto<span>Web</span></h2>
-                <p>Portal do Colaborador</p>
+                <div class="mt-2"><span class="badge-super">Super Admin</span></div>
             </div>
 
-            <form id="formLoginColab" onsubmit="executarLoginColaborador(event)">
+            <div id="msgErro" class="alert-error">⚠️ Acesso negado. Credenciais inválidas.</div>
+
+            <form onsubmit="entrarSuperAdmin(event)">
                 <div class="mb-3">
-                    <label class="form-label">E-mail de Acesso</label>
-                    <input type="email" id="loginEmail" class="form-control" placeholder="seu.email@empresa.com" required>
+                    <label class="form-label fw-bold small text-dark mb-1">E-mail do Proprietário</label>
+                    <input type="email" id="emailSuper" class="form-control" placeholder="dono@pontoweb.com" required>
                 </div>
                 
-                <div class="mb-4">
-                    <label class="form-label">Senha</label>
+                <div class="mb-2">
+                    <label class="form-label fw-bold small text-dark mb-1">Senha Mestra</label>
                     <div class="password-container">
-                        <input type="password" id="loginSenha" class="form-control" placeholder="••••••••" required>
-                        <button type="button" class="btn-toggle-eye" onclick="toggleSenhaLogin('loginSenha', this)">👁️</button>
+                        <input type="password" id="senhaSuper" class="form-control" placeholder="••••••••" required>
+                        <button type="button" class="btn-toggle-eye" onclick="toggleSenha()">👁️</button>
                     </div>
                 </div>
 
-                <button type="submit" class="btn-login">Entrar no Sistema</button>
+                <button type="submit" class="btn-login">Acessar Plataforma</button>
             </form>
 
-            <a href="login-admin.html" class="link-admin">🔒 Acesso Restrito à Gestão</a>
+            <div class="footer-text">Controle central de empresas clientes.</div>
         </div>
-
-        <!-- SEÇÃO 2: BATER PONTO (Painel do Colaborador) -->
-        <div id="secao-horarios" class="card-custom" style="padding: 30px 20px;">
-            
-            <div id="nomeFuncionarioConectado" class="mb-4 border-bottom pb-4 text-center">
-                <!-- Foto e Nome Injetados pelo JS -->
-            </div>
-
-            <!-- Mantendo o relógio do script escondido para não quebrar a lógica -->
-            <div style="display: none;">
-                <div id="relogioDigital">00:00:00</div>
-                <div id="dataAtualStr">Carregando data...</div>
-            </div>
-
-            <div class="d-flex flex-column">
-                <button type="button" class="btn-ponto btn-entrada" onclick="solicitarMarcacaoPonto('Entrada')">
-                    🟢 Bater Ponto - Entrada
-                </button>
-                <button type="button" class="btn-ponto btn-pausa-ida" onclick="solicitarMarcacaoPonto('Almoço Ida')">
-                    ⏸️ Início do Almoço
-                </button>
-                <button type="button" class="btn-ponto btn-pausa-volta" onclick="solicitarMarcacaoPonto('Almoço Volta')">
-                    ▶️ Volta do Almoço
-                </button>
-                <button type="button" class="btn-ponto btn-saida" onclick="solicitarMarcacaoPonto('Saída')">
-                    🔴 Bater Ponto - Saída
-                </button>
-            </div>
-
-            <div class="historico-box">
-                <div class="historico-titulo">⏱️ SEUS REGISTROS DE HOJE</div>
-                <div id="listaRegistrosHoje">
-                    <!-- Injetado pelo JS -->
-                </div>
-            </div>
-
-            <button type="button" class="btn-logout" onclick="executarLogoutColaborador()">Sair da minha conta</button>
-        </div>
-
     </div>
 
-    <!-- MODAL DE FEEDBACK / AVISOS -->
-    <div class="modal fade" id="modalFeedbackColab" tabindex="-1" aria-hidden="true">
-      <div class="modal-dialog modal-dialog-centered modal-sm">
-        <div class="modal-content border-0 shadow" style="border-radius:12px;">
-          <div class="modal-header bg-dark text-white py-3" style="border-top-left-radius:12px; border-top-right-radius:12px;">
-            <h5 class="modal-title fs-6 fw-bold" id="modalColabTitulo">Aviso</h5>
-            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-          </div>
-          <div class="modal-body p-4 text-center text-secondary fw-medium" id="modalColabMensagem">
-            <!-- Mensagem -->
-          </div>
-          <div class="modal-footer border-0 pt-0 d-flex justify-content-center">
-            <button type="button" class="btn btn-primary px-4 btn-sm fw-bold" data-bs-dismiss="modal">Entendido</button>
-          </div>
-        </div>
-      </div>
-    </div>
+    <script>
+        function toggleSenha() {
+            const input = document.getElementById('senhaSuper');
+            const btn = document.querySelector('.btn-toggle-eye');
+            if (input.type === "password") {
+                input.type = "text"; btn.innerText = "🙈";
+            } else {
+                input.type = "password"; btn.innerText = "👁️";
+            }
+        }
 
-    <!-- MODAL DE CONFIRMAÇÃO DE PONTO E GPS -->
-    <div class="modal fade" id="modalConfirmarPonto" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
-      <div class="modal-dialog modal-dialog-centered modal-sm">
-        <div class="modal-content border-0 shadow" style="border-radius:12px;">
-          <div class="modal-header bg-primary text-white py-3" style="border-top-left-radius:12px; border-top-right-radius:12px;">
-            <h5 class="modal-title fs-6 fw-bold">📍 Confirmação de Ponto</h5>
-            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-          </div>
-          <div class="modal-body p-4 text-center">
-            <p class="mb-2 text-secondary fw-medium">Confirma a marcação de:</p>
-            <h4 class="fw-bold text-dark mb-3" id="txtTipoPontoConfirmar">Tipo</h4>
-            <p class="small text-muted mb-0">Sua localização exata será capturada para validar este registro.</p>
-          </div>
-          <div class="modal-footer border-0 pt-0 d-flex justify-content-center gap-2">
-            <button type="button" class="btn btn-light border btn-sm fw-medium" data-bs-dismiss="modal">Cancelar</button>
-            <button type="button" class="btn btn-success btn-sm px-3 fw-bold" onclick="confirmarEGravarPonto()">Sim, Gravar</button>
-          </div>
-        </div>
-      </div>
-    </div>
+        function entrarSuperAdmin(event) {
+            event.preventDefault();
+            const email = document.getElementById("emailSuper").value.trim().toLowerCase();
+            const senha = document.getElementById("senhaSuper").value.trim();
+            const erro = document.getElementById("msgErro");
 
-    <!-- Scripts Bootstrap e Colaborador -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="colaborador.js"></script>
+            // Credenciais fixas do dono da plataforma
+            if (email === "super@admin.com" && senha === "super123") {
+                erro.style.display = "none";
+                sessionStorage.setItem("super_admin_autenticado", "true");
+                window.location.href = "super-admin.html";
+            } else {
+                erro.style.display = "block";
+                document.getElementById("senhaSuper").value = "";
+            }
+        }
+    </script>
 </body>
 </html>

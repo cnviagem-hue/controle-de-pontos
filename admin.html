@@ -18,8 +18,11 @@
         .sidebar-menu .nav-link:hover { background-color: #1e293b; color: #fff; }
         .sidebar-menu .nav-link.active { background-color: #1e293b; color: #f97316; font-weight: 600; }
         
-        .btn-copiar-link { background-color: #1e293b; border: 1px dashed #f97316; color: #f97316; padding: 12px; border-radius: 8px; text-align: center; font-size: 0.85rem; font-weight: 600; cursor: pointer; margin-top: 200px; transition: all 0.2s; display: flex; align-items: center; justify-content: center; gap: 8px; }
+        .btn-copiar-link { background-color: #1e293b; border: 1px dashed #f97316; color: #f97316; padding: 12px; border-radius: 8px; text-align: center; font-size: 0.85rem; font-weight: 600; cursor: pointer; margin-top: 20px; transition: all 0.2s; display: flex; align-items: center; justify-content: center; gap: 8px; }
         .btn-copiar-link:hover { background-color: #f97316; color: #fff; }
+
+        .btn-sidebar-logout { background: none; border: none; color: #64748b; font-size: 0.85rem; font-weight: 500; display: flex; align-items: center; justify-content: center; gap: 6px; cursor: pointer; padding: 12px; width: 100%; border-radius: 8px; transition: all 0.2s; margin-top: auto; }
+        .btn-sidebar-logout:hover { background-color: #1e293b; color: #ef4444; }
 
         /* ÁREA DE CONTEÚDO PRINCIPAL */
         .main-content { flex-grow: 1; margin-left: 260px; padding: 32px; min-width: 0; width: calc(100% - 260px); }
@@ -58,8 +61,9 @@
 </head>
 <body>
 
+    <!-- SIDEBAR -->
     <aside class="sidebar">
-        <div style="width: 100%;">
+        <div style="width: 100%; display: flex; flex-direction: column; height: 100%;">
             <div class="sidebar-header">
                 <h2>Ponto Web</h2>
             </div>
@@ -68,14 +72,21 @@
                 <li><a class="nav-link" id="menu-relatorios" onclick="alternarAba('relatorios')">📊 Relatórios</a></li>
                 <li><a class="nav-link" id="menu-configs" onclick="alternarAba('configs')">⚙️ Configs</a></li>
             </ul>
-        </div>
-        <div class="btn-copiar-link" onclick="copiarLinkColaborador()">
-            🔗 Copiar Link do App
+            
+            <div class="btn-copiar-link" onclick="copiarLinkColaborador()">
+                🔗 Copiar Link do App
+            </div>
+
+            <button type="button" class="btn-sidebar-logout" onclick="fazerLogout()">
+                ➔ Sair do Sistema
+            </button>
         </div>
     </aside>
 
+    <!-- CONTEÚDO PRINCIPAL -->
     <main class="main-content">
         
+        <!-- ABA 1: PESSOAL -->
         <div id="conteudo-pessoal" class="tab-content-section active">
             <div class="card-custom">
                 <div class="section-title">Gestão de Pessoal - Novo Usuário</div>
@@ -141,12 +152,14 @@
                             </tr>
                         </thead>
                         <tbody id="tabelaEquipe">
-                            </tbody>
+                            <!-- Inserido dinamicamente pelo admin.js -->
+                        </tbody>
                     </table>
                 </div>
             </div>
         </div>
 
+        <!-- ABA 2: RELATÓRIOS -->
         <div id="conteudo-relatorios" class="tab-content-section">
             <div class="card-custom">
                 <div class="section-title">Espelhos de Ponto e Relatórios</div>
@@ -155,7 +168,7 @@
                     <div class="col-md-4">
                         <label class="form-label small fw-medium">Filtrar por Colaborador</label>
                         <select id="filtroRelatorioColaborador" class="form-select">
-                            <option value="todos">-- Todos os Colaboradores --</option>
+                            <option value="todos">-- Selecione um Colaborador --</option>
                         </select>
                     </div>
                     <div class="col-md-4">
@@ -187,16 +200,14 @@
                             </tr>
                         </thead>
                         <tbody id="tabelaRelatoriosBody">
-                            <tr>
-                                <td colspan="8" class="text-center text-muted small py-4">Nenhum registro encontrado para os filtros selecionados.</td>
-                            </tr>
+                            <!-- Preenchido via admin.js -->
                         </tbody>
                     </table>
                 </div>
-
             </div>
         </div>
 
+        <!-- ABA 3: CONFIGURAÇÕES -->
         <div id="conteudo-configs" class="tab-content-section">
             <div class="card-custom">
                 <div class="section-title">
@@ -259,6 +270,7 @@
 
     </main>
 
+    <!-- MODAL DE NOTIFICAÇÃO MODERNA -->
     <div class="modal fade" id="modalFeedback" tabindex="-1" aria-hidden="true">
       <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content border-0 shadow-lg" style="border-radius:16px;">
@@ -266,16 +278,17 @@
             <h5 class="modal-title d-flex align-items-center gap-2" id="modalTitulo">🔔 Notificação</h5>
             <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
           </div>
-          <div class="modal-body p-4 text-center">
-            <p id="modalMensagem" class="fs-6 text-secondary mb-0"></p>
+          <div class="modal-body p-4 text-center" id="modalMensagem">
+            <!-- Mensagem via JS -->
           </div>
-          <div class="modal-footer border-0 pt-0 d-flex justify-content-center">
+          <div class="modal-footer border-0 pt-0 d-flex justify-content-center" id="modalFeedbackFooter">
             <button type="button" class="btn btn-primary px-4 btn-sm" data-bs-dismiss="modal">OK</button>
           </div>
         </div>
       </div>
     </div>
 
+    <!-- MODAL EDITAR FICHA -->
     <div class="modal fade" id="modalEditarFicha" tabindex="-1" aria-hidden="true">
       <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content border-0 shadow-lg" style="border-radius:16px;">
@@ -330,6 +343,7 @@
       </div>
     </div>
 
+    <!-- Script da Biblioteca Oficial SheetJS para geração nativa de arquivos Excel .xlsx reais -->
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <script src="admin.js"></script>
 </body>

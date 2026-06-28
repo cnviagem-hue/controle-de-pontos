@@ -157,33 +157,29 @@
             const senha = document.getElementById("senhaAdmin").value.trim();
             const erro = document.getElementById("msgErro");
 
-            // LÊ AS EMPRESAS CRIADAS PELO SUPER ADMIN
             const bancoEmpresas = JSON.parse(localStorage.getItem("banco_empresas_web")) || [];
-            
-            // Tenta encontrar a empresa correspondente e ativa
             const indexEmpresa = bancoEmpresas.findIndex(e => e.email === email && e.senhaAtual === senha && e.status === "ATIVO");
 
             if (indexEmpresa !== -1) {
                 erro.style.display = "none";
                 const empresa = bancoEmpresas[indexEmpresa];
 
-                // TRAVA DE SEGURANÇA: Exige troca de senha no primeiro login
                 if (empresa.primeiroAcesso === true || senha === "mudar123") {
                     empresaLogandoIndex = indexEmpresa;
                     new bootstrap.Modal(document.getElementById('modalTrocarSenha')).show();
                 } else {
-                    // Login liberado direto
                     sessionStorage.setItem("admin_autenticado", "true");
+                    sessionStorage.setItem("nome_empresa_ativa", empresa.nome); // ENVIANDO O NOME DA EMPRESA
                     window.location.href = "admin.html";
                 }
             } 
-            // Fallback de segurança para não te travar (Seu login antigo)
+            // Fallback: Seu login de testes original
             else if (email === "cnviagem@gmail.com" && senha === "123456") {
                 erro.style.display = "none";
                 sessionStorage.setItem("admin_autenticado", "true");
+                sessionStorage.setItem("nome_empresa_ativa", "UniCesumar"); // PROTEGENDO A UNICESUMAR
                 window.location.href = "admin.html";
             } 
-            // Falha no Login
             else {
                 erro.style.display = "block";
                 document.getElementById("senhaAdmin").value = "";
@@ -193,27 +189,24 @@
 
         function salvarNovaSenha() {
             const novaSenhaInput = document.getElementById("novaSenha").value.trim();
-            
             if (novaSenhaInput.length < 6) {
                 alert("Sua senha precisa ter no mínimo 6 caracteres.");
                 return;
             }
 
-            // Atualiza a senha no banco de dados do Super Admin
             let bancoEmpresas = JSON.parse(localStorage.getItem("banco_empresas_web")) || [];
             bancoEmpresas[empresaLogandoIndex].senhaAtual = novaSenhaInput;
             bancoEmpresas[empresaLogandoIndex].primeiroAcesso = false;
-            
             localStorage.setItem("banco_empresas_web", JSON.stringify(bancoEmpresas));
 
-            // Esconde o modal e faz o login na plataforma
             const modalEl = document.getElementById('modalTrocarSenha');
             const modalInstance = bootstrap.Modal.getInstance(modalEl);
             modalInstance.hide();
             
             sessionStorage.setItem("admin_autenticado", "true");
+            // ENVIANDO O NOME DA EMPRESA LOGO APÓS A TROCA DA SENHA
+            sessionStorage.setItem("nome_empresa_ativa", bancoEmpresas[empresaLogandoIndex].nome); 
             
-            // Aguarda a animação do modal fechar e redireciona
             setTimeout(() => {
                 window.location.href = "admin.html";
             }, 300);

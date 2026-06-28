@@ -3,56 +3,58 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login - Controle de Ponto</title>
+    <title>Login - Ponto Web</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
-        body { font-family: 'Segoe UI', Arial, sans-serif; background-color: #f8fafc; color: #1e293b; display: flex; align-items: center; justify-content: center; min-height: 100vh; padding: 16px; }
+        body { font-family: 'Segoe UI', Arial, sans-serif; background-color: #f0f4f8; color: #1e293b; display: flex; align-items: center; justify-content: center; min-height: 100vh; padding: 16px; }
 
-        .login-container { max-width: 400px; width: 100%; background: #ffffff; border-radius: 16px; border: 1px solid #e2e8f0; box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.05); padding: 32px; text-align: center; }
+        /* Card de Login baseado no anexo */
+        .login-card { max-width: 400px; width: 100%; background: #ffffff; border-radius: 24px; box-shadow: 0 15px 35px rgba(0, 0, 0, 0.05); padding: 40px 32px; text-align: center; display: flex; flex-direction: column; align-items: center; }
         
-        /* Identidade Visual Superior */
-        .login-header { margin-bottom: 28px; }
-        .login-header .icon { font-size: 2.5rem; display: inline-block; margin-bottom: 8px; }
-        .login-header h2 { font-size: 1.5rem; font-weight: 700; color: #0f172a; }
-        .login-header p { font-size: 0.9rem; color: #64748b; margin-top: 4px; }
+        /* Ícone Laranja do Topo */
+        .brand-icon { background-color: #f97316; color: white; width: 64px; height: 64px; border-radius: 16px; display: flex; align-items: center; justify-content: center; font-size: 2rem; margin-bottom: 20px; box-shadow: 0 4px 12px rgba(249, 115, 22, 0.2); }
 
-        /* Estrutura do Formulário */
-        .form-login { display: flex; flex-direction: column; gap: 16px; text-align: left; }
-        .input-group { display: flex; flex-direction: column; gap: 6px; }
-        .input-group label { font-size: 0.85rem; font-weight: 600; color: #475569; }
-        .input-group input { padding: 12px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 0.95rem; width: 100%; outline: none; background-color: #f8fafc; transition: all 0.2s; }
-        .input-group input:focus { border-color: #f97316; background-color: #fff; box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.1); }
+        /* Títulos */
+        .login-card h2 { font-size: 1.6rem; font-weight: 700; color: #1e293b; margin-bottom: 4px; }
+        .login-card p { font-size: 0.88rem; color: #94a3b8; margin-bottom: 28px; font-weight: 500; }
+
+        /* Formulário e Inputs Limpos do Anexo */
+        .form-login { width: 100%; display: flex; flex-direction: column; gap: 14px; }
+        .input-field { width: 100%; padding: 14px 16px; border: 1px solid #e2e8f0; border-radius: 12px; font-size: 0.95rem; outline: none; background-color: #ffffff; color: #334155; transition: all 0.2s ease; }
+        .input-field::placeholder { color: #cbd5e1; }
+        .input-field:focus { border-color: #f97316; box-shadow: 0 0 0 4px rgba(249, 115, 22, 0.08); }
         
-        .btn-entrar { background-color: #f97316; color: white; border: none; padding: 14px; border-radius: 8px; font-weight: 600; cursor: pointer; width: 100%; margin-top: 12px; font-size: 1rem; transition: background 0.2s; }
-        .btn-entrar:hover { background-color: #ea580c; }
+        /* Botão Escuro do Anexo */
+        .btn-entrar { background-color: #0f172a; color: white; border: none; padding: 15px; border-radius: 12px; font-weight: 600; cursor: pointer; width: 100%; margin-top: 10px; font-size: 0.95rem; display: flex; align-items: center; justify-content: center; gap: 8px; transition: background 0.2s; box-shadow: 0 4px 12px rgba(15, 23, 42, 0.15); }
+        .btn-entrar:hover { background-color: #1e293b; }
 
-        /* Mensagens de Alerta (Toast integrado ou tarja) */
-        .toast-notification { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(100px); background-color: #0f172a; color: #ffffff; padding: 14px 24px; border-radius: 10px; box-shadow: 0 10px 25px rgba(0,0,0,0.15); display: flex; align-items: center; gap: 12px; font-size: 0.9rem; font-weight: 500; opacity: 0; transition: all 0.3s ease; z-index: 9999; width: calc(100% - 32px); max-width: 360px; border-left: 4px solid #ef4444; text-align: center; justify-content: center; }
+        /* Link Esqueci Minha Senha em Laranja */
+        .link-esqueci { margin-top: 24px; font-size: 0.88rem; color: #f97316; text-decoration: none; font-weight: 600; transition: color 0.2s; cursor: pointer; }
+        .link-esqueci:hover { color: #ea580c; text-decoration: underline; }
+
+        /* Toast de Alerta */
+        .toast-notification { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(100px); background-color: #0f172a; color: #ffffff; padding: 14px 24px; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.15); display: flex; align-items: center; gap: 12px; font-size: 0.9rem; font-weight: 500; opacity: 0; transition: all 0.3s ease; z-index: 9999; width: calc(100% - 32px); max-width: 360px; border-left: 4px solid #ef4444; text-align: center; justify-content: center; }
         .toast-notification.show { transform: translateX(-50%) translateY(0); opacity: 1; }
     </style>
 </head>
 <body>
 
-    <div class="login-container">
-        <header class="login-header">
-            <span class="icon">⏱️</span>
-            <h2>Ponto Web</h2>
-            <p>Entre com suas credenciais de acesso</p>
-        </header>
+    <div class="login-card">
+        <div class="brand-icon">⏱️</div>
+        
+        <h2>Ponto Web</h2>
+        <p>Acesso ao Painel e Registros</p>
 
         <form id="loginForm" class="form-login">
-            <div class="input-group">
-                <label for="email">E-mail</label>
-                <input type="email" id="email" required placeholder="Ex: gestor@empresa.com">
-            </div>
+            <input type="email" id="email" class="input-field" required placeholder="Seu e-mail">
+            <input type="password" id="senha" class="input-field" required placeholder="Sua senha">
             
-            <div class="input-group">
-                <label for="senha">Senha</label>
-                <input type="password" id="senha" required placeholder="Digite sua senha">
-            </div>
-
-            <button type="submit" class="btn-entrar">Acessar Sistema</button>
+            <button type="submit" class="btn-entrar">
+                <span>➔</span> Entrar no Sistema
+            </button>
         </form>
+
+        <a class="link-esqueci" id="btnEsqueci">Esqueci minha senha</a>
     </div>
 
     <div id="toastNotification" class="toast-notification">
@@ -61,13 +63,15 @@
 
     <script type="module">
         import { auth, db } from './js/firebase-config.js';
-        import { signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
+        import { signInWithEmailAndPassword, sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
         import { doc, getDoc } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
 
         const loginForm = document.getElementById('loginForm');
+        const btnEsqueci = document.getElementById('btnEsqueci');
 
-        function mostrarToast(mensagem) {
+        function mostrarToast(mensagem, corBorda = "#ef4444") {
             const toast = document.getElementById('toastNotification');
+            toast.style.borderLeftColor = corBorda;
             document.getElementById('toastMessage').textContent = mensagem;
             toast.classList.add('show');
             setTimeout(() => { toast.classList.remove('show'); }, 3500);
@@ -81,31 +85,46 @@
                 const btn = e.submitter;
 
                 btn.disabled = true;
-                btn.textContent = "⌛ Autenticando...";
+                btn.style.opacity = "0.7";
+                btn.innerHTML = "⌛ Autenticando...";
 
                 try {
-                    // Faz o login no Auth do Firebase
                     const resultado = await signInWithEmailAndPassword(auth, email, senha);
-                    
-                    // Busca se é admin ou colaborador no banco de dados
                     const userDoc = await getDoc(doc(db, "usuarios", resultado.user.uid));
                     
                     if (userDoc.exists() && userDoc.data().tipo === "admin") {
                         window.location.href = "admin.html";
                     } else {
-                        // Se não for admin cadastrado explicitamente, assume o fluxo do colaborador
                         window.location.href = "colaborador.html";
                     }
                 } catch (err) {
                     console.error(err);
                     btn.disabled = false;
-                    btn.textContent = "Acessar Sistema";
+                    btn.style.opacity = "1";
+                    btn.innerHTML = "<span>➔</span> Entrar no Sistema";
                     
                     if (err.code === 'auth/wrong-password' || err.code === 'auth/user-not-found' || err.code === 'auth/invalid-credential') {
                         mostrarToast("E-mail ou senha incorretos.");
                     } else {
-                        mostrarToast("Erro no servidor: " + err.message);
+                        mostrarToast("Erro ao acessar: " + err.message);
                     }
+                }
+            };
+        }
+
+        // FUNÇÃO ADICIONAL: DISPARAR RESET DE SENHA SE PRECISAR
+        if (btnEsqueci) {
+            btnEsqueci.onclick = async () => {
+                const email = document.getElementById('email').value.trim();
+                if (!email) {
+                    mostrarToast("Digite seu e-mail no campo acima para redefinir a senha.");
+                    return;
+                }
+                try {
+                    await sendPasswordResetEmail(auth, email);
+                    mostrarToast("E-mail de redefinição enviado com sucesso!", "#10b981");
+                } catch (err) {
+                    mostrarToast("Erro ao enviar redefinição: " + err.message);
                 }
             };
         }

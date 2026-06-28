@@ -56,7 +56,10 @@
                 </div>
                 <div class="mb-4">
                     <label class="form-label small fw-semibold text-secondary">Senha de Acesso</label>
-                    <input type="password" id="loginSenha" placeholder="Digite sua senha" class="form-control" required>
+                    <div class="input-group">
+                        <input type="password" id="loginSenha" placeholder="Digite sua senha" class="form-control" required>
+                        <button class="btn btn-outline-secondary" type="button" onclick="toggleSenhaLogin('loginSenha', this)">👁️</button>
+                    </div>
                 </div>
                 <button type="submit" class="btn btn-primary w-100 py-2.5 fw-bold">Entrar na Área de Trabalho</button>
             </form>

@@ -19,7 +19,6 @@ function inicializarRelogio() {
     }, 1000);
 }
 
-// CORREÇÃO E IMPLEMENTAÇÃO: Função para alternar a visibilidade da senha no login
 function toggleSenhaLogin(idInput, botao) {
     const input = document.getElementById(idInput);
     if(input.type === "password") {
@@ -33,7 +32,7 @@ function toggleSenhaLogin(idInput, botao) {
 
 function exibirAvisoColab(titulo, mensagem) {
     document.getElementById("modalColabTitulo").innerText = titulo;
-    document.getElementById("modalColabMensagem").innerHTML = message = mensagem;
+    document.getElementById("modalColabMensagem").innerHTML = mensagem;
     new bootstrap.Modal(document.getElementById("modalFeedbackColab")).show();
 }
 
@@ -42,19 +41,18 @@ function verificarSessaoExistente() {
     if (sessaoSalva) {
         usuarioLogado = JSON.parse(sessaoSalva);
         renderizarFichaFuncionario();
+        renderizarHistoricoHoje(); // Renderiza filtrando apenas o dia de hoje
         irParaTela("horarios");
     } else {
         irParaTela("login");
     }
 }
 
-// OTIMIZADO: Ajustado para buscar de forma precisa na base salva pelo Admin
 function executarLoginColaborador(event) {
     event.preventDefault();
     const email = document.getElementById("loginEmail").value.trim().toLowerCase();
     const senha = document.getElementById("loginSenha").value.trim();
 
-    // Captura o banco exato criado no painel administrativo
     const rawUsers = localStorage.getItem("banco_usuarios_ponto");
     const listaUsuarios = rawUsers ? JSON.parse(rawUsers) : [];
 
@@ -70,6 +68,7 @@ function executarLoginColaborador(event) {
         localStorage.setItem("ponto_web_sessao_colab", JSON.stringify(usuarioLogado));
         
         renderizarFichaFuncionario();
+        renderizarHistoricoHoje();
         irParaTela("horarios");
         exibirAvisoColab("🔓 Logado", `Ficha validada com sucesso!`);
     } else {
@@ -87,15 +86,23 @@ function renderizarFichaFuncionario() {
     `;
 }
 
-function executarLogoutColaborador() {
-    localStorage.removeItem("ponto_web_sessao_colab");
-    usuarioLogado = null;
-    document.getElementById("loginEmail").value = "";
-    document.getElementById("loginSenha").value = "";
-    irParaTela("login");
-}
-
+// TRAVA DE SEGURANÇA E ANTIDUPLICAÇÃO: Verifica se o botão clicado já foi batido no dia de hoje
 function solicitarMarcacaoPonto(tipo) {
+    const hojeStr = new Date().toLocaleDateString("pt-BR");
+    const todosOsLogs = JSON.parse(localStorage.getItem("historico_pontos_global") || "[]");
+    
+    // Procura se o colaborador logado já registrou esse tipo específico de ponto hoje
+    const jaRegistrouHoje = todosOsLogs.some(log => 
+        log.colaboradorId === usuarioLogado.id && 
+        log.data === hojeStr && 
+        log.tipo === tipo
+    );
+
+    if (jaRegistrouHoje) {
+        exibirAvisoColab("⚠️ Registro Duplicado", `Você já realizou a marcação de <strong>${tipo}</strong> hoje. Escolha outra opção!`);
+        return; // Cancela a abertura do modal de confirmação
+    }
+
     tipoPontoPendente = tipo;
     document.getElementById("txtTipoPontoConfirmar").innerText = tipo;
     new bootstrap.Modal(document.getElementById("modalConfirmarPonto")).show();
@@ -115,26 +122,62 @@ function confirmarEGravarPonto() {
             const dataInjetada = agora.toLocaleDateString("pt-BR"); 
             const horaMarcada = agora.toLocaleTimeString("pt-BR", { hour: '2-digit', minute: '2-digit' });
             
-            const txtSemPontos = document.getElementById("txtSemPontos");
-            if (txtSemPontos) txtSemPontos.style.display = "none";
+            // Persistência robusta no repositório global lido pelo Administrador
+            const todosOsLogs = JSON.parse(localStorage.getItem("historico_pontos_global") || "[]");
+            todosOsLogs.push({
+                colaboradorId: usuarioLogado.id,
+                nome: usuarioLogado.nome,
+                data: dataInjetada,
+                tipo: tipoPontoPendente,
+                hora: horaMarcada
+            });
+            localStorage.setItem("historico_pontos_global", JSON.stringify(todosOsLogs));
 
-            const containerRegistros = document.getElementById("listaRegistrosHoje");
-            const novoLog = document.createElement("div");
-            novoLog.className = "log-registro";
-            novoLog.innerHTML = `
-                <span class="tipo">● ${tipoPontoPendente}</span>
-                <span class="data-log">(${dataInjetada})</span>
-                <span class="hora">${horaMarcada}</span>
-            `;
-            containerRegistros.appendChild(novoLog);
+            renderizarHistoricoHoje(); // Atualiza a lista filtrada em tempo real
 
-            exibirAvisoColab("🎯 Sucesso!", `Seu ponto de <strong>${tipoPontoPendente}</strong> das ${horaMarcada} foi validado geograficamente e gravado no dia ${dataInjetada}!`);
+            exibirAvisoColab("🎯 Sucesso!", `Seu ponto de <strong>${tipoPontoPendente}</strong> das ${horaMarcada} foi gravado com validação geográfica ativa!`);
         },
         (error) => { 
-            exibirAvisoColab("Erro de Autenticação", "Por favor, ative a localização/GPS do seu aparelho para validar o ponto."); 
+            exibirAvisoColab("Erro de Autenticação", "Por favor, ative o GPS do seu aparelho para validar o ponto."); 
         },
         { enableHighAccuracy: true, timeout: 7000 }
     );
+}
+
+// CORREÇÃO: Mostra na tela estritamente os pontos batidos no dia de hoje. Amanhã começará limpa!
+function renderizarHistoricoHoje() {
+    const hojeStr = new Date().toLocaleDateString("pt-BR");
+    const containerRegistros = document.getElementById("listaRegistrosHoje");
+    containerRegistros.innerHTML = "";
+
+    const todosOsLogs = JSON.parse(localStorage.getItem("historico_pontos_global") || "[]");
+    
+    // Filtra para exibir em tempo de execução somente os logs de hoje do colaborador conectado
+    const logsDeHoje = todosOsLogs.filter(log => log.colaboradorId === usuarioLogado.id && log.data === hojeStr);
+
+    if(logsDeHoje.length === 0) {
+        containerRegistros.innerHTML = `<div id="txtSemPontos" class="text-center text-muted small py-2">Nenhum ponto registrado hoje.</div>`;
+        return;
+    }
+
+    logsDeHoje.forEach(log => {
+        const div = document.createElement("div");
+        div.className = "log-registro";
+        div.innerHTML = `
+            <span class="tipo">● ${log.tipo}</span>
+            <span class="data-log">(${log.data})</span>
+            <span class="hora">${log.hora}</span>
+        `;
+        containerRegistros.appendChild(div);
+    });
+}
+
+function executarLogoutColaborador() {
+    localStorage.removeItem("ponto_web_sessao_colab");
+    usuarioLogado = null;
+    document.getElementById("loginEmail").value = "";
+    document.getElementById("loginSenha").value = "";
+    irParaTela("login");
 }
 
 function irParaTela(nomeTela) {

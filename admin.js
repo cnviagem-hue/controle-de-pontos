@@ -70,7 +70,7 @@ function mascaraCEPHtml(input) {
 function fazerLogout() {
     localStorage.removeItem("ponto_web_sessao_colab");
     sessionStorage.clear();
-    window.location.href = "index.html";
+    window.location.href = "login-admin.html";
 }
 
 function resetarBancoGeral() {
@@ -139,7 +139,6 @@ function cadastrarUsuario(event) {
             foto: foto,
             permissao: document.getElementById('cadPermissao').value,
             status: "ATIVO",
-            // Novas propriedades atreladas ao usuário para o controle de horas
             cargaSegSex: document.getElementById('cadCargaSegSex').value || "08:00",
             cargaSab: document.getElementById('cadCargaSab').value || "04:00",
             cargaDom: document.getElementById('cadCargaDom').value || "00:00"
@@ -152,7 +151,6 @@ function cadastrarUsuario(event) {
         sincronizarFiltrosColaboradores();
         
         document.getElementById('formUsuario').reset();
-        // Restaura valores padroes na interface
         document.getElementById('cadCargaSegSex').value = "08:00";
         document.getElementById('cadCargaSab').value = "04:00";
         document.getElementById('cadCargaDom').value = "00:00";
@@ -209,7 +207,6 @@ function abrirModalEditarFicha(index) {
     document.getElementById('editFotoFile').value = ""; 
     document.getElementById('editPermissao').value = u.permissao;
 
-    // Popula a carga horária na ficha de edição
     document.getElementById('editCargaSegSex').value = u.cargaSegSex || "08:00";
     document.getElementById('editCargaSab').value = u.cargaSab || "04:00";
     document.getElementById('editCargaDom').value = u.cargaDom || "00:00";
@@ -230,7 +227,6 @@ function confirmarEdicaoFicha() {
         u.senha = document.getElementById('editSenha').value.trim();
         u.permissao = document.getElementById('editPermissao').value;
         
-        // Salva a carga horária editada
         u.cargaSegSex = document.getElementById('editCargaSegSex').value || "08:00";
         u.cargaSab = document.getElementById('editCargaSab').value || "04:00";
         u.cargaDom = document.getElementById('editCargaDom').value || "00:00";
@@ -445,25 +441,23 @@ function processarLogsLocalStorage() {
         const objetoData = new Date(partesData[2], partesData[1] - 1, partesData[0]);
         const diaDaSemana = objetoData.getDay(); 
 
-        // BUSCA A CARGA DO COLABORADOR ESPECÍFICO (substituindo o antigo código fixo)
         const user = bancoUsuarios.find(u => String(u.id) === String(r.colaboradorId));
         const cargaSegSex = user ? (user.cargaSegSex || "08:00") : "08:00";
         const cargaSab = user ? (user.cargaSab || "04:00") : "04:00";
         const cargaDom = user ? (user.cargaDom || "00:00") : "00:00";
 
         let cargaObrigatoriaDoDia = 0; 
-        if (diaDaSemana === 6) { // Sábado
+        if (diaDaSemana === 6) { 
             const minCalc = bolarTempoParaMinutos(cargaSab);
             cargaObrigatoriaDoDia = minCalc !== null ? minCalc : 240;
-        } else if (diaDaSemana === 0) { // Domingo
+        } else if (diaDaSemana === 0) { 
             const minCalc = bolarTempoParaMinutos(cargaDom);
             cargaObrigatoriaDoDia = minCalc !== null ? minCalc : 0;
-        } else { // Segunda a Sexta
+        } else { 
             const minCalc = bolarTempoParaMinutos(cargaSegSex);
             cargaObrigatoriaDoDia = minCalc !== null ? minCalc : 480;
         }
 
-        // Calcula a hora extra baseada na regra individual
         if(minutosTrabalhados > cargaObrigatoriaDoDia) {
             const extra = minutosTrabalhados - cargaObrigatoriaDoDia;
             r.minutosExtrasNum = extra;
@@ -712,6 +706,10 @@ function salvarConfiguracoes() {
     
     localStorage.setItem("configuracoes_empresa", JSON.stringify(configs));
 
+    // ATUALIZA O NOME DA EMPRESA NO MENU LATERAL IMEDIATAMENTE
+    const elSidebar = document.getElementById("sidebarNomeEmpresa");
+    if(elSidebar) elSidebar.innerText = configs.nomeEmpresa;
+
     const btnSalvar = document.getElementById("btnSalvarConfigs");
     controlarCamposConfiguracao(true);
     btnSalvar.classList.remove("btn-primary");
@@ -740,6 +738,15 @@ function carregarConfiguracoes() {
             document.getElementById("boxEndereco").style.display = "block";
             document.getElementById("enderecoTexto").innerText = configs.endereco;
         }
+        
+        // CARREGA O NOME DA EMPRESA NO MENU LATERAL AO ABRIR O PAINEL
+        const elSidebar = document.getElementById("sidebarNomeEmpresa");
+        if(elSidebar) elSidebar.innerText = configs.nomeEmpresa || "UniCesumar";
+        
+    } else {
+        // Fallback caso não tenha configuração salva
+        const elSidebar = document.getElementById("sidebarNomeEmpresa");
+        if(elSidebar) elSidebar.innerText = "UniCesumar";
     }
 }
 
@@ -769,7 +776,6 @@ function inicializarDadosFicticios() {
         ];
         localStorage.setItem("banco_usuarios_ponto", JSON.stringify(bancoUsuarios));
     } else {
-        // Mapeia para garantir que quem já estava no banco receba a propriedade de horas e não quebre
         bancoUsuarios = JSON.parse(rawUsers).map(u => ({
             ...u,
             cargaSegSex: u.cargaSegSex || "08:00",

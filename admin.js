@@ -238,7 +238,7 @@ function copiarLinkColaborador() {
 function sincronizarFiltrosColaboradores() {
     const select = document.getElementById('filtroRelatorioColaborador');
     const valorSelecionado = select.value;
-    select.innerHTML = '<option value="todos">-- Selecione um Colaborador --</option>'; // Força a ação de escolha
+    select.innerHTML = '<option value="todos">-- Selecione um Colaborador --</option>'; 
     bancoUsuarios.forEach(u => {
         select.innerHTML += `<option value="${u.id}">${u.nome}</option>`;
     });
@@ -317,7 +317,6 @@ function processarLogsLocalStorage() {
     return listaFinal;
 }
 
-// AJUSTE: Não exibe nada até o ADM escolher um funcionário na lista
 function filtrarRelatorioTela() {
     const filtroColab = document.getElementById('filtroRelatorioColaborador').value;
     const filtroInicio = document.getElementById('filtroRelatorioInicio').value;
@@ -384,7 +383,7 @@ function filtrarRelatorioTela() {
     tabelaBody.appendChild(trTotal);
 }
 
-// ATUALIZAÇÃO CIRÚRGICA: Injeta XML de propriedades para forçar as cores (Laranja, Verde, Vermelho) no Excel nativo
+// ATUALIZAÇÃO: Injeta mesclagem de colunas (!merges) para os textos compridos caberem perfeitamente.
 function exportarPontosExcel() {
     const filtroColab = document.getElementById('filtroRelatorioColaborador').value;
     
@@ -401,9 +400,11 @@ function exportarPontosExcel() {
     }
 
     const colabNome = dadosParaPlanilha[0].nome;
+    const dataEmissao = new Date().toLocaleDateString('pt-BR');
+    
     const matrizPlanilha = [
         ["DRE - ESPELHO DE PONTO EXECUTIVO"],
-        [`Colaborador: ${colabNome} | Emissão: ${new Date().toLocaleDateString('pt-BR')}`],
+        [`Colaborador: ${colabNome} | Emissão: ${dataEmissao}`],
         [],
         ["Data", "Colaborador", "Entrada", "Almoço Ida", "Almoço Volta", "Saída", "Horas Trab.", "Horas Extras"]
     ];
@@ -417,25 +418,41 @@ function exportarPontosExcel() {
         matrizPlanilha.push([r.data, r.nome, r.entrada, r.almocoIda, r.almocoVolta, r.saida, r.horasTrabalhadas, r.horasExtras]);
     });
 
-    matrizPlanilha.push([]);
-    matrizPlanilha.push(["TOTAL DE HORAS DO PERÍODO:", "", "", "", "", "", formatarMinutosParaString(somaTrab), formatarMinutosParaString(somaExtra)]);
+    matrizPlanilha.push([]); // Linha em branco
+    
+    // Insere a linha de total
+    matrizPlanilha.push([
+        "TOTAL DE HORAS TRABALHADAS DO PERÍODO:", 
+        "", "", "", "", "", 
+        formatarMinutosParaString(somaTrab), 
+        formatarMinutosParaString(somaExtra)
+    ]);
 
     const worksheet = XLSX.utils.aoa_to_sheet(matrizPlanilha);
 
-    // INJEÇÃO DOS ESTILOS COLORIDOS NATIVOS NAS CÉLULAS DO SHEETJS XML
-    const orangeFill = { fill: { fgColor: { rgb: "F97316" } }, font: { bold: true, color: { rgb: "FFFFFF" }, size: 12 }, alignment: { horizontal: "center" } };
-    const greenHeader = { fill: { fgColor: { rgb: "16A34A" } }, font: { bold: true, color: { rgb: "FFFFFF" } }, alignment: { horizontal: "center" } };
-    const greyTotal = { fill: { fgColor: { rgb: "E5E7EB" } }, font: { bold: true, color: { rgb: "000000" } } };
+    // Definição de Estilos Visuais Nativos
+    const orangeFill = { fill: { fgColor: { rgb: "F97316" } }, font: { bold: true, color: { rgb: "FFFFFF" }, size: 12 }, alignment: { horizontal: "center", vertical: "center" } };
+    const greyTotalAlignRight = { fill: { fgColor: { rgb: "E5E7EB" } }, font: { bold: true, color: { rgb: "000000" } }, alignment: { horizontal: "right", vertical: "center" } };
+    const greyTotalGreen = { fill: { fgColor: { rgb: "E5E7EB" } }, font: { bold: true, color: { rgb: "16A34A" } }, alignment: { horizontal: "center", vertical: "center" } };
+    const greyTotalRed = { fill: { fgColor: { rgb: "E5E7EB" } }, font: { bold: true, color: { rgb: "EF4444" } }, alignment: { horizontal: "center", vertical: "center" } };
 
-    // Aplica o topo laranja idêntico ao modelo DRE na linha 1
+    // Aplica o topo laranja na linha 1
     worksheet['A1'].s = orangeFill;
     
-    // Aplica formatação cinza no fechamento de totais na última linha
+    // Aplica os estilos cinzas na última linha
     const ultimaLinhaIndex = matrizPlanilha.length;
-    if(worksheet[`A${ultimaLinhaIndex}`]) worksheet[`A${ultimaLinhaIndex}`].s = greyTotal;
-    if(worksheet[`G${ultimaLinhaIndex}`]) worksheet[`G${ultimaLinhaIndex}`].s = { font: { bold: true, color: { rgb: "16A34A" } } };
-    if(worksheet[`H${ultimaLinhaIndex}`]) worksheet[`H${ultimaLinhaIndex}`].s = { font: { bold: true, color: { rgb: "EF4444" } } };
+    if(worksheet[`A${ultimaLinhaIndex}`]) worksheet[`A${ultimaLinhaIndex}`].s = greyTotalAlignRight;
+    if(worksheet[`G${ultimaLinhaIndex}`]) worksheet[`G${ultimaLinhaIndex}`].s = greyTotalGreen;
+    if(worksheet[`H${ultimaLinhaIndex}`]) worksheet[`H${ultimaLinhaIndex}`].s = greyTotalRed;
 
+    // MESCLAGEM DE CÉLULAS (MERGES): Une as colunas para o texto caber inteiro e alinhado
+    worksheet['!merges'] = [
+        { s: { r: 0, c: 0 }, e: { r: 0, c: 7 } }, // Linha 1: Título DRE centralizado de A1 até H1
+        { s: { r: 1, c: 0 }, e: { r: 1, c: 7 } }, // Linha 2: Subtítulo de A2 até H2
+        { s: { r: ultimaLinhaIndex - 1, c: 0 }, e: { r: ultimaLinhaIndex - 1, c: 5 } } // Última Linha: Mescla do A ao F para caber o texto "TOTAL DE HORAS..." e alinhar à direita
+    ];
+
+    // Largura das Colunas
     worksheet['!cols'] = [
         { wch: 12 }, { wch: 45 }, { wch: 10 }, { wch: 12 }, { wch: 14 }, { wch: 10 }, { wch: 14 }, { wch: 14 }
     ];

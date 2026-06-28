@@ -145,7 +145,7 @@ function renderTabelaComAtualizacao() {
     tabela.innerHTML = "";
     
     if(bancoUsuarios.length === 0) {
-        tabela.innerHTML = `<tr><td colspan="9" class="text-center text-muted small py-3">Nenhum funcionário cadastrado na base.</td></tr>`;
+        tabela.innerHTML = `<tr><td colspan="10" class="text-center text-muted small py-3">Nenhum funcionário cadastrado na base.</td></tr>`;
         return;
     }
 
@@ -164,7 +164,8 @@ function renderTabelaComAtualizacao() {
             <td><span class="badge ${badgeStatus} px-2.5">${u.status}</span></td>
             <td class="text-center">
                 <button class="btn btn-sm btn-outline-primary me-1" onclick="abrirModalEditarFicha(${u.id})">✏️ Ficha</button>
-                <button class="btn btn-sm btn-outline-danger" onclick="bloquearUsuario(${u.id})">🔒 ${u.status === 'ATIVO' ? 'Bloquear' : 'Ativar'}</button>
+                <button class="btn btn-sm btn-outline-danger me-1" onclick="bloquearUsuario(${u.id})">🔒 ${u.status === 'ATIVO' ? 'Bloquear' : 'Ativar'}</button>
+                <button class="btn btn-sm btn-danger" onclick="excluirUsuario(${u.id})">🗑️ Excluir</button>
             </td>
         `;
         tabela.appendChild(tr);
@@ -172,7 +173,7 @@ function renderTabelaComAtualizacao() {
 }
 
 function abrirModalEditarFicha(id) {
-    usuarioSelecionadoId = parseInt(id); // Garante a busca pelo tipo numérico do ID
+    usuarioSelecionadoId = parseInt(id);
     const u = bancoUsuarios.find(x => x.id === usuarioSelecionadoId);
     if(!u) return;
 
@@ -212,16 +213,31 @@ function confirmarEdicaoFicha() {
     });
 }
 
+// ADICIONADO: Função para exclusão definitiva do funcionário
+function excluirUsuario(id) {
+    const u = bancoUsuarios.find(x => x.id === parseInt(id));
+    if(!u) return;
+    
+    if(confirm(`Tem certeza absoluta que deseja remover permanentemente o funcionário ${u.nome}? Esta ação não pode ser desfeita.`)) {
+        bancoUsuarios = bancoUsuarios.filter(x => x.id !== parseInt(id));
+        localStorage.setItem("banco_usuarios_ponto", JSON.stringify(bancoUsuarios));
+        renderTabelaComAtualizacao();
+        sincronizarFiltrosColaboradores();
+        exibirAlertaTop("🗑️ Removido", "O colaborador foi excluído da base com sucesso.");
+    }
+}
+
 function bolarTempoParaMinutos(strHora) {
     if(!strHora || strHora === "-" || !strHora.includes(":")) return null;
     const partes = strHora.split(':');
     return parseInt(partes[0], 10) * 60 + parseInt(partes[1], 10);
 }
 
+// CORREÇÃO CRÍTICA DA SINTAXE: Removida a atribuição dupla incorreta que quebrava o script
 function formatarMinutosParaString(minutosTotais) {
     if(minutosTotais <= 0) return "00:00";
     const hrs = Math.floor(minutosTotais / 60);
-    const mins = minutesTotais = minutosTotais % 60;
+    const mins = minutosTotais % 60;
     return `${hrs.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}`;
 }
 
@@ -459,7 +475,6 @@ function exportarPontosExcel() {
 function inicializarDadosFicticios() {
     const rawUsers = localStorage.getItem("banco_usuarios_ponto");
     if(!rawUsers || JSON.parse(rawUsers).length === 0) {
-        // ALINHAMENTO DEFINITIVO: Senha configurada como "Entrada123" conforme base real da imagem
         bancoUsuarios = [
             { id: 1, nome: "ADRIANA SANTARINE DE MENDONÇA DINIZ", cpf: "809.017.781-68", telefone: "(64) 98141-0002", email: "adrianasantarinediniz@gmail.com", senha: "Entrada123", foto: "https://ui-avatars.com/api/?name=Adriana+Diniz&background=f97316&color=fff", permissao: "Celular", status: "ATIVO" }
         ];

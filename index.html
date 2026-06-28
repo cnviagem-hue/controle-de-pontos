@@ -9,7 +9,7 @@
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body { 
-            background-color: #f4f7f6; /* Fundo cinza bem claro */
+            background-color: #f4f7f6; 
             font-family: 'Segoe UI', Arial, sans-serif; 
             min-height: 100vh;
             display: flex;
@@ -32,7 +32,7 @@
             border: 1px solid #eaeaea;
         }
 
-        /* LOGO ESTILO ORIGINAL */
+        /* LOGO ORIGINAL */
         .logo-area { text-align: center; margin-bottom: 30px; }
         .logo-area h2 { font-size: 2.2rem; color: #111827; font-weight: 900; letter-spacing: -0.5px; margin-bottom: 2px; }
         .logo-area span { color: #f97316; }
@@ -42,7 +42,7 @@
         #secao-login, #secao-horarios { display: none; }
         #secao-login.active, #secao-horarios.active { display: block; }
 
-        /* INPUTS ESTILO ORIGINAL */
+        /* INPUTS ORIGINAIS */
         .form-label { font-weight: 700; font-size: 0.85rem; color: #111827; }
         .form-control {
             background-color: #ffffff;
@@ -73,7 +73,7 @@
         }
         .btn-login:hover { background-color: #ea580c; color: white; }
 
-        /* BOTÕES DE PONTO ESTILO ORIGINAL */
+        /* BOTÕES DE PONTO ORIGINAIS */
         .btn-ponto {
             width: 100%;
             padding: 14px;
@@ -84,16 +84,18 @@
             border: none;
             color: white;
             transition: opacity 0.2s;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
         }
-        .btn-ponto:hover { opacity: 0.9; }
+        .btn-ponto:hover { opacity: 0.9; color: white; }
         
-        .btn-entrada { background-color: #10b981; } /* Verde */
-        .btn-pausa { background-color: #f59e0b; }   /* Laranja/Amarelo */
-        .btn-saida { background-color: #ef4444; }   /* Vermelho */
+        .btn-entrada { background-color: #22c55e; } /* Verde Original */
+        .btn-pausa-ida { background-color: #f59e0b; } /* Amarelo Original */
+        .btn-pausa-volta { background-color: #f97316; } /* Laranja Original */
+        .btn-saida { background-color: #ef4444; } /* Vermelho Original */
 
         /* CAIXA DE HISTÓRICO ORIGINAL */
         .historico-box { background-color: #f8fafc; border-radius: 8px; padding: 20px 16px; margin-top: 30px; border: 1px solid #e2e8f0; }
-        .historico-titulo { font-size: 0.8rem; font-weight: 700; color: #64748b; margin-bottom: 15px; }
+        .historico-titulo { font-size: 0.8rem; font-weight: 700; color: #64748b; margin-bottom: 15px; text-transform: uppercase; }
         
         .log-registro { display: flex; justify-content: space-between; align-items: center; background: white; padding: 12px; border-radius: 6px; margin-bottom: 8px; border: 1px solid #e2e8f0; font-size: 0.9rem; }
         .log-registro .tipo { font-weight: 700; color: #111827; }
@@ -102,8 +104,10 @@
 
         /* LINK ADMIN NO RODAPÉ DO LOGIN */
         .link-admin {
-            display: block;
-            text-align: center;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 6px;
             margin-top: 25px;
             padding-top: 20px;
             border-top: 1px solid #f3f4f6;
@@ -155,7 +159,7 @@
                 <!-- Foto e Nome Injetados pelo JS -->
             </div>
 
-            <!-- RELÓGIO OCULTO PARA NÃO QUEBRAR O JS, MAS MANTENDO O VISUAL ORIGINAL -->
+            <!-- Mantendo o relógio do script escondido para não quebrar a lógica -->
             <div style="display: none;">
                 <div id="relogioDigital">00:00:00</div>
                 <div id="dataAtualStr">Carregando data...</div>
@@ -165,10 +169,10 @@
                 <button type="button" class="btn-ponto btn-entrada" onclick="solicitarMarcacaoPonto('Entrada')">
                     🟢 Bater Ponto - Entrada
                 </button>
-                <button type="button" class="btn-ponto btn-pausa" onclick="solicitarMarcacaoPonto('Almoço Ida')">
+                <button type="button" class="btn-ponto btn-pausa-ida" onclick="solicitarMarcacaoPonto('Almoço Ida')">
                     ⏸️ Início do Almoço
                 </button>
-                <button type="button" class="btn-ponto btn-pausa" onclick="solicitarMarcacaoPonto('Almoço Volta')">
+                <button type="button" class="btn-ponto btn-pausa-volta" onclick="solicitarMarcacaoPonto('Almoço Volta')">
                     ▶️ Volta do Almoço
                 </button>
                 <button type="button" class="btn-ponto btn-saida" onclick="solicitarMarcacaoPonto('Saída')">

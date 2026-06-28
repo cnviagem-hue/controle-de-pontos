@@ -20,7 +20,9 @@ function alternarAba(nomeAba) {
 
 function exibirAlertaTop(titulo, message) {
     document.getElementById('modalTitulo').innerText = titulo;
-    document.getElementById('modalMensagem').innerHTML = message;
+    document.getElementById('modalMensagem').innerHTML = `<p class="fs-6 text-secondary mb-0">${message}</p>`;
+    // Garante que o rodapé padrão tenha apenas o botão de fechar OK básico
+    document.getElementById('modalFeedbackFooter').innerHTML = `<button type="button" class="btn btn-primary px-4 btn-sm" data-bs-dismiss="modal">OK</button>`;
     new bootstrap.Modal(document.getElementById('modalFeedback')).show();
 }
 
@@ -67,9 +69,9 @@ function mascaraCEPHtml(input) {
     input.value = valor;
 }
 
-function做Logout() {
-    // Limpa os dados de sessão do administrador de forma segura
-    localStorage.removeItem("usuario_logado");
+// FUNÇÃO DE LOGOUT: Limpa sessões e desloga com segurança
+function fazerLogout() {
+    localStorage.removeItem("ponto_web_sessao_colab");
     sessionStorage.clear();
     window.location.href = "index.html";
 }
@@ -124,7 +126,7 @@ function cadastrarUsuario(event) {
         }
         
         const novoUser = {
-            id: proximoIdUsuario,
+            id: String(proximoIdUsuario),
             nome: document.getElementById('cadNome').value.trim(),
             cpf: document.getElementById('cadCpf').value.trim(),
             telefone: document.getElementById('cadTelefone').value.trim(),
@@ -179,10 +181,9 @@ function renderTabelaComAtualizacao() {
     });
 }
 
-// CORREÇÃO: Busca resiliente que funciona tanto com IDs numéricos quanto Strings
 function abrirModalEditarFicha(id) {
-    usuarioSelecionadoId = id;
-    const u = bancoUsuarios.find(x => String(x.id) === String(id));
+    usuarioSelecionadoId = String(id);
+    const u = bancoUsuarios.find(x => String(x.id) === usuarioSelecionadoId);
     if(!u) return;
 
     document.getElementById('editNome').value = u.nome;
@@ -197,7 +198,7 @@ function abrirModalEditarFicha(id) {
 }
 
 function confirmarEdicaoFicha() {
-    const u = bancoUsuarios.find(x => String(x.id) === String(usuarioSelecionadoId));
+    const u = bancoUsuarios.find(x => String(x.id) === usuarioSelecionadoId);
     if(!u) return;
 
     otimizarEConverterFoto(document.getElementById('editFotoFile')).then(novaFotoBase64 => {
@@ -222,26 +223,29 @@ function confirmarEdicaoFicha() {
     });
 }
 
-// CORREÇÃO: Busca resiliente para abertura e disparo correto do Modal customizado do sistema
+// POP-UP DE EXCLUSÃO ESTILIZADO EM BOOTSTRAP (Padrão e Limpo do Sistema)
 function solicitarExclusaoUsuario(id) {
-    usuarioSelecionadoId = id;
-    const u = bancoUsuarios.find(x => String(x.id) === String(id));
+    usuarioSelecionadoId = String(id);
+    const u = bancoUsuarios.find(x => String(x.id) === usuarioSelecionadoId);
     if(!u) return;
 
     document.getElementById('modalTitulo').innerText = "⚠️ Confirmar Exclusão";
     document.getElementById('modalMensagem').innerHTML = `
-        <p>Tem certeza absoluta que deseja remover permanentemente o funcionário <strong>${u.nome}</strong>?</p>
-        <p class="text-danger small mb-0">Esta ação não poderá ser desfeita e removerá o acesso dele.</p>
-        <div class="d-flex justify-content-end gap-2 mt-3">
-            <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Não, Cancelar</button>
-            <button type="button" class="btn btn-danger btn-sm" onclick="executarExclusaoDefinitiva()">Sim, Excluir</button>
-        </div>
+        <p class="mb-2">Tem certeza absoluta que deseja remover permanentemente o funcionário <strong>${u.nome}</strong>?</p>
+        <p class="text-danger small mb-0">Esta ação não poderá ser desfeita e removerá o histórico dele da listagem.</p>
     `;
+    
+    // Injeta os botões de sim/não customizados no rodapé do Modal
+    document.getElementById('modalFeedbackFooter').innerHTML = `
+        <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Não, Cancelar</button>
+        <button type="button" class="btn btn-danger btn-sm px-3" onclick="executarExclusaoDefinitiva()">Sim, Excluir</button>
+    `;
+    
     new bootstrap.Modal(document.getElementById('modalFeedback')).show();
 }
 
-function executarExclusaoDefinitiva() {
-    bancoUsuarios = bancoUsuarios.filter(x => String(x.id) !== String(usuarioSelecionadoId));
+function ejecutarExclusaoDefinitiva() {
+    bancoUsuarios = bancoUsuarios.filter(x => String(x.id) !== usuarioSelecionadoId);
     localStorage.setItem("banco_usuarios_ponto", JSON.stringify(bancoUsuarios));
     
     const elementoModal = document.getElementById('modalFeedback');
@@ -259,6 +263,7 @@ function bolarTempoParaMinutos(strHora) {
     return parseInt(partes[0], 10) * 60 + parseInt(partes[1], 10);
 }
 
+// SINTAXE REVISADA: Removida qualquer atribuição duplicada
 function formatarMinutosParaString(minutosTotais) {
     if(minutosTotais <= 0) return "00:00";
     const hrs = Math.floor(minutosTotais / 60);
@@ -352,7 +357,7 @@ function processarLogsLocalStorage() {
         }
 
         if(minutosTrabalhados > cargaObrigatoriaDoDia) {
-            const extra = minutosTrabalhados - cargaObrigatoriaDoDia;
+            const extra = minutesTrabalhados - cargaObrigatoriaDoDia;
             r.minutosExtrasNum = extra;
             r.horasExtras = formatarMinutosParaString(extra);
         } else {
@@ -501,24 +506,24 @@ function inicializarDadosFicticios() {
     const rawUsers = localStorage.getItem("banco_usuarios_ponto");
     if(!rawUsers || JSON.parse(rawUsers).length === 0) {
         bancoUsuarios = [
-            { id: 1, nome: "ADRIANA SANTARINE DE MENDONÇA DINIZ", cpf: "809.017.781-68", telefone: "(64) 98141-0002", email: "adrianasantarinediniz@gmail.com", senha: "Entrada123", foto: "https://ui-avatars.com/api/?name=Adriana+Diniz&background=f97316&color=fff", permissao: "Celular", status: "ATIVO" }
+            { id: "1", nome: "ADRIANA SANTARINE DE MENDONÇA DINIZ", cpf: "809.017.781-68", telefone: "(64) 98141-0002", email: "adrianasantarinediniz@gmail.com", senha: "Entrada123", foto: "https://ui-avatars.com/api/?name=Adriana+Diniz&background=f97316&color=fff", permissao: "Celular", status: "ATIVO" }
         ];
         localStorage.setItem("banco_usuarios_ponto", JSON.stringify(bancoUsuarios));
         proximoIdUsuario = 2;
     } else {
         bancoUsuarios = JSON.parse(rawUsers);
         if(bancoUsuarios.length > 0) {
-            proximoIdUsuario = Math.max(...bancoUsuarios.map(u => u.id)) + 1;
+            proximoIdUsuario = Math.max(...bancoUsuarios.map(u => parseInt(u.id) || 0)) + 1;
         }
     }
 
     const rawLogs = localStorage.getItem("historico_pontos_global");
     if(!rawLogs) {
         localStorage.setItem("historico_pontos_global", JSON.stringify([
-            { colaboradorId: 1, nome: "ADRIANA SANTARINE DE MENDONÇA DINIZ", data: "24/06/2026", tipo: "Entrada", hora: "08:00" },
-            { colaboradorId: 1, nome: "ADRIANA SANTARINE DE MENDONÇA DINIZ", data: "24/06/2026", tipo: "Almoço Ida", hora: "12:00" },
-            { colaboradorId: 1, nome: "ADRIANA SANTARINE DE MENDONÇA DINIZ", data: "24/06/2026", tipo: "Almoço Volta", hora: "13:00" },
-            { colaboradorId: 1, nome: "ADRIANA SANTARINE DE MENDONÇA DINIZ", data: "24/06/2026", tipo: "Saída", hora: "18:00" }
+            { colaboradorId: "1", nome: "ADRIANA SANTARINE DE MENDONÇA DINIZ", data: "24/06/2026", tipo: "Entrada", hora: "08:00" },
+            { colaboradorId: "1", nome: "ADRIANA SANTARINE DE MENDONÇA DINIZ", data: "24/06/2026", tipo: "Almoço Ida", hora: "12:00" },
+            { colaboradorId: "1", nome: "ADRIANA SANTARINE DE MENDONÇA DINIZ", data: "24/06/2026", tipo: "Almoço Volta", hora: "13:00" },
+            { colaboradorId: "1", nome: "ADRIANA SANTARINE DE MENDONÇA DINIZ", data: "24/06/2026", tipo: "Saída", hora: "18:00" }
         ]));
     }
 }

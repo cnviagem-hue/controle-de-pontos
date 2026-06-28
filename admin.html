@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Painel Admin - Ponto Web</title>
-    <!-- Bootstrap 5 para design moderno -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -57,7 +56,6 @@
 </head>
 <body>
 
-    <!-- SIDEBAR -->
     <aside class="sidebar">
         <div style="width: 100%;">
             <div class="sidebar-header">
@@ -74,10 +72,8 @@
         </div>
     </aside>
 
-    <!-- CONTEÚDO PRINCIPAL -->
     <main class="main-content">
         
-        <!-- ABA 1: PESSOAL -->
         <div id="conteudo-pessoal" class="tab-content-section active">
             <div class="card-custom">
                 <div class="section-title">Gestão de Pessoal - Novo Usuário</div>
@@ -107,8 +103,8 @@
                             </div>
                         </div>
                         <div class="col-md-6">
-                            <label class="form-label fw-medium small">Link/URL da Foto de Perfil (Opcional)</label>
-                            <input type="url" id="cadFoto" placeholder="Ex: https://site.com/suafoto.jpg" class="form-control">
+                            <label class="form-label fw-medium small">Foto de Perfil (Otimização Automática)</label>
+                            <input type="file" id="cadFotoFile" accept="image/*" class="form-control">
                         </div>
                         <div class="col-12">
                             <label class="form-label fw-medium small">Dispositivo Autorizado</label>
@@ -143,14 +139,12 @@
                             </tr>
                         </thead>
                         <tbody id="tabelaEquipe">
-                            <!-- Inserido dinamicamente pelo admin.js -->
-                        </tbody>
+                            </tbody>
                     </table>
                 </div>
             </div>
         </div>
 
-        <!-- ABA 2: RELATÓRIOS -->
         <div id="conteudo-relatorios" class="tab-content-section">
             <div class="card-custom">
                 <div class="section-title">Espelhos de Ponto e Relatórios</div>
@@ -159,7 +153,6 @@
             </div>
         </div>
 
-        <!-- ABA 3: CONFIGURAÇÕES -->
         <div id="conteudo-configs" class="tab-content-section">
             <div class="card-custom">
                 <div class="section-title">Configuração da Empresa</div>
@@ -219,7 +212,6 @@
 
     </main>
 
-    <!-- MODAL DE NOTIFICAÇÃO MODERNA -->
     <div class="modal fade" id="modalFeedback" tabindex="-1" aria-hidden="true">
       <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content border-0 shadow-lg" style="border-radius:16px;">
@@ -237,7 +229,6 @@
       </div>
     </div>
 
-    <!-- MODAL EDITAR FICHA -->
     <div class="modal fade" id="modalEditarFicha" tabindex="-1" aria-hidden="true">
       <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content border-0 shadow-lg" style="border-radius:16px;">
@@ -271,8 +262,8 @@
                       </div>
                   </div>
                   <div class="col-12">
-                      <label class="form-label small fw-medium text-muted">Link/URL da Foto</label>
-                      <input type="url" id="editFoto" class="form-control">
+                      <label class="form-label small fw-medium text-muted">Alterar Foto de Perfil</label>
+                      <input type="file" id="editFotoFile" accept="image/*" class="form-control">
                   </div>
                   <div class="col-12">
                       <label class="form-label small fw-medium text-muted">Dispositivo Autorizado</label>

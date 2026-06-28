@@ -165,7 +165,7 @@ function renderTabelaComAtualizacao() {
             <td class="text-center">
                 <button class="btn btn-sm btn-outline-primary me-1" onclick="abrirModalEditarFicha(${u.id})">✏️ Ficha</button>
                 <button class="btn btn-sm btn-outline-danger me-1" onclick="bloquearUsuario(${u.id})">🔒 ${u.status === 'ATIVO' ? 'Bloquear' : 'Ativar'}</button>
-                <button class="btn btn-sm btn-danger" onclick="excluirUsuario(${u.id})">🗑️ Excluir</button>
+                <button class="btn btn-sm btn-danger" onclick="solicitarExclusaoUsuario(${u.id})">🗑️ Excluir</button>
             </td>
         `;
         tabela.appendChild(tr);
@@ -213,18 +213,37 @@ function confirmarEdicaoFicha() {
     });
 }
 
-// ADICIONADO: Função para exclusão definitiva do funcionário
-function excluirUsuario(id) {
-    const u = bancoUsuarios.find(x => x.id === parseInt(id));
+// POP-UP BONITO PADRÃO DO SISTEMA: Aciona a confirmação elegante por Modal Bootstrap
+function solicitarExclusaoUsuario(id) {
+    usuarioSelecionadoId = parseInt(id);
+    const u = bancoUsuarios.find(x => x.id === usuarioSelecionadoId);
     if(!u) return;
+
+    // Reutiliza a estrutura de feedback injetando botões customizados de Sim/Não para ficar lindo e nativo
+    document.getElementById('modalTitulo').innerText = "⚠️ Confirmar Exclusão";
+    document.getElementById('modalMensagem').innerHTML = `
+        <p>Tem certeza absoluta que deseja remover permanentemente o funcionário <strong>${u.nome}</strong>?</p>
+        <p class="text-danger small mb-0">Esta ação não poderá ser desfeita e removerá o acesso dele.</p>
+        <div class="d-flex justify-content-end gap-2 mt-3">
+            <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Não, Cancelar</button>
+            <button type="button" class="btn btn-danger btn-sm" onclick="executarExclusaoDefinitiva()">Sim, Excluir</button>
+        </div>
+    `;
+    new bootstrap.Modal(document.getElementById('modalFeedback')).show();
+}
+
+function executarExclusaoDefinitiva() {
+    bancoUsuarios = bancoUsuarios.filter(x => x.id !== usuarioSelecionadoId);
+    localStorage.setItem("banco_usuarios_ponto", JSON.stringify(bancoUsuarios));
     
-    if(confirm(`Tem certeza absoluta que deseja remover permanentemente o funcionário ${u.nome}? Esta ação não pode ser desfeita.`)) {
-        bancoUsuarios = bancoUsuarios.filter(x => x.id !== parseInt(id));
-        localStorage.setItem("banco_usuarios_ponto", JSON.stringify(bancoUsuarios));
-        renderTabelaComAtualizacao();
-        sincronizarFiltrosColaboradores();
-        exibirAlertaTop("🗑️ Removido", "O colaborador foi excluído da base com sucesso.");
-    }
+    // Fecha o modal de confirmação de forma limpa
+    const elementoModal = document.getElementById('modalFeedback');
+    const modalInstance = bootstrap.Modal.getInstance(elementoModal);
+    if(modalInstance) modalInstance.hide();
+
+    renderTabelaComAtualizacao();
+    sincronizarFiltrosColaboradores();
+    exibirAlertaTop("🗑️ Removido", "O colaborador foi excluído da base com sucesso.");
 }
 
 function bolarTempoParaMinutos(strHora) {
@@ -233,7 +252,6 @@ function bolarTempoParaMinutos(strHora) {
     return parseInt(partes[0], 10) * 60 + parseInt(partes[1], 10);
 }
 
-// CORREÇÃO CRÍTICA DA SINTAXE: Removida a atribuição dupla incorreta que quebrava o script
 function formatarMinutosParaString(minutosTotais) {
     if(minutosTotais <= 0) return "00:00";
     const hrs = Math.floor(minutosTotais / 60);
@@ -298,7 +316,7 @@ function processarLogsLocalStorage() {
     const listaFinal = Object.values(espelhosAgrupados);
 
     listaFinal.forEach(r => {
-        let minutosTrabalhados = 0;
+        let minutesTrabalhados = 0;
 
         const mEntrada = bolarTempoParaMinutos(r.entrada);
         const mAlmIda = bolarTempoParaMinutos(r.almocoIda);
@@ -306,14 +324,14 @@ function processarLogsLocalStorage() {
         const mSaida = bolarTempoParaMinutos(r.saida);
 
         if(mEntrada !== null && mAlmIda !== null && mAlmIda > mEntrada) {
-            minutosTrabalhados += (mAlmIda - mEntrada);
+            minutesTrabalhados += (mAlmIda - mEntrada);
         }
         if(mAlmVolta !== null && mSaida !== null && mSaida > mAlmVolta) {
-            minutosTrabalhados += (mSaida - mAlmVolta);
+            minutesTrabalhados += (mSaida - mAlmVolta);
         }
 
-        r.minutosTrabalhadosNum = minutosTrabalhados;
-        r.horasTrabalhadas = formatarMinutosParaString(minutosTrabalhados);
+        r.minutosTrabalhadosNum = minutesTrabalhados;
+        r.horasTrabalhadas = formatarMinutosParaString(minutesTrabalhados);
 
         const partesData = r.data.split('/');
         const objetoData = new Date(partesData[2], partesData[1] - 1, partesData[0]);
@@ -326,8 +344,8 @@ function processarLogsLocalStorage() {
             cargaObrigatoriaDoDia = 0;   
         }
 
-        if(minutosTrabalhados > cargaObrigatoriaDoDia) {
-            const extra = minutosTrabalhados - cargaObrigatoriaDoDia;
+        if(minutesTrabalhados > cargaObrigatoriaDoDia) {
+            const extra = minutesTrabalhados - cargaObrigatoriaDoDia;
             r.minutosExtrasNum = extra;
             r.horasExtras = formatarMinutosParaString(extra);
         } else {

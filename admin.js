@@ -62,7 +62,12 @@ function mascaraCPF(input) {
     input.value = v;
 }
 
-// LOGOUT ADICIONADO E INTEGRADO
+function mascaraCEPHtml(input) {
+    let valor = input.value.replace(/\D/g, '');
+    if (valor.length > 5) valor = valor.replace(/^(\d{5})(\d)/, '$1-$2');
+    input.value = valor;
+}
+
 function fazerLogout() {
     localStorage.removeItem("ponto_web_sessao_colab");
     sessionStorage.clear();
@@ -119,7 +124,7 @@ function cadastrarUsuario(event) {
         }
         
         const novoUser = {
-            id: String(new Date().getTime()), // ID único baseado em timestamp para evitar conflito de indexação
+            id: String(new Date().getTime()), 
             nome: document.getElementById('cadNome').value.trim(),
             cpf: document.getElementById('cadCpf').value.trim(),
             telefone: document.getElementById('cadTelefone').value.trim(),
@@ -140,7 +145,6 @@ function cadastrarUsuario(event) {
     });
 }
 
-// CORREÇÃO DOS BOTÕES: Mapeamento direto via escopo de Strings garantindo a execução do clique
 function renderTabelaComAtualizacao() {
     const tabela = document.getElementById('tabelaEquipe');
     if(!tabela) return;

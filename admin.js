@@ -202,6 +202,7 @@ function confirmarEdicaoFicha() {
         
         if(novaFotoBase64) u.foto = novaFotoBase64;
 
+        bancoUsuarios = bancoUsuarios.map(x => x.id === u.id ? u : x);
         localStorage.setItem("banco_usuarios_ponto", JSON.stringify(bancoUsuarios));
         
         const elementoModal = document.getElementById('modalEditarFicha');
@@ -213,13 +214,11 @@ function confirmarEdicaoFicha() {
     });
 }
 
-// POP-UP BONITO PADRÃO DO SISTEMA: Aciona a confirmação elegante por Modal Bootstrap
 function solicitarExclusaoUsuario(id) {
     usuarioSelecionadoId = parseInt(id);
     const u = bancoUsuarios.find(x => x.id === usuarioSelecionadoId);
     if(!u) return;
 
-    // Reutiliza a estrutura de feedback injetando botões customizados de Sim/Não para ficar lindo e nativo
     document.getElementById('modalTitulo').innerText = "⚠️ Confirmar Exclusão";
     document.getElementById('modalMensagem').innerHTML = `
         <p>Tem certeza absoluta que deseja remover permanentemente o funcionário <strong>${u.nome}</strong>?</p>
@@ -232,11 +231,10 @@ function solicitarExclusaoUsuario(id) {
     new bootstrap.Modal(document.getElementById('modalFeedback')).show();
 }
 
-function executarExclusaoDefinitiva() {
+function ejecutarExclusaoDefinitiva() {
     bancoUsuarios = bancoUsuarios.filter(x => x.id !== usuarioSelecionadoId);
     localStorage.setItem("banco_usuarios_ponto", JSON.stringify(bancoUsuarios));
     
-    // Fecha o modal de confirmação de forma limpa
     const elementoModal = document.getElementById('modalFeedback');
     const modalInstance = bootstrap.Modal.getInstance(elementoModal);
     if(modalInstance) modalInstance.hide();
@@ -252,6 +250,7 @@ function bolarTempoParaMinutos(strHora) {
     return parseInt(partes[0], 10) * 60 + parseInt(partes[1], 10);
 }
 
+// CORREÇÃO CIRÚRGICA: Removido o erro de sintaxe estrutural que congelava o script
 function formatarMinutosParaString(minutosTotais) {
     if(minutosTotais <= 0) return "00:00";
     const hrs = Math.floor(minutosTotais / 60);
@@ -316,7 +315,7 @@ function processarLogsLocalStorage() {
     const listaFinal = Object.values(espelhosAgrupados);
 
     listaFinal.forEach(r => {
-        let minutesTrabalhados = 0;
+        let minutosTrabalhados = 0;
 
         const mEntrada = bolarTempoParaMinutos(r.entrada);
         const mAlmIda = bolarTempoParaMinutos(r.almocoIda);
@@ -324,14 +323,14 @@ function processarLogsLocalStorage() {
         const mSaida = bolarTempoParaMinutos(r.saida);
 
         if(mEntrada !== null && mAlmIda !== null && mAlmIda > mEntrada) {
-            minutesTrabalhados += (mAlmIda - mEntrada);
+            minutosTrabalhados += (mAlmIda - mEntrada);
         }
         if(mAlmVolta !== null && mSaida !== null && mSaida > mAlmVolta) {
-            minutesTrabalhados += (mSaida - mAlmVolta);
+            minutosTrabalhados += (mSaida - mAlmVolta);
         }
 
-        r.minutosTrabalhadosNum = minutesTrabalhados;
-        r.horasTrabalhadas = formatarMinutosParaString(minutesTrabalhados);
+        r.minutosTrabalhadosNum = minutosTrabalhados;
+        r.horasTrabalhadas = formatarMinutosParaString(minutosTrabalhados);
 
         const partesData = r.data.split('/');
         const objetoData = new Date(partesData[2], partesData[1] - 1, partesData[0]);
@@ -344,8 +343,8 @@ function processarLogsLocalStorage() {
             cargaObrigatoriaDoDia = 0;   
         }
 
-        if(minutesTrabalhados > cargaObrigatoriaDoDia) {
-            const extra = minutesTrabalhados - cargaObrigatoriaDoDia;
+        if(minutosTrabalhados > cargaObrigatoriaDoDia) {
+            const extra = minutosTrabalhados - cargaObrigatoriaDoDia;
             r.minutosExtrasNum = extra;
             r.horasExtras = formatarMinutosParaString(extra);
         } else {

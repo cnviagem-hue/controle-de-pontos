@@ -126,7 +126,6 @@ async function cadastrarUsuario(event) {
     };
 
     bancoUsuarios.push(novoUser);
-    
     localStorage.setItem("banco_usuarios_ponto", JSON.stringify(bancoUsuarios));
     
     renderizarTabela();
@@ -289,19 +288,21 @@ function obtenerLocalizacaoAtual() {
     );
 }
 
-// NOVO: Faz o botão mudar de cor de azul para verde com animação suave e altera o texto por 3 segundos
+// ALTERADO: Salva os dados, avisa visualmente e bloqueia todos os campos novamente
 function salvarConfiguracoes() {
     const btnSalvar = document.getElementById("btnSalvarConfigs");
     
+    // Desabilita os campos novamente para proteger contra edições acidentais
+    controlarCamposConfiguracao(true);
+
     // Altera para o estado "Salvo" de sucesso (Verde)
     btnSalvar.classList.remove("btn-primary");
     btnSalvar.classList.add("btn-success");
     btnSalvar.innerText = "✓ Configurações Salvas com Sucesso!";
     
-    // Alerta pop-up de reforço nativo do sistema
-    exibirAlertaTop("Configurações Salvas", "Cerca virtual e parâmetros da empresa gravados com sucesso!");
+    exibirAlertaTop("Configurações Salvas", "Cerca virtual e parâmetros da empresa gravados com segurança!");
 
-    // Retorna ao estado original após 3 segundos
+    // Retorna o botão ao estado azul padrão após 3 segundos (mas os campos seguem bloqueados)
     setTimeout(() => {
         btnSalvar.classList.remove("btn-success");
         btnSalvar.classList.add("btn-primary");
@@ -309,11 +310,26 @@ function salvarConfiguracoes() {
     }, 3000);
 }
 
-// NOVO: Coloca o foco visual no input da empresa quando o botão de lápis/editar é acionado
+// NOVO: Destrava explicitamente os campos quando o botão de lápis/editar é acionado
 function focarEdicaoConfigs() {
+    controlarCamposConfiguracao(false); // Destrava todos os inputs
+    
     const inputNome = document.getElementById("nomeEmpresa");
     inputNome.focus();
     inputNome.select();
+}
+
+// NOVO: Função auxiliar para travar ou destravar o painel de configurações
+function controlarCamposConfiguracao(bloquear) {
+    document.getElementById("nomeEmpresa").disabled = bloquear;
+    document.getElementById("btnGpsConfigs").disabled = bloquear;
+    document.getElementById("cepBusca").disabled = bloquear;
+    document.getElementById("numeroBusca").disabled = bloquear;
+    document.getElementById("btnBuscarCep").disabled = bloquear;
+    document.getElementById("latitude").disabled = bloquear;
+    document.getElementById("longitude").disabled = bloquear;
+    document.getElementById("raioTolerancia").disabled = bloquear;
+    document.getElementById("btnSalvarConfigs").disabled = bloquear;
 }
 
 const dadosSalvos = localStorage.getItem("banco_usuarios_ponto");

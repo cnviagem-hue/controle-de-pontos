@@ -1,5 +1,4 @@
 let usuarioSelecionadoId = null;
-let proximoIdUsuario = 1;
 let bancoUsuarios = [];
 
 function alternarAba(nomeAba) {
@@ -145,6 +144,7 @@ function cadastrarUsuario(event) {
     });
 }
 
+// RENDERIZADOR BLINDADO CONTRA ERROS DE TIPO (STRING/NUMBER)
 function renderTabelaComAtualizacao() {
     const tabela = document.getElementById('tabelaEquipe');
     if(!tabela) return;
@@ -155,7 +155,7 @@ function renderTabelaComAtualizacao() {
         return;
     }
 
-    bancoUsuarios.forEach(u => {
+    bancoUsuarios.forEach((u, index) => {
         const badgeStatus = u.status === "ATIVO" ? 'bg-success-subtle text-success border border-success-subtle' : 'bg-danger-subtle text-danger border border-danger-subtle';
         const tr = document.createElement('tr');
         
@@ -169,19 +169,22 @@ function renderTabelaComAtualizacao() {
             <td><span class="badge bg-secondary">Apenas ${u.permissao}</span></td>
             <td><span class="badge ${badgeStatus} px-2.5">${u.status}</span></td>
             <td class="text-center">
-                <button class="btn btn-sm btn-outline-primary me-1" onclick="abrirModalEditarFicha('${u.id}')">✏️ Ficha</button>
-                <button class="btn btn-sm btn-outline-danger me-1" onclick="bloquearUsuario('${u.id}')">🔒 ${u.status === 'ATIVO' ? 'Bloquear' : 'Ativar'}</button>
-                <button class="btn btn-sm btn-danger" onclick="solicitarExclusaoUsuario('${u.id}')">🗑️ Excluir</button>
+                <button class="btn btn-sm btn-outline-primary me-1" onclick="abrirModalEditarFichaIndex('${i}')">✏️ Ficha</button>
+                <button class="btn btn-sm btn-outline-danger me-1" onclick="bloquearUsuarioIndex('${i}')">🔒 ${u.status === 'ATIVO' ? 'Bloquear' : 'Ativar'}</button>
+                <button class="btn btn-sm btn-danger" onclick="solicitarExclusaoUsuarioIndex('${i}')">🗑️ Excluir</button>
             </td>
         `;
         tabela.appendChild(tr);
     });
 }
 
-function abrirModalEditarFicha(id) {
-    usuarioSelecionadoId = String(id);
-    const u = bancoUsuarios.find(x => String(x.id) === usuarioSelecionadoId);
+// RESOLUÇÃO DEFINITIVA: Localização baseada na posição do Array para evitar conflitos de IDs gerados em lote
+function abrirModalEditarFicha(index) {
+    const idx = parseInt(index);
+    const u = bancoUsuarios[idx];
     if(!u) return;
+    
+    usuarioSelecionadoId = idx;
 
     document.getElementById('editNome').value = u.nome;
     document.getElementById('editCpf').value = u.cpf;
@@ -195,7 +198,8 @@ function abrirModalEditarFicha(id) {
 }
 
 function confirmarEdicaoFicha() {
-    const u = bancoUsuarios.find(x => String(x.id) === usuarioSelecionadoId);
+    if (usuarioSelecionadoId === null) return;
+    const u = bancoUsuarios[usuarioSelecionadoId];
     if(!u) return;
 
     otimizarEConverterFoto(document.getElementById('editFotoFile')).then(novaFotoBase64 => {
@@ -208,7 +212,7 @@ function confirmarEdicaoFicha() {
         
         if(novaFotoBase64) u.foto = novaFotoBase64;
 
-        bancoUsuarios = bancoUsuarios.map(x => String(x.id) === String(u.id) ? u : x);
+        bancoUsuarios[usuarioSelecionadoId] = u;
         localStorage.setItem("banco_usuarios_ponto", JSON.stringify(bancoUsuarios));
         
         const elementoModal = document.getElementById('modalEditarFicha');
@@ -220,9 +224,9 @@ function confirmarEdicaoFicha() {
     });
 }
 
-function solicitarExclusaoUsuario(id) {
-    usuarioSelecionadoId = String(id);
-    const u = bancoUsuarios.find(x => String(x.id) === usuarioSelecionadoId);
+function solicitarExclusaoUsuario(index) {
+    usuarioSelecionadoId = parseInt(id);
+    const u = bancoUsuarios[usuarioSelecionadoId];
     if(!u) return;
 
     document.getElementById('modalTitulo').innerText = "⚠️ Confirmar Exclusão";
@@ -235,11 +239,12 @@ function solicitarExclusaoUsuario(id) {
         <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Não, Cancelar</button>
         <button type="button" class="btn btn-danger btn-sm px-3" onclick="executarExclusaoDefinitiva()">Sim, Excluir</button>
     `;
+    
     new bootstrap.Modal(document.getElementById('modalFeedback')).show();
 }
 
-function executarExclusaoDefinitiva() {
-    bancoUsuarios = bancoUsuarios.filter(x => String(x.id) !== String(usuarioSelecionadoId));
+function ejecutarExclusaoDefinitiva() {
+    bancoUsuarios.splice(usuarioSelecionadoId, 1);
     localStorage.setItem("banco_usuarios_ponto", JSON.stringify(bancoUsuarios));
     
     const elementoModal = document.getElementById('modalFeedback');
@@ -264,8 +269,8 @@ function formatarMinutosParaString(minutosTotais) {
     return `${hrs.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}`;
 }
 
-function bloquearUsuario(id) {
-    const u = bancoUsuarios.find(x => String(x.id) === String(id));
+function bloquearUsuario(idx) {
+    const u = bancoUsuarios[parseInt(idx)];
     if(!u) return;
     u.status = u.status === "ATIVO" ? "BLOQUEADO" : "ATIVO";
     localStorage.setItem("banco_usuarios_ponto", JSON.stringify(bancoUsuarios));
@@ -502,12 +507,8 @@ function inicializarDadosFicticios() {
             { id: "1", nome: "ADRIANA SANTARINE DE MENDONÇA DINIZ", cpf: "809.017.781-68", telefone: "(64) 98141-0002", email: "adrianasantarinediniz@gmail.com", senha: "Entrada123", foto: "https://ui-avatars.com/api/?name=Adriana+Diniz&background=f97316&color=fff", permissao: "Celular", status: "ATIVO" }
         ];
         localStorage.setItem("banco_usuarios_ponto", JSON.stringify(bancoUsuarios));
-        proximoIdUsuario = 2;
     } else {
         bancoUsuarios = JSON.parse(rawUsers);
-        if(bancoUsuarios.length > 0) {
-            proximoIdUsuario = Math.max(...bancoUsuarios.map(u => parseInt(u.id) || 0)) + 1;
-        }
     }
 
     const rawLogs = localStorage.getItem("historico_pontos_global");

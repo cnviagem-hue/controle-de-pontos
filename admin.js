@@ -245,7 +245,6 @@ function sincronizarFiltrosColaboradores() {
     select.value = valorSelecionado;
 }
 
-// ARQUITETURA MATEMÁTICA CONTRATUAL: Segunda a Sexta (8h), Sábado (4h) e Domingo (DSR - Tudo Extra)
 function processarLogsLocalStorage() {
     const logsBrutos = JSON.parse(localStorage.getItem("historico_pontos_global") || "[]");
     const espelhosAgrupados = {};
@@ -298,11 +297,11 @@ function processarLogsLocalStorage() {
         const objetoData = new Date(partesData[2], partesData[1] - 1, partesData[0]);
         const diaDaSemana = objetoData.getDay(); 
 
-        let cargaObrigatoriaDoDia = 480; // Segunda a Sexta = 8h
+        let cargaObrigatoriaDoDia = 480; 
         if (diaDaSemana === 6) {
-            cargaObrigatoriaDoDia = 240; // Sábado = 4h
+            cargaObrigatoriaDoDia = 240; 
         } else if (diaDaSemana === 0) {
-            cargaObrigatoriaDoDia = 0;   // Domingo = 0h (Tudo Extra)
+            cargaObrigatoriaDoDia = 0;   
         }
 
         if(minutosTrabalhados > cargaObrigatoriaDoDia) {
@@ -318,7 +317,6 @@ function processarLogsLocalStorage() {
     return listaFinal;
 }
 
-// FILTRO AVANÇADO COM LINHA DE TOTAIS NO FINAL DA TABELA
 function filtrarRelatorioTela() {
     const filtroColab = document.getElementById('filtroRelatorioColaborador').value;
     const filtroInicio = document.getElementById('filtroRelatorioInicio').value;
@@ -373,7 +371,6 @@ function filtrarRelatorioTela() {
         tabelaBody.appendChild(tr);
     });
 
-    // INCLUSÃO DA LINHA DE TOTAIS NO FINAL DA TABELA DA TELA
     const trTotal = document.createElement('tr');
     trTotal.style.backgroundColor = "#e5e7eb";
     trTotal.className = "table-secondary fw-bold text-dark";
@@ -385,6 +382,7 @@ function filtrarRelatorioTela() {
     tabelaBody.appendChild(trTotal);
 }
 
+// ADAPTAÇÃO CIRÚRGICA: Geração do Excel estruturado exatamente como o modelo profissional e limpo da imagem
 function exportarPontosExcel() {
     const filtroColab = document.getElementById('filtroRelatorioColaborador').value;
     const filtroInicio = document.getElementById('filtroRelatorioInicio').value;
@@ -415,40 +413,65 @@ function exportarPontosExcel() {
         return;
     }
 
+    // 1. Criação da matriz de linhas inicial (Header)
+    const matrizPlanilha = [];
+    
+    // Título Principal Estilizado (Igual o topo laranja/destacado do modelo)
+    matrizPlanilha.push(["ESPELHO DE PONTO CONSOLIDADO - PONTO WEB"]);
+    matrizPlanilha.push([`Gerado em: ${new Date().toLocaleDateString('pt-BR')} | Filtro Período Ativo`]);
+    matrizPlanilha.push([]); // Linha em branco para separação visual elegante
+
+    // Linha de Cabeçalhos Oficiais da Tabela
+    matrizPlanilha.push(["Data", "Colaborador", "Entrada", "Almoço Ida", "Almoço Volta", "Saída", "Horas Trab.", "Horas Extras"]);
+
     let somaTrab = 0;
     let somaExtra = 0;
 
-    const formatoExcel = dadosParaPlanilha.map(r => {
+    // 2. Preenchimento das linhas de dados dos colaboradores
+    dadosParaPlanilha.forEach(r => {
         somaTrab += r.minutosTrabalhadosNum;
         somaExtra += r.minutosExtrasNum;
-        return {
-            "Data": r.data,
-            "Colaborador": r.nome,
-            "Entrada": r.entrada,
-            "Almoço Ida": r.almocoIda,
-            "Almoço Volta": r.almocoVolta,
-            "Saída": r.saida,
-            "Horas Trabalhadas": r.horasTrabalhadas,
-            "Horas Extras": r.horasExtras
-        };
+        matrizPlanilha.push([
+            r.data,
+            r.nome,
+            r.entrada,
+            r.almocoIda,
+            r.almocoVolta,
+            r.saida,
+            r.horasTrabalhadas,
+            r.horasExtras
+        ]);
     });
 
-    // Adiciona a linha de totais na última linha do Excel exportado
-    formatoExcel.push({
-        "Data": "TOTAL GERAL",
-        "Colaborador": "",
-        "Entrada": "",
-        "Almoço Ida": "",
-        "Almoço Volta": "",
-        "Saída": "",
-        "Horas Trabalhadas": formatarMinutosParaString(somaTrab),
-        "Horas Extras": formatarMinutosParaString(somaExtra)
-    });
+    // 3. Linha de Fechamento com o Total das Horas no final (Mesmo modelo da imagem)
+    matrizPlanilha.push([]); // Espaço
+    matrizPlanilha.push([
+        "TOTAL DE HORAS TRABALHADAS DO PERÍODO:", 
+        "", "", "", "", "", 
+        formatarMinutosParaString(somaTrab), 
+        formatarMinutosParaString(somaExtra)
+    ]);
 
-    const worksheet = XLSX.utils.json_to_sheet(formatoExcel);
+    // Cria o objeto Workbook usando os utilitários nativos da biblioteca SheetJS (XLSX)
+    const worksheet = XLSX.utils.aoa_to_sheet(matrizPlanilha);
+    
+    // Define a largura ideal de cada coluna para que não fique com os dados cortados (###)
+    worksheet['!cols'] = [
+        { wch: 12 }, // Data
+        { wch: 45 }, // Colaborador (largo o suficiente para o nome completo)
+        { wch: 10 }, // Entrada
+        { wch: 12 }, // Almoço Ida
+        { wch: 14 }, // Almoço Volta
+        { wch: 10 }, // Saída
+        { wch: 14 }, // Horas Trab.
+        { wch: 14 }  // Horas Extras
+    ];
+
     const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, "Folha de Ponto");
-    XLSX.writeFile(workbook, `Folha_Ponto_Consolidada.xlsx`);
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Folha_Consolidada");
+    
+    // Faz o download imediato do arquivo diretamente na máquina do Administrador
+    XLSX.writeFile(workbook, `Espelho_Ponto_Executivo_${new Date().getFullYear()}.xlsx`);
 }
 
 function inicializarDadosFicticios() {
@@ -459,7 +482,6 @@ function inicializarDadosFicticios() {
         ];
         localStorage.setItem("banco_usuarios_ponto", JSON.stringify(bancoUsuarios));
         
-        // Mock de teste completo simulando 9h trabalhadas em um dia de semana (Carga: 8h -> Extra: 1h)
         localStorage.setItem("historico_pontos_global", JSON.stringify([
             { colaboradorId: 1, nome: "ADRIANA SANTARINE DE MENDONÇA DINIZ", data: "24/06/2026", tipo: "Entrada", hora: "08:00" },
             { colaboradorId: 1, nome: "ADRIANA SANTARINE DE MENDONÇA DINIZ", data: "24/06/2026", tipo: "Almoço Ida", hora: "12:00" },

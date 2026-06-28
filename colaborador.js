@@ -41,7 +41,7 @@ function verificarSessaoExistente() {
     if (sessaoSalva) {
         usuarioLogado = JSON.parse(sessaoSalva);
         renderizarFichaFuncionario();
-        renderizarHistoricoHoje(); // Renderiza filtrando apenas o dia de hoje
+        renderizarHistoricoHoje(); 
         irParaTela("horarios");
     } else {
         irParaTela("login");
@@ -59,11 +59,28 @@ function executarLoginColaborador(event) {
     const encontrarUser = listaUsuarios.find(u => u.email.trim().toLowerCase() === email && u.senha.toString().trim() === senha);
 
     if (encontrarUser) {
+        // Trava 1: Usuário Bloqueado
         if(encontrarUser.status === "BLOQUEADO") {
             exibirAvisoColab("🔒 Acesso Suspenso", "Sua conta foi temporariamente desativada pelo gestor.");
             return;
         }
         
+        // Trava 2: VALIDAÇÃO DE DISPOSITIVO AUTORIZADO
+        // O código abaixo detecta via navegador se o aparelho é um celular/tablet
+        const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+        
+        if (encontrarUser.permissao === "Celular" && !isMobile) {
+            exibirAvisoColab("🚫 Acesso Bloqueado", "Sua conta está autorizada para bater ponto <strong>APENAS PELO CELULAR</strong>.<br><br>Acesso via Computador/PC foi negado.");
+            return;
+        }
+        
+        if (encontrarUser.permissao === "PC" && isMobile) {
+            exibirAvisoColab("🚫 Acesso Bloqueado", "Sua conta está autorizada para bater ponto <strong>APENAS PELO COMPUTADOR</strong>.<br><br>Acesso via Celular foi negado.");
+            return;
+        }
+        // Se for "Ambos", ele ignora as travas acima e passa direto.
+
+        // Sucesso: Libera o login
         usuarioLogado = encontrarUser;
         localStorage.setItem("ponto_web_sessao_colab", JSON.stringify(usuarioLogado));
         
@@ -86,12 +103,10 @@ function renderizarFichaFuncionario() {
     `;
 }
 
-// TRAVA DE SEGURANÇA E ANTIDUPLICAÇÃO: Verifica se o botão clicado já foi batido no dia de hoje
 function solicitarMarcacaoPonto(tipo) {
     const hojeStr = new Date().toLocaleDateString("pt-BR");
     const todosOsLogs = JSON.parse(localStorage.getItem("historico_pontos_global") || "[]");
     
-    // Procura se o colaborador logado já registrou esse tipo específico de ponto hoje
     const jaRegistrouHoje = todosOsLogs.some(log => 
         log.colaboradorId === usuarioLogado.id && 
         log.data === hojeStr && 
@@ -100,7 +115,7 @@ function solicitarMarcacaoPonto(tipo) {
 
     if (jaRegistrouHoje) {
         exibirAvisoColab("⚠️ Registro Duplicado", `Você já realizou a marcação de <strong>${tipo}</strong> hoje. Escolha outra opção!`);
-        return; // Cancela a abertura do modal de confirmação
+        return; 
     }
 
     tipoPontoPendente = tipo;
@@ -122,7 +137,6 @@ function confirmarEGravarPonto() {
             const dataInjetada = agora.toLocaleDateString("pt-BR"); 
             const horaMarcada = agora.toLocaleTimeString("pt-BR", { hour: '2-digit', minute: '2-digit' });
             
-            // Persistência robusta no repositório global lido pelo Administrador
             const todosOsLogs = JSON.parse(localStorage.getItem("historico_pontos_global") || "[]");
             todosOsLogs.push({
                 colaboradorId: usuarioLogado.id,
@@ -133,7 +147,7 @@ function confirmarEGravarPonto() {
             });
             localStorage.setItem("historico_pontos_global", JSON.stringify(todosOsLogs));
 
-            renderizarHistoricoHoje(); // Atualiza a lista filtrada em tempo real
+            renderizarHistoricoHoje(); 
 
             exibirAvisoColab("🎯 Sucesso!", `Seu ponto de <strong>${tipoPontoPendente}</strong> das ${horaMarcada} foi gravado com validação geográfica ativa!`);
         },
@@ -144,7 +158,6 @@ function confirmarEGravarPonto() {
     );
 }
 
-// CORREÇÃO: Mostra na tela estritamente os pontos batidos no dia de hoje. Amanhã começará limpa!
 function renderizarHistoricoHoje() {
     const hojeStr = new Date().toLocaleDateString("pt-BR");
     const containerRegistros = document.getElementById("listaRegistrosHoje");
@@ -152,7 +165,6 @@ function renderizarHistoricoHoje() {
 
     const todosOsLogs = JSON.parse(localStorage.getItem("historico_pontos_global") || "[]");
     
-    // Filtra para exibir em tempo de execução somente os logs de hoje do colaborador conectado
     const logsDeHoje = todosOsLogs.filter(log => log.colaboradorId === usuarioLogado.id && log.data === hojeStr);
 
     if(logsDeHoje.length === 0) {

@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login Administrativo - Ponto Web</title>
-    <!-- Bootstrap 5 CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -49,7 +48,7 @@
         .password-container { position: relative; display: flex; align-items: center; }
         .password-container input { padding-right: 45px; }
         .btn-toggle-eye {
-            position: absolute; right: 12px; background: none; border: none; font-size: 1.1rem; cursor: pointer; color: #94a3b8; transition: color 0.2s; padding: 0;
+            position: absolute; right: 12px; background: none; border: none; font-size: 1.1rem; cursor: pointer; color: #94a3b8; transition: color 0.2s; padding: 0; z-index: 5;
         }
         .btn-toggle-eye:hover { color: #f97316; }
 
@@ -98,7 +97,7 @@
                     <label class="form-label fw-bold small text-dark mb-1">Senha de Acesso</label>
                     <div class="password-container">
                         <input type="password" id="senhaAdmin" class="form-control" placeholder="••••••••" required>
-                        <button type="button" class="btn-toggle-eye" onclick="alternarVisibilidadeSenha(this)">👁️</button>
+                        <button type="button" class="btn-toggle-eye" onclick="alternarVisibilidadeSenha('senhaAdmin', this)">👁️</button>
                     </div>
                 </div>
 
@@ -111,9 +110,37 @@
         </div>
     </div>
 
+    <div class="modal fade" id="modalTrocarSenha" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered modal-sm">
+        <div class="modal-content border-0 shadow-lg" style="border-radius:12px;">
+          <div class="modal-header bg-warning text-dark py-3">
+            <h5 class="modal-title fs-6 fw-bold">🔒 Troca de Senha Obrigatória</h5>
+          </div>
+          <div class="modal-body p-4 text-center">
+            <p class="mb-3 text-secondary small fw-medium">Este é o seu primeiro acesso. Para garantir a segurança da sua empresa, por favor, cadastre uma nova senha.</p>
+            
+            <div class="mb-2 text-start">
+                <label class="form-label fw-bold small text-dark mb-1">Nova Senha</label>
+                <div class="password-container">
+                    <input type="password" id="novaSenha" class="form-control" placeholder="Mínimo 6 caracteres" minlength="6" required>
+                    <button type="button" class="btn-toggle-eye" onclick="alternarVisibilidadeSenha('novaSenha', this)">👁️</button>
+                </div>
+            </div>
+          </div>
+          <div class="modal-footer border-0 pt-0 d-flex justify-content-center">
+            <button type="button" class="btn btn-primary w-100 fw-bold" onclick="salvarNovaSenha()">Salvar e Acessar</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
     <script>
-        function alternarVisibilidadeSenha(botao) {
-            const input = document.getElementById('senhaAdmin');
+        let empresaLogandoIndex = null;
+
+        function alternarVisibilidadeSenha(idInput, botao) {
+            const input = document.getElementById(idInput);
             if (input.type === "password") {
                 input.type = "text";
                 botao.innerText = "🙈";
@@ -130,16 +157,66 @@
             const senha = document.getElementById("senhaAdmin").value.trim();
             const erro = document.getElementById("msgErro");
 
-            // SEUS DADOS APROVADOS AQUI
-            if (email === "cnviagem@gmail.com" && senha === "123456") {
+            // LÊ AS EMPRESAS CRIADAS PELO SUPER ADMIN
+            const bancoEmpresas = JSON.parse(localStorage.getItem("banco_empresas_web")) || [];
+            
+            // Tenta encontrar a empresa correspondente e ativa
+            const indexEmpresa = bancoEmpresas.findIndex(e => e.email === email && e.senhaAtual === senha && e.status === "ATIVO");
+
+            if (indexEmpresa !== -1) {
+                erro.style.display = "none";
+                const empresa = bancoEmpresas[indexEmpresa];
+
+                // TRAVA DE SEGURANÇA: Exige troca de senha no primeiro login
+                if (empresa.primeiroAcesso === true || senha === "mudar123") {
+                    empresaLogandoIndex = indexEmpresa;
+                    new bootstrap.Modal(document.getElementById('modalTrocarSenha')).show();
+                } else {
+                    // Login liberado direto
+                    sessionStorage.setItem("admin_autenticado", "true");
+                    window.location.href = "admin.html";
+                }
+            } 
+            // Fallback de segurança para não te travar (Seu login antigo)
+            else if (email === "cnviagem@gmail.com" && senha === "123456") {
                 erro.style.display = "none";
                 sessionStorage.setItem("admin_autenticado", "true");
                 window.location.href = "admin.html";
-            } else {
+            } 
+            // Falha no Login
+            else {
                 erro.style.display = "block";
                 document.getElementById("senhaAdmin").value = "";
                 document.getElementById("senhaAdmin").focus();
             }
+        }
+
+        function salvarNovaSenha() {
+            const novaSenhaInput = document.getElementById("novaSenha").value.trim();
+            
+            if (novaSenhaInput.length < 6) {
+                alert("Sua senha precisa ter no mínimo 6 caracteres.");
+                return;
+            }
+
+            // Atualiza a senha no banco de dados do Super Admin
+            let bancoEmpresas = JSON.parse(localStorage.getItem("banco_empresas_web")) || [];
+            bancoEmpresas[empresaLogandoIndex].senhaAtual = novaSenhaInput;
+            bancoEmpresas[empresaLogandoIndex].primeiroAcesso = false;
+            
+            localStorage.setItem("banco_empresas_web", JSON.stringify(bancoEmpresas));
+
+            // Esconde o modal e faz o login na plataforma
+            const modalEl = document.getElementById('modalTrocarSenha');
+            const modalInstance = bootstrap.Modal.getInstance(modalEl);
+            modalInstance.hide();
+            
+            sessionStorage.setItem("admin_autenticado", "true");
+            
+            // Aguarda a animação do modal fechar e redireciona
+            setTimeout(() => {
+                window.location.href = "admin.html";
+            }, 300);
         }
     </script>
 </body>

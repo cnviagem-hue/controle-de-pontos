@@ -279,6 +279,25 @@
       </div>
     </div>
 
+    <div class="modal fade" id="modalExclusao" tabindex="-1" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg" style="border-radius:16px;">
+          <div class="modal-header bg-dark text-white py-3" style="border-top-left-radius:16px; border-top-right-radius:16px;">
+            <h5 class="modal-title d-flex align-items-center gap-2">⚠️ Confirmar Exclusão</h5>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body p-4 text-center">
+            <p class="mb-2">Tem certeza absoluta que deseja remover permanentemente o funcionário <strong id="nomeUsuarioExclusao"></strong>?</p>
+            <p class="text-danger small mb-0">Esta ação não poderá ser desfeita e removerá o histórico dele da listagem.</p>
+          </div>
+          <div class="modal-footer border-0 pt-0 d-flex justify-content-center gap-2">
+            <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Não, Cancelar</button>
+            <button type="button" class="btn btn-danger btn-sm px-3" onclick="executarExclusaoDefinitiva()">Sim, Excluir</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <div class="modal fade" id="modalEditarFicha" tabindex="-1" aria-hidden="true">
       <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content border-0 shadow-lg" style="border-radius:16px;">

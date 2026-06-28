@@ -21,7 +21,6 @@ function alternarAba(nomeAba) {
 function exibirAlertaTop(titulo, message) {
     document.getElementById('modalTitulo').innerText = titulo;
     document.getElementById('modalMensagem').innerHTML = `<p class="fs-6 text-secondary mb-0">${message}</p>`;
-    // Garante que o rodapé padrão tenha apenas o botão de fechar OK básico
     document.getElementById('modalFeedbackFooter').innerHTML = `<button type="button" class="btn btn-primary px-4 btn-sm" data-bs-dismiss="modal">OK</button>`;
     new bootstrap.Modal(document.getElementById('modalFeedback')).show();
 }
@@ -63,13 +62,7 @@ function mascaraCPF(input) {
     input.value = v;
 }
 
-function mascaraCEPHtml(input) {
-    let valor = input.value.replace(/\D/g, '');
-    if (valor.length > 5) valor = valor.replace(/^(\d{5})(\d)/, '$1-$2');
-    input.value = valor;
-}
-
-// FUNÇÃO DE LOGOUT: Limpa sessões e desloga com segurança
+// LOGOUT ADICIONADO E INTEGRADO
 function fazerLogout() {
     localStorage.removeItem("ponto_web_sessao_colab");
     sessionStorage.clear();
@@ -126,7 +119,7 @@ function cadastrarUsuario(event) {
         }
         
         const novoUser = {
-            id: String(proximoIdUsuario),
+            id: String(new Date().getTime()), // ID único baseado em timestamp para evitar conflito de indexação
             nome: document.getElementById('cadNome').value.trim(),
             cpf: document.getElementById('cadCpf').value.trim(),
             telefone: document.getElementById('cadTelefone').value.trim(),
@@ -141,13 +134,13 @@ function cadastrarUsuario(event) {
         localStorage.setItem("banco_usuarios_ponto", JSON.stringify(bancoUsuarios));
         
         renderTabelaComAtualizacao();
-        proximoIdUsuario++;
         
         document.getElementById('formUsuario').reset();
         exibirAlertaTop("👥 Cadastrado", `Colaborador <strong>${novoUser.nome}</strong> registrado com sucesso!`);
     });
 }
 
+// CORREÇÃO DOS BOTÕES: Mapeamento direto via escopo de Strings garantindo a execução do clique
 function renderTabelaComAtualizacao() {
     const tabela = document.getElementById('tabelaEquipe');
     if(!tabela) return;
@@ -223,7 +216,6 @@ function confirmarEdicaoFicha() {
     });
 }
 
-// POP-UP DE EXCLUSÃO ESTILIZADO EM BOOTSTRAP (Padrão e Limpo do Sistema)
 function solicitarExclusaoUsuario(id) {
     usuarioSelecionadoId = String(id);
     const u = bancoUsuarios.find(x => String(x.id) === usuarioSelecionadoId);
@@ -235,17 +227,15 @@ function solicitarExclusaoUsuario(id) {
         <p class="text-danger small mb-0">Esta ação não poderá ser desfeita e removerá o histórico dele da listagem.</p>
     `;
     
-    // Injeta os botões de sim/não customizados no rodapé do Modal
     document.getElementById('modalFeedbackFooter').innerHTML = `
         <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Não, Cancelar</button>
         <button type="button" class="btn btn-danger btn-sm px-3" onclick="executarExclusaoDefinitiva()">Sim, Excluir</button>
     `;
-    
     new bootstrap.Modal(document.getElementById('modalFeedback')).show();
 }
 
-function ejecutarExclusaoDefinitiva() {
-    bancoUsuarios = bancoUsuarios.filter(x => String(x.id) !== usuarioSelecionadoId);
+function executarExclusaoDefinitiva() {
+    bancoUsuarios = bancoUsuarios.filter(x => String(x.id) !== String(usuarioSelecionadoId));
     localStorage.setItem("banco_usuarios_ponto", JSON.stringify(bancoUsuarios));
     
     const elementoModal = document.getElementById('modalFeedback');
@@ -263,7 +253,6 @@ function bolarTempoParaMinutos(strHora) {
     return parseInt(partes[0], 10) * 60 + parseInt(partes[1], 10);
 }
 
-// SINTAXE REVISADA: Removida qualquer atribuição duplicada
 function formatarMinutosParaString(minutosTotais) {
     if(minutosTotais <= 0) return "00:00";
     const hrs = Math.floor(minutosTotais / 60);
@@ -357,7 +346,7 @@ function processarLogsLocalStorage() {
         }
 
         if(minutosTrabalhados > cargaObrigatoriaDoDia) {
-            const extra = minutesTrabalhados - cargaObrigatoriaDoDia;
+            const extra = minutosTrabalhados - cargaObrigatoriaDoDia;
             r.minutosExtrasNum = extra;
             r.horasExtras = formatarMinutosParaString(extra);
         } else {

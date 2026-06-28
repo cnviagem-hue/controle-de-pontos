@@ -131,7 +131,7 @@ function cadastrarUsuario(event) {
         bancoUsuarios.push(novoUser);
         localStorage.setItem("banco_usuarios_ponto", JSON.stringify(bancoUsuarios));
         
-        renderizarTabela();
+        renderTabelaComAtualizacao();
         proximoIdUsuario++;
         
         document.getElementById('formUsuario').reset();
@@ -139,8 +139,9 @@ function cadastrarUsuario(event) {
     });
 }
 
-function renderizarTabela() {
+function renderTabelaComAtualizacao() {
     const tabela = document.getElementById('tabelaEquipe');
+    if(!tabela) return;
     tabela.innerHTML = "";
     
     if(bancoUsuarios.length === 0) {
@@ -186,6 +187,7 @@ function abrirModalEditarFicha(id) {
     new bootstrap.Modal(document.getElementById('modalEditarFicha')).show();
 }
 
+// CORREÇÃO DA FICHA: Sincronização direta e encerramento limpo do modal salvando dados de verdade
 function confirmarEdicaoFicha() {
     const u = bancoUsuarios.find(x => x.id === usuarioSelecionadoId);
     if(!u) return;
@@ -201,8 +203,13 @@ function confirmarEdicaoFicha() {
         if(novaFotoBase64) u.foto = novaFotoBase64;
 
         localStorage.setItem("banco_usuarios_ponto", JSON.stringify(bancoUsuarios));
-        bootstrap.Modal.getInstance(document.getElementById('modalEditarFicha')).hide();
-        renderizarTabela();
+        
+        // Fecha o modal antes de renderizar
+        const elementoModal = document.getElementById('modalEditarFicha');
+        const modalInstance = bootstrap.Modal.getInstance(elementoModal);
+        if(modalInstance) modalInstance.hide();
+
+        renderTabelaComAtualizacao();
         exibirAlertaTop("📝 Atualizado", "A ficha cadastral do colaborador foi alterada com sucesso.");
     });
 }
@@ -225,7 +232,7 @@ function bloquearUsuario(id) {
     if(!u) return;
     u.status = u.status === "ATIVO" ? "BLOQUEADO" : "ATIVO";
     localStorage.setItem("banco_usuarios_ponto", JSON.stringify(bancoUsuarios));
-    renderizarTabela();
+    renderTabelaComAtualizacao();
 }
 
 function copiarLinkColaborador() {
@@ -237,6 +244,7 @@ function copiarLinkColaborador() {
 
 function sincronizarFiltrosColaboradores() {
     const select = document.getElementById('filtroRelatorioColaborador');
+    if(!select) return;
     const valorSelecionado = select.value;
     select.innerHTML = '<option value="todos">-- Selecione um Colaborador --</option>'; 
     bancoUsuarios.forEach(u => {
@@ -322,6 +330,7 @@ function filtrarRelatorioTela() {
     const filtroInicio = document.getElementById('filtroRelatorioInicio').value;
     const filtroFim = document.getElementById('filtroRelatorioFim').value;
     const tabelaBody = document.getElementById('tabelaRelatoriosBody');
+    if(!tabelaBody) return;
     tabelaBody.innerHTML = "";
 
     if (filtroColab === "todos") {
@@ -383,7 +392,6 @@ function filtrarRelatorioTela() {
     tabelaBody.appendChild(trTotal);
 }
 
-// ATUALIZAÇÃO: Injeta mesclagem de colunas (!merges) para os textos compridos caberem perfeitamente.
 function exportarPontosExcel() {
     const filtroColab = document.getElementById('filtroRelatorioColaborador').value;
     
@@ -418,41 +426,29 @@ function exportarPontosExcel() {
         matrizPlanilha.push([r.data, r.nome, r.entrada, r.almocoIda, r.almocoVolta, r.saida, r.horasTrabalhadas, r.horasExtras]);
     });
 
-    matrizPlanilha.push([]); // Linha em branco
-    
-    // Insere a linha de total
-    matrizPlanilha.push([
-        "TOTAL DE HORAS TRABALHADAS DO PERÍODO:", 
-        "", "", "", "", "", 
-        formatarMinutosParaString(somaTrab), 
-        formatarMinutosParaString(somaExtra)
-    ]);
+    matrizPlanilha.push([]);
+    matrizPlanilha.push(["TOTAL DE HORAS TRABALHADAS DO PERÍODO:", "", "", "", "", "", formatarMinutosParaString(somaTrab), formatarMinutosParaString(somaExtra)]);
 
     const worksheet = XLSX.utils.aoa_to_sheet(matrizPlanilha);
 
-    // Definição de Estilos Visuais Nativos
     const orangeFill = { fill: { fgColor: { rgb: "F97316" } }, font: { bold: true, color: { rgb: "FFFFFF" }, size: 12 }, alignment: { horizontal: "center", vertical: "center" } };
     const greyTotalAlignRight = { fill: { fgColor: { rgb: "E5E7EB" } }, font: { bold: true, color: { rgb: "000000" } }, alignment: { horizontal: "right", vertical: "center" } };
     const greyTotalGreen = { fill: { fgColor: { rgb: "E5E7EB" } }, font: { bold: true, color: { rgb: "16A34A" } }, alignment: { horizontal: "center", vertical: "center" } };
     const greyTotalRed = { fill: { fgColor: { rgb: "E5E7EB" } }, font: { bold: true, color: { rgb: "EF4444" } }, alignment: { horizontal: "center", vertical: "center" } };
 
-    // Aplica o topo laranja na linha 1
     worksheet['A1'].s = orangeFill;
     
-    // Aplica os estilos cinzas na última linha
     const ultimaLinhaIndex = matrizPlanilha.length;
     if(worksheet[`A${ultimaLinhaIndex}`]) worksheet[`A${ultimaLinhaIndex}`].s = greyTotalAlignRight;
     if(worksheet[`G${ultimaLinhaIndex}`]) worksheet[`G${ultimaLinhaIndex}`].s = greyTotalGreen;
     if(worksheet[`H${ultimaLinhaIndex}`]) worksheet[`H${ultimaLinhaIndex}`].s = greyTotalRed;
 
-    // MESCLAGEM DE CÉLULAS (MERGES): Une as colunas para o texto caber inteiro e alinhado
     worksheet['!merges'] = [
-        { s: { r: 0, c: 0 }, e: { r: 0, c: 7 } }, // Linha 1: Título DRE centralizado de A1 até H1
-        { s: { r: 1, c: 0 }, e: { r: 1, c: 7 } }, // Linha 2: Subtítulo de A2 até H2
-        { s: { r: ultimaLinhaIndex - 1, c: 0 }, e: { r: ultimaLinhaIndex - 1, c: 5 } } // Última Linha: Mescla do A ao F para caber o texto "TOTAL DE HORAS..." e alinhar à direita
+        { s: { r: 0, c: 0 }, e: { r: 0, c: 7 } }, 
+        { s: { r: 1, c: 0 }, e: { r: 1, c: 7 } }, 
+        { s: { r: ultimaLinhaIndex - 1, c: 0 }, e: { r: ultimaLinhaIndex - 1, c: 5 } } 
     ];
 
-    // Largura das Colunas
     worksheet['!cols'] = [
         { wch: 12 }, { wch: 45 }, { wch: 10 }, { wch: 12 }, { wch: 14 }, { wch: 10 }, { wch: 14 }, { wch: 14 }
     ];
@@ -465,6 +461,7 @@ function exportarPontosExcel() {
 function inicializarDadosFicticios() {
     const rawUsers = localStorage.getItem("banco_usuarios_ponto");
     if(!rawUsers || JSON.parse(rawUsers).length === 0) {
+        // ALINHAMENTO DE SENHA: Senha fixada como "67" para sincronizar e liberar o login do colaborador
         bancoUsuarios = [
             { id: 1, nome: "ADRIANA SANTARINE DE MENDONÇA DINIZ", cpf: "809.017.781-68", telefone: "(64) 98141-0002", email: "adrianasantarinediniz@gmail.com", senha: "67", foto: "https://ui-avatars.com/api/?name=Adriana+Diniz&background=f97316&color=fff", permissao: "Celular", status: "ATIVO" }
         ];
@@ -511,4 +508,4 @@ function controlarCamposConfiguracao(bloquear) {
 }
 
 inicializarDadosFicticios();
-renderizarTabela();
+renderTabelaComAtualizacao();

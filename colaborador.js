@@ -35,13 +35,11 @@ function verificarSessaoExistente() {
     }
 }
 
-// CORREÇÃO: Busca dinamicamente no banco criado pelo Administrador
 function executarLoginColaborador(event) {
     event.preventDefault();
     const email = document.getElementById("loginEmail").value.trim().toLowerCase();
     const senha = document.getElementById("loginSenha").value.trim();
 
-    // Carrega a lista atualizada de usuários criados no painel admin
     const rawUsers = localStorage.getItem("banco_usuarios_ponto");
     const listaUsuarios = rawUsers ? JSON.parse(rawUsers) : [];
 
@@ -64,11 +62,11 @@ function executarLoginColaborador(event) {
     }
 }
 
-// INJETA A FOTO, NOME E CPF NA TELA DO COLABORADOR IGUAL COMBINAMOS!
+// INJETA FOTO OTIMIZADA, NOME E CPF NA TELA DO COLABORADOR
 function renderizarFichaFuncionario() {
     document.getElementById("nomeFuncionarioConectado").innerHTML = `
         <div class="text-center mt-3">
-            <img src="${usuarioLogado.foto}" style="width: 80px; height: 80px; border-radius: 50%; object-fit: cover; border: 3px solid #f97316; margin-bottom: 10px;" onerror="this.src='https://ui-avatars.com/api/?name=User'">
+            <img src="${usuarioLogado.foto}" style="width: 85px; height: 85px; border-radius: 50%; object-fit: cover; border: 3px solid #f97316; margin-bottom: 10px;" onerror="this.src='https://ui-avatars.com/api/?name=User'">
             <h5 class="mb-0 text-dark fw-bold">${usuarioLogado.nome}</h5>
             <p class="text-muted small mb-0">CPF: ${usuarioLogado.cpf}</p>
         </div>

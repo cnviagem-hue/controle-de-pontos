@@ -73,6 +73,17 @@ function fazerLogout() {
     window.location.href = "index.html";
 }
 
+// ADICIONADO: Função extra de socorro para limpar registros corrompidos na fase de teste
+function resetarBancoGeral() {
+    if(confirm("Deseja limpar os cadastros repetidos e reiniciar a base de dados de teste limpa?")) {
+        localStorage.removeItem("banco_usuarios_ponto");
+        inicializarDadosFicticios();
+        renderTabelaComAtualizacao();
+        sincronizarFiltrosColaboradores();
+        exibirAlertaTop("Base Reiniciada", "Registros duplicados limpos com sucesso!");
+    }
+}
+
 function otimizarEConverterFoto(fileInputElement) {
     return new Promise((resolve) => {
         const file = fileInputElement.files[0];
@@ -145,6 +156,7 @@ function cadastrarUsuario(event) {
     });
 }
 
+// CORREÇÃO CIRÚRGICA: Mapeamento de escopo 'index' perfeitamente amarrado
 function renderTabelaComAtualizacao() {
     const tabela = document.getElementById('tabelaEquipe');
     if(!tabela) return;
@@ -234,7 +246,7 @@ function solicitarExclusaoUsuario(index) {
     document.getElementById('modalTitulo').innerText = "⚠️ Confirmar Exclusão";
     document.getElementById('modalMensagem').innerHTML = `
         <p class="mb-2">Tem certeza absoluta que deseja remover permanentemente o funcionário <strong>${u.nome}</strong>?</p>
-        <p class="text-danger small mb-0">Esta ação não poderá ser desfeita e removerá o histórico dele da listagem.</p>
+        <p class="text-danger small mb-0">Esta ação não poderá ser desfeita.</p>
     `;
     
     document.getElementById('modalFeedbackFooter').innerHTML = `

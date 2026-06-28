@@ -3,116 +3,505 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login - Ponto Web</title>
+    <title>Painel do Gestor - Controle de Ponto</title>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
-        body { font-family: 'Segoe UI', Arial, sans-serif; background-color: #f0f4f8; color: #1e293b; display: flex; align-items: center; justify-content: center; min-height: 100vh; padding: 16px; }
-
-        /* Card de Login Premium baseado no seu anexo */
-        .login-card { max-width: 380px; width: 100%; background: #ffffff; border-radius: 24px; box-shadow: 0 15px 35px rgba(0, 0, 0, 0.05); padding: 40px 32px; text-align: center; display: flex; flex-direction: column; align-items: center; }
+        body { font-family: 'Segoe UI', Arial, sans-serif; display: flex; min-height: 100vh; background-color: #f8fafc; color: #1e293b; }
         
-        /* Ícone Quadrado Laranja */
-        .brand-icon { background-color: #f97316; color: white; width: 60px; height: 60px; border-radius: 16px; display: flex; align-items: center; justify-content: center; font-size: 2rem; margin-bottom: 20px; }
-
-        /* Textos */
-        .login-card h2 { font-size: 1.5rem; font-weight: 700; color: #1e293b; margin-bottom: 4px; }
-        .login-card p { font-size: 0.88rem; color: #94a3b8; margin-bottom: 28px; font-weight: 500; }
-
-        /* Formulário e Inputs */
-        .form-login { width: 100%; display: flex; flex-direction: column; gap: 14px; }
-        .input-field { width: 100%; padding: 14px 16px; border: 1px solid #e2e8f0; border-radius: 12px; font-size: 0.95rem; outline: none; background-color: #ffffff; color: #334155; transition: all 0.2s; }
-        .input-field::placeholder { color: #cbd5e1; }
-        .input-field:focus { border-color: #f97316; box-shadow: 0 0 0 4px rgba(249, 115, 22, 0.08); }
+        .sidebar { width: 260px; background-color: #0f172a; color: #fff; padding: 24px 16px; flex-shrink: 0; display: flex; flex-direction: column; justify-content: space-between; }
+        .sidebar-header { display: flex; align-items: center; gap: 12px; margin-bottom: 32px; padding-bottom: 16px; border-bottom: 1px solid #334155; }
+        .sidebar-header h2 { font-size: 1.25rem; font-weight: 600; color: #f8fafc; }
+        .sidebar-menu { list-style: none; flex-grow: 1; }
+        .sidebar-menu li { margin-bottom: 8px; }
+        .sidebar-menu a { display: block; color: #94a3b8; text-decoration: none; padding: 12px; border-radius: 8px; font-weight: 500; transition: all 0.2s; cursor: pointer; }
+        .sidebar-menu li.active a, .sidebar-menu a:hover { background-color: #1e293b; color: #f97316; }
         
-        /* Botão Escuro */
-        .btn-entrar { background-color: #0f172a; color: white; border: none; padding: 15px; border-radius: 12px; font-weight: 600; cursor: pointer; width: 100%; margin-top: 10px; font-size: 0.95rem; transition: background 0.2s; }
-        .btn-entrar:hover { background-color: #1e293b; }
+        .btn-copiar-link { background-color: #1e293b; border: 1px dashed #f97316; color: #f97316; padding: 12px; border-radius: 8px; text-align: center; font-size: 0.85rem; font-weight: 600; cursor: pointer; margin-top: 20px; transition: all 0.2s; }
+        .btn-copiar-link:hover { background-color: #f97316; color: #fff; }
 
-        /* Link de Esqueci a Senha */
-        .link-esqueci { margin-top: 24px; font-size: 0.88rem; color: #f97316; font-weight: 600; cursor: pointer; }
-        .link-esqueci:hover { text-decoration: underline; }
+        .main-content { flex-grow: 1; display: flex; flex-direction: column; min-width: 0; }
+        .topbar { background-color: #fff; padding: 20px 32px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #e2e8f0; }
+        .topbar h1 { font-size: 1.5rem; font-weight: 600; color: #0f172a; }
+        .btn-sair { background-color: #ef4444; color: #fff; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 0.9rem; }
+        
+        .content-area { padding: 32px; flex-grow: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 24px; }
+        .card { background: #fff; border-radius: 12px; border: 1px solid #e2e8f0; box-shadow: 0 1px 3px rgba(0,0,0,0.05); padding: 32px; max-width: 900px; width: 100%; }
+        .card-header { margin-bottom: 24px; padding-bottom: 12px; border-bottom: 1px solid #f1f5f9; }
+        .card-header h3 { font-size: 1.25rem; color: #0f172a; }
+        
+        .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        .input-group { display: flex; flex-direction: column; gap: 8px; }
+        .input-group.full-width { grid-column: span 2; }
+        .input-group label { font-size: 0.875rem; font-weight: 600; color: #475569; }
+        .input-group input, .input-group select { padding: 12px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 0.95rem; width: 100%; outline: none; background-color: #f8fafc; }
+        .input-group input:focus, .input-group select:focus { border-color: #f97316; background-color: #fff; }
+        
+        .btn-primary { background-color: #f97316; color: white; border: none; padding: 14px; border-radius: 8px; font-weight: 600; cursor: pointer; width: 100%; margin-top: 24px; font-size: 1rem; transition: background 0.2s; }
+        .btn-primary:hover { background-color: #ea580c; }
+        .btn-secundario { background-color: #3b82f6; color: white; border: none; padding: 10px 15px; border-radius: 8px; font-weight: 600; cursor: pointer; font-size: 0.9rem; transition: background 0.2s; margin-bottom: 10px; width: fit-content; }
+        .btn-secundario:hover { background-color: #2563eb; }
+        .divider { margin-top: 20px; border-top: 1px solid #e2e8f0; padding-top: 20px; color: #0f172a; }
+        
+        .table-responsive { width: 100%; overflow-x: auto; margin-top: 16px; }
+        .colab-table { width: 100%; border-collapse: collapse; text-align: left; font-size: 0.9rem; }
+        .colab-table th { background-color: #f1f5f9; color: #475569; padding: 12px; font-weight: 600; border-bottom: 2px solid #e2e8f0; }
+        .colab-table td { padding: 12px; border-bottom: 1px solid #e2e8f0; color: #334155; vertical-align: middle; }
+        .badge { padding: 4px 8px; border-radius: 6px; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; }
+        .badge.ativo { background-color: #dcfce7; color: #15803d; }
+        .badge.bloqueado { background-color: #fee2e2; color: #ef4444; }
+        
+        .actions-cell { display: flex; gap: 6px; flex-wrap: wrap; }
+        .btn-action { border: none; padding: 6px 10px; border-radius: 6px; font-size: 0.8rem; font-weight: 600; cursor: pointer; transition: background 0.2s; }
+        .btn-action.edit { background-color: #e0f2fe; color: #0369a1; }
+        .btn-action.block { background-color: #fef3c7; color: #b45309; }
+        .btn-action.activate { background-color: #dcfce7; color: #166534; }
+        .btn-action.delete { background-color: #fee2e2; color: #b91c1c; }
 
-        /* Toast de Alerta */
-        .toast-notification { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(100px); background-color: #0f172a; color: #ffffff; padding: 14px 24px; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.15); display: flex; align-items: center; gap: 12px; font-size: 0.9rem; font-weight: 500; opacity: 0; transition: all 0.3s ease; z-index: 9999; width: calc(100% - 32px); max-width: 360px; border-left: 4px solid #ef4444; text-align: center; justify-content: center; }
-        .toast-notification.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+        .toast-notification { position: fixed; bottom: 24px; right: 24px; background-color: #0f172a; color: #ffffff; padding: 16px 24px; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.15); display: flex; align-items: center; gap: 12px; font-size: 0.9rem; font-weight: 500; transform: translateY(100px); opacity: 0; transition: all 0.3s cubic-bezier(0.68, -0.55, 0.27, 1.55); z-index: 9999; border-left: 4px solid #10b981; }
+        .toast-notification.show { transform: translateY(0); opacity: 1; }
+
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.4); backdrop-filter: blur(4px); display: flex; align-items: center; justify-content: center; z-index: 10000; opacity: 0; pointer-events: none; transition: opacity 0.25s ease; }
+        .modal-overlay.show { opacity: 1; pointer-events: auto; }
+        .modal-box { background: #ffffff; padding: 28px; border-radius: 16px; max-width: 420px; width: calc(100% - 32px); box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04); transform: scale(0.9); transition: transform 0.25s ease; text-align: center; }
+        .modal-overlay.show .modal-box { transform: scale(1); }
+        
+        .modal-icon { font-size: 2.5rem; margin-bottom: 12px; display: inline-block; }
+        .modal-icon.danger { color: #ef4444; }
+        .modal-icon.info { color: #3b82f6; }
+        
+        .modal-box h4 { font-size: 1.25rem; font-weight: 700; color: #0f172a; margin-bottom: 8px; }
+        .modal-box p { font-size: 0.95rem; color: #64748b; margin-bottom: 16px; line-height: 1.5; }
+        
+        .modal-custom-body { margin-bottom: 24px; text-align: left; }
+        .modal-custom-body select { padding: 12px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 0.95rem; width: 100%; outline: none; background-color: #f8fafc; font-family: inherit; }
+        .modal-custom-body select:focus { border-color: #3b82f6; background-color: #fff; }
+
+        .modal-buttons { display: flex; gap: 12px; justify-content: center; }
+        .btn-modal { padding: 12px 20px; border-radius: 8px; font-size: 0.9rem; font-weight: 600; border: none; cursor: pointer; transition: background 0.2s; width: 100%; }
+        .btn-modal.cancel { background-color: #f1f5f9; color: #475569; }
+        .btn-modal.cancel:hover { background-color: #e2e8f0; }
+        .btn-modal.confirm-del { background-color: #ef4444; color: white; }
+        .btn-modal.confirm-del:hover { background-color: #dc2626; }
+        .btn-modal.confirm-save { background-color: #3b82f6; color: white; }
+        .btn-modal.confirm-save:hover { background-color: #2563eb; }
+
+        @media (max-width: 768px) {
+            body { flex-direction: column; }
+            .sidebar { width: 100%; padding: 16px; }
+            .sidebar-header { margin-bottom: 16px; justify-content: center; }
+            .sidebar-menu { display: flex; justify-content: space-around; gap: 8px; }
+            .sidebar-menu li { margin-bottom: 0; flex-grow: 1; }
+            .sidebar-menu a { padding: 10px; font-size: 0.85rem; text-align: center; }
+            .btn-copiar-link { display: none; }
+            .topbar { padding: 16px; flex-direction: column; gap: 12px; text-align: center; }
+            .topbar h1 { font-size: 1.25rem; }
+            .content-area { padding: 16px; }
+            .card { padding: 20px; }
+            .form-grid { grid-template-columns: 1fr; gap: 16px; }
+            .input-group.full-width { grid-column: span 1; }
+        }
     </style>
 </head>
 <body>
+    
+    <aside class="sidebar">
+        <div>
+            <div class="sidebar-header">
+                <h2>Ponto Web</h2>
+            </div>
+            <ul class="sidebar-menu">
+                <li id="li-cadastro" class="active"><a id="menu-cadastro">👥 Pessoal</a></li>
+                <li id="li-relatorios"><a id="menu-relatorios">📊 Relatórios</a></li>
+                <li id="li-config"><a id="menu-config">⚙️ Configs</a></li>
+            </ul>
+            <div id="btnCopiarLink" class="btn-copiar-link">🔗 Copiar Link do App</div>
+        </div>
+    </aside>
 
-    <div class="login-card">
-        <div class="brand-icon">⏱️</div>
-        <h2>Ponto Web</h2>
-        <p>Acesso ao Painel e Registros</p>
+    <main class="main-content">
+        <header class="topbar">
+            <h1 id="titulo-pagina">Gestão de Pessoas</h1>
+            <button id="btnSair" class="btn-sair">Sair ➔</button>
+        </header>
 
-        <form id="loginForm" class="form-login">
-            <input type="email" id="email" class="input-field" required placeholder="Seu e-mail">
-            <input type="password" id="senha" class="input-field" required placeholder="Sua senha">
-            <button type="submit" id="btnTexto" class="btn-entrar">Entrar no Sistema</button>
-        </form>
+        <div class="content-area">
+            
+            <div id="sec-cadastro" style="display: flex; flex-direction: column; gap: 24px; width: 100%;">
+                <div class="card">
+                    <div class="card-header"><h3>+ Novo Usuário</h3></div>
+                    <form id="cadastroForm">
+                        <div class="form-grid">
+                            <div class="input-group full-width">
+                                <label for="nome">Nome Completo</label>
+                                <input type="text" id="nome" required placeholder="Ex: João da Silva">
+                            </div>
+                            <div class="input-group">
+                                <label for="emailNovo">E-mail de Acesso</label>
+                                <input type="email" id="emailNovo" required placeholder="joao@empresa.com">
+                            </div>
+                            <div class="input-group">
+                                <label for="senhaNova">Senha Inicial</label>
+                                <input type="password" id="senhaNova" required placeholder="Mínimo 6 dígitos">
+                            </div>
+                            <div class="input-group">
+                                <label for="tipoAcesso">Tipo de Acesso</label>
+                                <select id="tipoAcesso">
+                                    <option value="colaborador">Colaborador (App de Ponto)</option>
+                                    <option value="admin">Gestor (Acesso Painel)</option>
+                                </select>
+                            </div>
+                            <div class="input-group">
+                                <label for="dispositivoPermitido">Dispositivo Autorizado</label>
+                                <select id="dispositivoPermitido">
+                                    <option value="celular">Apenas Celular</option>
+                                    <option value="pc">Apenas PC</option>
+                                    <option value="ambos">Celular e PC</option>
+                                </select>
+                            </div>
+                            <div class="input-group full-width divider"><h4>Carga Horária Diária (Horas)</h4></div>
+                            <div class="input-group"><label for="horasSegSex">Segunda a Sexta</label><input type="number" id="horasSegSex" value="8" required></div>
+                            <div class="input-group"><label for="horasSab">Sábado</label><input type="number" id="horasSab" value="4" required></div>
+                        </div>
+                        <button type="submit" class="btn-primary">Cadastrar Usuário</button>
+                    </form>
+                </div>
 
-        <div class="link-esqueci" id="btnEsqueci">Esqueci minha senha</div>
+                <div class="card">
+                    <div class="card-header"><h3>Equipe Cadastrada</h3></div>
+                    <div class="table-responsive">
+                        <table class="colab-table">
+                            <thead>
+                                <tr>
+                                    <th>Nome</th>
+                                    <th>E-mail</th>
+                                    <th>Permissão</th>
+                                    <th>Status</th>
+                                    <th>Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tabelaColaboradoresBody">
+                                <tr>
+                                    <td colspan="5" style="text-align: center; color: #64748b;">Carregando equipe do Firebase...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <div id="sec-relatorios" class="card" style="display: none;">
+                <div class="card-header"><h3>Filtro de Registros</h3></div>
+                <div class="card-body">
+                    <p style="color: #64748b; margin-bottom: 20px;">Selecione o período para gerar o relatório.</p>
+                    <div class="form-grid">
+                        <div class="input-group"><label>Data Início</label><input type="date" id="dataInicio"></div>
+                        <div class="input-group"><label>Data Fim</label><input type="date" id="dataFim"></div>
+                    </div>
+                    <button id="btnGerarRelatorio" class="btn-primary" style="background-color: #10b981;">Gerar e Baixar Excel</button>
+                </div>
+            </div>
+
+            <div id="sec-config" class="card" style="display: none;">
+                <div class="card-header"><h3>Configuração da Empresa</h3></div>
+                <form id="configForm">
+                    <div class="form-grid">
+                        <div class="input-group full-width">
+                            <label for="nomeEmpresa">Nome da Empresa (Aparecerá para o funcionário)</label>
+                            <input type="text" id="nomeEmpresa" required placeholder="Ex: Mercado Central">
+                        </div>
+                        <div class="input-group full-width divider"><h4>Cerca Virtual Antifraude</h4></div>
+                        <div class="input-group full-width">
+                            <button type="button" id="btnCapturarGps" class="btn-secundario">📍 Obter Localização Atual</button>
+                        </div>
+                        <div class="input-group"><label for="latEmpresa">Latitude</label><input type="text" id="latEmpresa" placeholder="Aguardando GPS..." required readonly></div>
+                        <div class="input-group"><label for="lngEmpresa">Longitude</label><input type="text" id="lngEmpresa" placeholder="Aguardando GPS..." required readonly></div>
+                        <div class="input-group full-width">
+                            <label for="raioPermitido">Raio de Tolerância (metros)</label>
+                            <input type="number" id="raioPermitido" value="50" required>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn-primary" style="background-color: #3b82f6;">Salvar Configurações</button>
+                </form>
+            </div>
+
+        </div>
+    </main>
+
+    <div id="modalConfirmacao" class="modal-overlay">
+        <div class="modal-box">
+            <span id="modalIcon" class="modal-icon info">⚙️</span>
+            <h4 id="modalTitulo">Confirmação</h4>
+            <p id="modalTexto">Tem certeza?</p>
+            <div id="modalCustomBody" class="modal-custom-body"></div>
+            <div class="modal-buttons">
+                <button id="btnModalCancelar" class="btn-modal cancel">Cancelar</button>
+                <button id="btnModalConfirmar" class="btn-modal confirm-save">Confirmar</button>
+            </div>
+        </div>
     </div>
 
     <div id="toastNotification" class="toast-notification">
-        <span id="toastMessage">Erro ao fazer login.</span>
+        <span id="toastMessage">Aviso</span>
     </div>
 
     <script type="module">
         import { auth, db } from './js/firebase-config.js';
-        import { signInWithEmailAndPassword, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
-        import { doc, getDoc } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
+        import { signOut, getAuth, createUserWithEmailAndPassword, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
+        import { doc, setDoc, getDoc, collection, getDocs, updateDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
 
-        const loginForm = document.getElementById('loginForm');
-        const btnTexto = document.getElementById('btnTexto');
+        const btnCadastro = document.getElementById('menu-cadastro');
+        const btnRelatorios = document.getElementById('menu-relatorios');
+        const btnConfig = document.getElementById('menu-config');
+        const btnSair = document.getElementById('btnSair');
+        const btnCopiarLink = document.getElementById('btnCopiarLink');
 
-        function mostrarToast(mensagem) {
+        const liCadastro = document.getElementById('li-cadastro');
+        const liRelatorios = document.getElementById('li-relatorios');
+        const liConfig = document.getElementById('li-config');
+
+        const boxCadastro = document.getElementById('sec-cadastro');
+        const boxRelatorios = document.getElementById('sec-relatorios');
+        const boxConfig = document.getElementById('sec-config');
+        const txtTitulo = document.getElementById('titulo-pagina');
+
+        const modal = document.getElementById('modalConfirmacao');
+        const modalIcon = document.getElementById('modalIcon');
+        const modalTitulo = document.getElementById('modalTitulo');
+        const modalTexto = document.getElementById('modalTexto');
+        const modalCustomBody = document.getElementById('modalCustomBody');
+        const btnModalCancelar = document.getElementById('btnModalCancelar');
+        const btnModalConfirmar = document.getElementById('btnModalConfirmar');
+
+        let acaoConfirmarGlobal = null;
+
+        // PROTEÇÃO: Garante que só acessa se estiver autenticado como admin
+        onAuthStateChanged(auth, async (user) => {
+            if (!user) {
+                window.location.href = "index.html";
+            } else {
+                const userDoc = await getDoc(doc(db, "usuarios", user.uid));
+                if (!userDoc.exists() || userDoc.data().tipo !== "admin") {
+                    window.location.href = "colaborador.html";
+                }
+            }
+        });
+
+        function alternarTela(telaVisivel, liAtivo, textoTitulo) {
+            boxCadastro.style.display = 'none';
+            boxRelatorios.style.display = 'none';
+            boxConfig.style.display = 'none';
+            liCadastro.classList.remove('active');
+            liRelatorios.classList.remove('active');
+            liConfig.classList.remove('active');
+
+            telaVisivel.style.display = 'flex';
+            if(telaVisivel === boxRelatorios || telaVisivel === boxConfig) { telaVisivel.style.display = 'block'; }
+            liAtivo.classList.add('active');
+            txtTitulo.textContent = textoTitulo;
+        }
+
+        btnCadastro.onclick = () => alternarTela(boxCadastro, liCadastro, 'Gestão de Pessoas');
+        btnRelatorios.onclick = () => alternarTela(boxRelatorios, liRelatorios, 'Relatórios e Fechamento');
+        btnConfig.onclick = () => { alternarTela(boxConfig, liConfig, 'Configurações do Sistema'); carregarConfiguracoes(); };
+        btnSair.onclick = async () => { await signOut(auth); window.location.href = 'index.html'; };
+
+        function mostrarToast(mensagem, corBorda = "#10b981") {
             const toast = document.getElementById('toastNotification');
-            document.getElementById('toastMessage').textContent = message || mensagem;
+            toast.style.borderLeft = `4px solid ${corBorda}`;
+            document.getElementById('toastMessage').textContent = mensagem;
             toast.classList.add('show');
             setTimeout(() => { toast.classList.remove('show'); }, 3500);
         }
 
-        // DIRECIONADOR AUTOMÁTICO SE JÁ ESTIVER LOGADO (O QUE ESTAVA FALTANDO!)
-        onAuthStateChanged(auth, async (user) => {
-            if (user) {
-                try {
-                    const userDoc = await getDoc(doc(db, "usuarios", user.uid));
-                    if (userDoc.exists() && userDoc.data().tipo === "admin") {
-                        window.location.href = "admin.html";
-                    } else {
-                        window.location.href = "colaborador.html";
-                    }
-                } catch (e) { console.error(e); }
-            }
-        });
+        function abrirModalUI(titulo, texto, icone, classeBotao, callbackConfirmar, htmlCustomizado = "") {
+            modalTitulo.textContent = titulo;
+            modalTexto.textContent = texto;
+            modalIcon.textContent = icone;
+            modalIcon.className = `modal-icon ${classeBotao === 'confirm-del' ? 'danger' : 'info'}`;
+            btnModalConfirmar.className = `btn-modal ${classeBotao}`;
+            modalCustomBody.innerHTML = htmlCustomizado;
+            acaoConfirmarGlobal = callbackConfirmar;
+            modal.classList.add('show');
+        }
 
-        // EVENTO DE LOGIN ATIVO COM O BANCO
-        if (loginForm) {
-            loginForm.onsubmit = async (e) => {
-                e.preventDefault();
-                const email = document.getElementById('email').value.trim();
-                const senha = document.getElementById('senha').value;
+        btnModalCancelar.onclick = () => { modal.classList.remove('show'); acaoConfirmarGlobal = null; };
+        btnModalConfirmar.onclick = async () => {
+            if(acaoConfirmarGlobal) { await acaoConfirmarGlobal(); }
+            modal.classList.remove('show');
+        };
 
-                btnTexto.disabled = true;
-                btnTexto.textContent = "⌛ Autenticando...";
+        btnCopiarLink.onclick = () => {
+            const linkColaborador = window.location.origin + "/colaborador.html";
+            navigator.clipboard.writeText(linkColaborador).then(() => {
+                mostrarToast("Link do app copiado! Envie para a equipe.");
+            });
+        };
 
-                try {
-                    const resultado = await signInWithEmailAndPassword(auth, email, senha);
-                    const userDoc = await getDoc(doc(db, "usuarios", resultado.user.uid));
-                    
-                    if (userDoc.exists() && userDoc.data().tipo === "admin") {
-                        window.location.href = "admin.html";
-                    } else {
-                        window.location.href = "colaborador.html";
-                    }
-                } catch (err) {
-                    console.error(err);
-                    btnTexto.disabled = false;
-                    btnTexto.textContent = "Entrar no Sistema";
-                    mostrarToast("Credenciais incorretas ou usuário inválido.");
-                }
+        if (document.getElementById('btnCapturarGps')) {
+            document.getElementById('btnCapturarGps').onclick = () => {
+                document.getElementById('btnCapturarGps').textContent = "⌛ Capturando...";
+                navigator.geolocation.getCurrentPosition((pos) => {
+                    document.getElementById('latEmpresa').value = pos.coords.latitude;
+                    document.getElementById('lngEmpresa').value = pos.coords.longitude;
+                    document.getElementById('btnCapturarGps').textContent = "📍 Obter Localização Atual";
+                }, () => {
+                    alert("Ative seu GPS.");
+                    document.getElementById('btnCapturarGps').textContent = "📍 Obter Localização Atual";
+                });
             };
         }
+
+        async function carregarConfiguracoes() {
+            try {
+                const docRef = await getDoc(doc(db, "sistema", "configGeral"));
+                if (docRef.exists()) {
+                    const dados = docRef.data();
+                    document.getElementById('nomeEmpresa').value = dados.nomeEmpresa || '';
+                    document.getElementById('latEmpresa').value = dados.latitude || '';
+                    document.getElementById('lngEmpresa').value = dados.longitude || '';
+                    document.getElementById('raioPermitido').value = dados.raio || 50;
+                }
+            } catch (err) { console.error(err); }
+        }
+
+        if (document.getElementById('configForm')) {
+            document.getElementById('configForm').onsubmit = async (e) => {
+                e.preventDefault();
+                try {
+                    await setDoc(doc(db, "sistema", "configGeral"), {
+                        nomeEmpresa: document.getElementById('nomeEmpresa').value.trim(),
+                        latitude: Number(document.getElementById('latEmpresa').value),
+                        longitude: Number(document.getElementById('lngEmpresa').value),
+                        raio: Number(document.getElementById('raioPermitido').value)
+                    });
+                    mostrarToast("Configurações salvas com sucesso!");
+                } catch (err) { mostrarToast("Erro ao salvar: " + err.message, "#ef4444"); }
+            };
+        }
+
+        const tabelaBody = document.getElementById('tabelaColaboradoresBody');
+
+        async function listarColaboradores() {
+            tabelaBody.innerHTML = '<tr><td colspan="5" style="text-align: center;">Buscando equipe...</td></tr>';
+            try {
+                const querySnapshot = await getDocs(collection(db, "usuarios"));
+                tabelaBody.innerHTML = '';
+                if(querySnapshot.empty) {
+                    tabelaBody.innerHTML = '<tr><td colspan="5" style="text-align: center;">Nenhum usuário cadastrado.</td></tr>';
+                    return;
+                }
+                querySnapshot.forEach((usuarioDoc) => {
+                    const u = usuarioDoc.data();
+                    const uid = usuarioDoc.id;
+                    const nomeExibir = u.nome || "Usuário Antigo";
+                    const emailExibir = u.email || "sem@email.com";
+                    const dispPermissao = u.dispositivoPermitido || "celular";
+                    const statusText = u.status !== "bloqueado" ? "Ativo" : "Bloqueado";
+                    const badgeClass = u.status !== "bloqueado" ? "ativo" : "bloqueado";
+                    const btnBlockText = u.status !== "bloqueado" ? "🔒 Bloquear" : "🔓 Ativar";
+
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td><strong>${nomeExibir}</strong></td>
+                        <td>${emailExibir}</td>
+                        <td><span style="text-transform: capitalize; font-weight:600;">${dispPermissao}</span></td>
+                        <td><span class="badge ${badgeClass}">${statusText}</span></td>
+                        <td class="actions-cell">
+                            <button class="btn-action edit" data-uid="${uid}" data-nome="${nomeExibir}" data-disp="${dispPermissao}">✏️ Disp</button>
+                            <button class="btn-action block" data-uid="${uid}" data-status="${u.status || 'ativo'}">${btnBlockText}</button>
+                            <button class="btn-action delete" data-uid="${uid}" data-nome="${nomeExibir}">🗑️ Excluir</button>
+                        </td>
+                    `;
+                    tabelaBody.appendChild(tr);
+                });
+                vincularCliquesTabela();
+            } catch (err) { tabelaBody.innerHTML = '<tr><td colspan="5">Erro ao carregar tabela.</td></tr>'; }
+        }
+
+        function vincularCliquesTabela() {
+            document.querySelectorAll('.btn-action.edit').forEach(btn => {
+                btn.onclick = () => {
+                    const uid = btn.getAttribute('data-uid');
+                    const nome = btn.getAttribute('data-nome');
+                    const dispAtual = btn.getAttribute('data-disp');
+                    const htmlSelect = `
+                        <select id="modalSelectDispositivo">
+                            <option value="celular" ${dispAtual === 'celular' ? 'selected' : ''}>📱 Apenas Celular</option>
+                            <option value="pc" ${dispAtual === 'pc' ? 'selected' : ''}>💻 Apenas PC</option>
+                            <option value="ambos" ${dispAtual === 'ambos' ? 'selected' : ''}>🔄 Celular e PC (Ambos)</option>
+                        </select>
+                    `;
+                    abrirModalUI("Alterar Dispositivo", `Selecione as novas permissões para ${nome}:`, "⚙️", "confirm-save", async () => {
+                        const novaEscolha = document.getElementById('modalSelectDispositivo').value;
+                        await updateDoc(doc(db, "usuarios", uid), { dispositivoPermitido: novaEscolha });
+                        mostrarToast(`Acesso de ${nome} atualizado!`);
+                        listarColaboradores();
+                    }, htmlSelect);
+                };
+            });
+
+            document.querySelectorAll('.btn-action.block').forEach(btn => {
+                btn.onclick = () => {
+                    const uid = btn.getAttribute('data-uid');
+                    const statusAtual = btn.getAttribute('data-status');
+                    const novoStatus = statusAtual === "bloqueado" ? "ativo" : "bloqueado";
+                    abrirModalUI(novoStatus === "bloqueado" ? "Bloquear?" : "Ativar?", `Alterar status do colaborador?`, "🔒", novoStatus === "bloqueado" ? "confirm-del" : "confirm-save", async () => {
+                        await updateDoc(doc(db, "usuarios", uid), { status: novoStatus });
+                        mostrarToast(novoStatus === "bloqueado" ? "Usuário suspenso!" : "Usuário reativado!");
+                        listarColaboradores();
+                    });
+                };
+            });
+
+            document.querySelectorAll('.btn-action.delete').forEach(btn => {
+                btn.onclick = () => {
+                    const uid = btn.getAttribute('data-uid');
+                    const nome = btn.getAttribute('data-nome');
+                    abrirModalUI("Excluir Registro?", `Deseja deletar ${nome} permanentemente?`, "🗑️", "confirm-del", async () => {
+                        try {
+                            await deleteDoc(doc(db, "usuarios", uid));
+                            mostrarToast("Colaborador removido!");
+                            listarColaboradores();
+                        } catch (err) { mostrarToast("Erro: " + err.message, "#ef4444"); }
+                    });
+                };
+            });
+        }
+
+        const cadastroForm = document.getElementById('cadastroForm');
+        if (cadastroForm) {
+            cadastroForm.onsubmit = async (e) => {
+                e.preventDefault();
+                const nome = document.getElementById('nome').value.trim();
+                const email = document.getElementById('emailNovo').value.trim();
+                const senha = document.getElementById('senhaNova').value;
+                const tipo = document.getElementById('tipoAcesso').value;
+                const dispositivo = document.getElementById('dispositivoPermitido').value;
+                const segSex = document.getElementById('horasSegSex').value;
+                const sab = document.getElementById('horasSab').value;
+
+                try {
+                    const app2 = initializeApp(auth.app.options, 'AppCadastro');
+                    const auth2 = getAuth(app2);
+                    const cred = await createUserWithEmailAndPassword(auth2, email, senha);
+                    await setDoc(doc(db, "usuarios", cred.user.uid), {
+                        nome: nome,
+                        email: email,
+                        tipo: tipo,
+                        dispositivoPermitido: dispositivo,
+                        status: "ativo",
+                        cargaHoraria: { segSex: Number(segSex), sabado: Number(sab), domingo: 0 },
+                        dataCadastro: new Date().toISOString()
+                    });
+                    await signOut(auth2);
+                    mostrarToast("Usuário cadastrado com sucesso!");
+                    cadastroForm.reset();
+                    listarColaboradores();
+                } catch (err) { mostrarToast("Erro: " + err.message, "#ef4444"); }
+            };
+        }
+        listarColaboradores();
     </script>
 </body>
 </html>

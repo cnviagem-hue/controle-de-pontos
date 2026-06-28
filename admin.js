@@ -20,6 +20,7 @@ function alternarAba(nomeAba) {
 function exibirAlertaTop(titulo, message) {
     document.getElementById('modalTitulo').innerText = titulo;
     document.getElementById('modalMensagem').innerHTML = `<p class="fs-6 text-secondary mb-0">${message}</p>`;
+    document.getElementById('modalFeedbackFooter').innerHTML = `<button type="button" class="btn btn-primary px-4 btn-sm" data-bs-dismiss="modal">OK</button>`;
     new bootstrap.Modal(document.getElementById('modalFeedback')).show();
 }
 
@@ -70,6 +71,13 @@ function fazerLogout() {
     localStorage.removeItem("ponto_web_sessao_colab");
     sessionStorage.clear();
     window.location.href = "index.html";
+}
+
+function resetarBancoGeral() {
+    localStorage.removeItem("banco_usuarios_ponto");
+    inicializarDadosFicticios();
+    renderTabelaComAtualizacao();
+    sincronizarFiltrosColaboradores();
 }
 
 function otimizarEConverterFoto(fileInputElement) {
@@ -213,13 +221,11 @@ function confirmarEdicaoFicha() {
         bancoUsuarios[usuarioSelecionadoId] = u;
         localStorage.setItem("banco_usuarios_ponto", JSON.stringify(bancoUsuarios));
         
-        // Forma segura de fechar o modal
         const elementoModal = document.getElementById('modalEditarFicha');
         const modalInstance = bootstrap.Modal.getInstance(elementoModal);
         if(modalInstance) {
             modalInstance.hide();
         } else {
-            // Fallback se a instância se perder (remover as classes do body manualmente)
             elementoModal.classList.remove('show');
             elementoModal.style.display = 'none';
             document.body.classList.remove('modal-open');
@@ -230,7 +236,6 @@ function confirmarEdicaoFicha() {
         renderTabelaComAtualizacao();
         sincronizarFiltrosColaboradores();
         
-        // Timeout pequeno para garantir que a transição de fechamento do modal anterior não bloqueie o Alerta
         setTimeout(() => {
             exibirAlertaTop("📝 Atualizado", "A ficha cadastral do colaborador foi alterada com sucesso.");
         }, 300);
@@ -244,7 +249,6 @@ function solicitarExclusaoUsuario(index) {
 
     usuarioSelecionadoId = idx;
     
-    // Atualiza o nome no novo modal dedicado de exclusão
     document.getElementById('nomeUsuarioExclusao').innerText = u.nome;
     
     new bootstrap.Modal(document.getElementById('modalExclusao')).show();
@@ -255,7 +259,6 @@ function executarExclusaoDefinitiva() {
     bancoUsuarios.splice(usuarioSelecionadoId, 1);
     localStorage.setItem("banco_usuarios_ponto", JSON.stringify(bancoUsuarios));
     
-    // Forma segura de fechar o modal de exclusão
     const elementoModal = document.getElementById('modalExclusao');
     const modalInstance = bootstrap.Modal.getInstance(elementoModal);
     if(modalInstance) {
@@ -521,7 +524,166 @@ function exportarPontosExcel() {
     XLSX.writeFile(workbook, `Espelho_Ponto_${colabNome.replace(/ /g, "_")}.xlsx`);
 }
 
-// INICIALIZADOR: O único lugar onde limpamos e populamos os dados de teste da Adriana
+// ============== LÓGICA DE GEOLOCALIZAÇÃO =================
+
+function obterLocalizacaoAtual() {
+    if (!navigator.geolocation) {
+        exibirAlertaTop("Erro", "Geolocalização não é suportada pelo seu navegador.");
+        return;
+    }
+
+    const btn = document.getElementById("btnGpsConfigs");
+    const textoOriginal = btn.innerText;
+    btn.innerText = "⏳ Buscando...";
+    btn.disabled = true;
+
+    navigator.geolocation.getCurrentPosition(
+        (position) => {
+            document.getElementById("latitude").value = position.coords.latitude;
+            document.getElementById("longitude").value = position.coords.longitude;
+            document.getElementById("boxEndereco").style.display = "block";
+            document.getElementById("enderecoTexto").innerText = "Localização capturada via GPS do dispositivo.";
+            
+            btn.innerText = textoOriginal;
+            btn.disabled = false;
+            exibirAlertaTop("📍 Sucesso", "Coordenadas capturadas com sucesso via GPS!");
+        },
+        (error) => {
+            btn.innerText = textoOriginal;
+            btn.disabled = false;
+            exibirAlertaTop("⚠️ Erro de GPS", "Não foi possível obter a localização. Verifique as permissões do navegador.");
+        },
+        { enableHighAccuracy: true, timeout: 10000 }
+    );
+}
+
+async function buscarCoordenadasPorCEP() {
+    const cepInput = document.getElementById("cepBusca").value.replace(/\D/g, '');
+    const numInput = document.getElementById("numeroBusca").value.trim();
+
+    if (cepInput.length !== 8) {
+        exibirAlertaTop("⚠️ Aviso", "Por favor, digite um CEP válido com 8 dígitos.");
+        return;
+    }
+
+    const btn = document.getElementById("btnBuscarCep");
+    const textoOriginal = btn.innerText;
+    btn.innerText = "⏳ Buscando Endereço...";
+    btn.disabled = true;
+
+    try {
+        const resViaCep = await fetch(`https://viacep.com.br/ws/${cepInput}/json/`);
+        const dadosCep = await resViaCep.json();
+
+        if (dadosCep.erro) throw new Error("CEP não encontrado na base de dados.");
+
+        const enderecoCompleto = `${dadosCep.logradouro}${numInput ? ', ' + numInput : ''}, ${dadosCep.bairro}, ${dadosCep.localidade} - ${dadosCep.uf}`;
+        
+        btn.innerText = "⏳ Buscando Coordenadas...";
+
+        // Buscar coordenadas via Nominatim
+        const query = encodeURIComponent(`${dadosCep.logradouro}, ${dadosCep.localidade}, ${dadosCep.uf}, Brazil`);
+        const resGeo = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${query}&limit=1`);
+        const dadosGeo = await resGeo.json();
+
+        if (dadosGeo.length > 0) {
+            document.getElementById("latitude").value = dadosGeo[0].lat;
+            document.getElementById("longitude").value = dadosGeo[0].lon;
+            document.getElementById("boxEndereco").style.display = "block";
+            document.getElementById("enderecoTexto").innerText = enderecoCompleto;
+            exibirAlertaTop("📍 Sucesso", "Endereço e coordenadas localizados com sucesso!");
+        } else {
+            // Busca genérica pela cidade caso a rua falhe
+            const queryGenerica = encodeURIComponent(`${dadosCep.localidade}, ${dadosCep.uf}, Brazil`);
+            const resGeoGen = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${queryGenerica}&limit=1`);
+            const dadosGeoGen = await resGeoGen.json();
+
+            if(dadosGeoGen.length > 0) {
+                document.getElementById("latitude").value = dadosGeoGen[0].lat;
+                document.getElementById("longitude").value = dadosGeoGen[0].lon;
+                document.getElementById("boxEndereco").style.display = "block";
+                document.getElementById("enderecoTexto").innerText = `${enderecoCompleto} (Coordenada aproximada pela cidade)`;
+                exibirAlertaTop("📍 Sucesso Parcial", "Coordenadas aproximadas localizadas pela cidade.");
+            } else {
+                throw new Error("Não foi possível encontrar as coordenadas exatas para este CEP.");
+            }
+        }
+    } catch (error) {
+        exibirAlertaTop("⚠️ Erro", error.message || "Falha ao buscar dados de localização.");
+        document.getElementById("boxEndereco").style.display = "none";
+    } finally {
+        btn.innerText = textoOriginal;
+        btn.disabled = false;
+    }
+}
+
+// ============== SALVAMENTO DE CONFIGURAÇÕES =================
+
+function salvarConfiguracoes() {
+    const configs = {
+        nomeEmpresa: document.getElementById("nomeEmpresa").value,
+        cep: document.getElementById("cepBusca").value,
+        numero: document.getElementById("numeroBusca").value,
+        latitude: document.getElementById("latitude").value,
+        longitude: document.getElementById("longitude").value,
+        raio: document.getElementById("raioTolerancia").value,
+        endereco: document.getElementById("enderecoTexto").innerText
+    };
+    
+    // Grava as coordenadas na memória do navegador para o uso do colaborador
+    localStorage.setItem("configuracoes_empresa", JSON.stringify(configs));
+
+    const btnSalvar = document.getElementById("btnSalvarConfigs");
+    controlarCamposConfiguracao(true);
+    btnSalvar.classList.remove("btn-primary");
+    btnSalvar.classList.add("btn-success");
+    btnSalvar.innerText = "✓ Configurações Salvas com Sucesso!";
+    exibirAlertaTop("Configurações Salvas", "Cerca virtual gravada com segurança no sistema!");
+    
+    setTimeout(() => {
+        btnSalvar.classList.remove("btn-success");
+        btnSalvar.classList.add("btn-primary");
+        btnSalvar.innerText = "Salvar Configurações";
+    }, 3000);
+}
+
+function carregarConfiguracoes() {
+    const configSalva = localStorage.getItem("configuracoes_empresa");
+    if(configSalva) {
+        const configs = JSON.parse(configSalva);
+        document.getElementById("nomeEmpresa").value = configs.nomeEmpresa || "UniCesumar";
+        document.getElementById("cepBusca").value = configs.cep || "";
+        document.getElementById("numeroBusca").value = configs.numero || "";
+        document.getElementById("latitude").value = configs.latitude || "";
+        document.getElementById("longitude").value = configs.longitude || "";
+        document.getElementById("raioTolerancia").value = configs.raio || "50";
+        if(configs.endereco) {
+            document.getElementById("boxEndereco").style.display = "block";
+            document.getElementById("enderecoTexto").innerText = configs.endereco;
+        }
+    }
+}
+
+function focarEdicaoConfigs() {
+    controlarCamposConfiguracao(false);
+    document.getElementById("nomeEmpresa").focus();
+}
+
+function controlarCamposConfiguracao(bloquear) {
+    document.getElementById("nomeEmpresa").disabled = bloquear;
+    document.getElementById("cepBusca").disabled = bloquear;
+    document.getElementById("numeroBusca").disabled = bloquear;
+    document.getElementById("latitude").disabled = bloquear;
+    document.getElementById("longitude").disabled = bloquear;
+    document.getElementById("raioTolerancia").disabled = bloquear;
+    document.getElementById("btnSalvarConfigs").disabled = bloquear;
+    
+    // Habilita os botões de busca para o usuário quando ele clica em Editar
+    document.getElementById("btnGpsConfigs").disabled = bloquear;
+    document.getElementById("btnBuscarCep").disabled = bloquear;
+}
+
+// INICIALIZADOR GLOBAL
 function inicializarDadosFicticios() {
     const rawUsers = localStorage.getItem("banco_usuarios_ponto");
     if(!rawUsers || JSON.parse(rawUsers).length === 0) {
@@ -544,33 +706,6 @@ function inicializarDadosFicticios() {
     }
 }
 
-function salvarConfiguracoes() {
-    const btnSalvar = document.getElementById("btnSalvarConfigs");
-    controlarCamposConfiguracao(true);
-    btnSalvar.classList.remove("btn-primary");
-    btnSalvar.classList.add("btn-success");
-    btnSalvar.innerText = "✓ Configurações Salvas com Sucesso!";
-    setTimeout(() => {
-        btnSalvar.classList.remove("btn-success");
-        btnSalvar.classList.add("btn-primary");
-        btnSalvar.innerText = "Salvar Configurações";
-    }, 3000);
-}
-
-function focarEdicaoConfigs() {
-    controlarCamposConfiguracao(false);
-    document.getElementById("nomeEmpresa").focus();
-}
-
-function controlarCamposConfiguracao(bloquear) {
-    document.getElementById("nomeEmpresa").disabled = bloquear;
-    document.getElementById("cepBusca").disabled = bloquear;
-    document.getElementById("numeroBusca").disabled = bloquear;
-    document.getElementById("latitude").disabled = bloquear;
-    document.getElementById("longitude").disabled = bloquear;
-    document.getElementById("raioTolerancia").disabled = bloquear;
-    document.getElementById("btnSalvarConfigs").disabled = bloquear;
-}
-
 inicializarDadosFicticios();
+carregarConfiguracoes();
 renderTabelaComAtualizacao();

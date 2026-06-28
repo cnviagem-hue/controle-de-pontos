@@ -18,19 +18,23 @@
         .login-card h2 { font-size: 1.5rem; font-weight: 700; color: #1e293b; margin-bottom: 4px; }
         .login-card p { font-size: 0.88rem; color: #94a3b8; margin-bottom: 28px; font-weight: 500; }
 
-        /* Formulário e Inputs do Anexo */
+        /* Formulário e Inputs */
         .form-login { width: 100%; display: flex; flex-direction: column; gap: 14px; }
-        .input-field { width: 100%; padding: 14px 16px; border: 1px solid #e2e8f0; border-radius: 12px; font-size: 0.95rem; outline: none; background-color: #ffffff; color: #334155; }
+        .input-field { width: 100%; padding: 14px 16px; border: 1px solid #e2e8f0; border-radius: 12px; font-size: 0.95rem; outline: none; background-color: #ffffff; color: #334155; transition: all 0.2s; }
         .input-field::placeholder { color: #cbd5e1; }
-        .input-field:focus { border-color: #f97316; }
+        .input-field:focus { border-color: #f97316; box-shadow: 0 0 0 4px rgba(249, 115, 22, 0.08); }
         
         /* Botão Escuro */
-        .btn-entrar { background-color: #0f172a; color: white; border: none; padding: 15px; border-radius: 12px; font-weight: 600; cursor: pointer; width: 100%; margin-top: 10px; font-size: 0.95rem; }
+        .btn-entrar { background-color: #0f172a; color: white; border: none; padding: 15px; border-radius: 12px; font-weight: 600; cursor: pointer; width: 100%; margin-top: 10px; font-size: 0.95rem; transition: background 0.2s; }
         .btn-entrar:hover { background-color: #1e293b; }
 
         /* Link de Esqueci a Senha */
         .link-esqueci { margin-top: 24px; font-size: 0.88rem; color: #f97316; font-weight: 600; cursor: pointer; }
         .link-esqueci:hover { text-decoration: underline; }
+
+        /* Toast de Alerta */
+        .toast-notification { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(100px); background-color: #0f172a; color: #ffffff; padding: 14px 24px; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.15); display: flex; align-items: center; gap: 12px; font-size: 0.9rem; font-weight: 500; opacity: 0; transition: all 0.3s ease; z-index: 9999; width: calc(100% - 32px); max-width: 360px; border-left: 4px solid #ef4444; text-align: center; justify-content: center; }
+        .toast-notification.show { transform: translateX(-50%) translateY(0); opacity: 1; }
     </style>
 </head>
 <body>
@@ -43,23 +47,72 @@
         <form id="loginForm" class="form-login">
             <input type="email" id="email" class="input-field" required placeholder="Seu e-mail">
             <input type="password" id="senha" class="input-field" required placeholder="Sua senha">
-            <button type="submit" class="btn-entrar">Entrar no Sistema</button>
+            <button type="submit" id="btnTexto" class="btn-entrar">Entrar no Sistema</button>
         </form>
 
         <div class="link-esqueci" id="btnEsqueci">Esqueci minha senha</div>
     </div>
 
+    <div id="toastNotification" class="toast-notification">
+        <span id="toastMessage">Erro ao fazer login.</span>
+    </div>
+
     <script type="module">
-        // Lógica limpa e direta para evitar travamentos de build
-        document.getElementById('loginForm').onsubmit = (e) => {
-            e.preventDefault();
-            const email = document.getElementById('email').value.trim();
-            if(email.includes("admin")) {
-                window.location.href = "admin.html";
-            } else {
-                window.location.href = "colaborador.html";
+        import { auth, db } from './js/firebase-config.js';
+        import { signInWithEmailAndPassword, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
+        import { doc, getDoc } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
+
+        const loginForm = document.getElementById('loginForm');
+        const btnTexto = document.getElementById('btnTexto');
+
+        function mostrarToast(mensagem) {
+            const toast = document.getElementById('toastNotification');
+            document.getElementById('toastMessage').textContent = message || mensagem;
+            toast.classList.add('show');
+            setTimeout(() => { toast.classList.remove('show'); }, 3500);
+        }
+
+        // DIRECIONADOR AUTOMÁTICO SE JÁ ESTIVER LOGADO (O QUE ESTAVA FALTANDO!)
+        onAuthStateChanged(auth, async (user) => {
+            if (user) {
+                try {
+                    const userDoc = await getDoc(doc(db, "usuarios", user.uid));
+                    if (userDoc.exists() && userDoc.data().tipo === "admin") {
+                        window.location.href = "admin.html";
+                    } else {
+                        window.location.href = "colaborador.html";
+                    }
+                } catch (e) { console.error(e); }
             }
-        };
+        });
+
+        // EVENTO DE LOGIN ATIVO COM O BANCO
+        if (loginForm) {
+            loginForm.onsubmit = async (e) => {
+                e.preventDefault();
+                const email = document.getElementById('email').value.trim();
+                const senha = document.getElementById('senha').value;
+
+                btnTexto.disabled = true;
+                btnTexto.textContent = "⌛ Autenticando...";
+
+                try {
+                    const resultado = await signInWithEmailAndPassword(auth, email, senha);
+                    const userDoc = await getDoc(doc(db, "usuarios", resultado.user.uid));
+                    
+                    if (userDoc.exists() && userDoc.data().tipo === "admin") {
+                        window.location.href = "admin.html";
+                    } else {
+                        window.location.href = "colaborador.html";
+                    }
+                } catch (err) {
+                    console.error(err);
+                    btnTexto.disabled = false;
+                    btnTexto.textContent = "Entrar no Sistema";
+                    mostrarToast("Credenciais incorretas ou usuário inválido.");
+                }
+            };
+        }
     </script>
 </body>
 </html>

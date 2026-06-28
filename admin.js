@@ -172,8 +172,8 @@ function renderTabelaComAtualizacao() {
 }
 
 function abrirModalEditarFicha(id) {
-    usuarioSelecionadoId = id;
-    const u = bancoUsuarios.find(x => x.id === id);
+    usuarioSelecionadoId = parseInt(id); // Garante a busca pelo tipo numérico do ID
+    const u = bancoUsuarios.find(x => x.id === usuarioSelecionadoId);
     if(!u) return;
 
     document.getElementById('editNome').value = u.nome;
@@ -187,7 +187,6 @@ function abrirModalEditarFicha(id) {
     new bootstrap.Modal(document.getElementById('modalEditarFicha')).show();
 }
 
-// CORREÇÃO DA FICHA: Sincronização direta e encerramento limpo do modal salvando dados de verdade
 function confirmarEdicaoFicha() {
     const u = bancoUsuarios.find(x => x.id === usuarioSelecionadoId);
     if(!u) return;
@@ -204,7 +203,6 @@ function confirmarEdicaoFicha() {
 
         localStorage.setItem("banco_usuarios_ponto", JSON.stringify(bancoUsuarios));
         
-        // Fecha o modal antes de renderizar
         const elementoModal = document.getElementById('modalEditarFicha');
         const modalInstance = bootstrap.Modal.getInstance(elementoModal);
         if(modalInstance) modalInstance.hide();
@@ -223,12 +221,12 @@ function bolarTempoParaMinutos(strHora) {
 function formatarMinutosParaString(minutosTotais) {
     if(minutosTotais <= 0) return "00:00";
     const hrs = Math.floor(minutosTotais / 60);
-    const mins = minutosTotais % 60;
+    const mins = minutesTotais = minutosTotais % 60;
     return `${hrs.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}`;
 }
 
 function bloquearUsuario(id) {
-    const u = bancoUsuarios.find(x => x.id === id);
+    const u = bancoUsuarios.find(x => x.id === parseInt(id));
     if(!u) return;
     u.status = u.status === "ATIVO" ? "BLOQUEADO" : "ATIVO";
     localStorage.setItem("banco_usuarios_ponto", JSON.stringify(bancoUsuarios));
@@ -461,20 +459,27 @@ function exportarPontosExcel() {
 function inicializarDadosFicticios() {
     const rawUsers = localStorage.getItem("banco_usuarios_ponto");
     if(!rawUsers || JSON.parse(rawUsers).length === 0) {
-        // ALINHAMENTO DE SENHA: Senha fixada como "67" para sincronizar e liberar o login do colaborador
+        // ALINHAMENTO DEFINITIVO: Senha configurada como "Entrada123" conforme base real da imagem
         bancoUsuarios = [
-            { id: 1, nome: "ADRIANA SANTARINE DE MENDONÇA DINIZ", cpf: "809.017.781-68", telefone: "(64) 98141-0002", email: "adrianasantarinediniz@gmail.com", senha: "67", foto: "https://ui-avatars.com/api/?name=Adriana+Diniz&background=f97316&color=fff", permissao: "Celular", status: "ATIVO" }
+            { id: 1, nome: "ADRIANA SANTARINE DE MENDONÇA DINIZ", cpf: "809.017.781-68", telefone: "(64) 98141-0002", email: "adrianasantarinediniz@gmail.com", senha: "Entrada123", foto: "https://ui-avatars.com/api/?name=Adriana+Diniz&background=f97316&color=fff", permissao: "Celular", status: "ATIVO" }
         ];
         localStorage.setItem("banco_usuarios_ponto", JSON.stringify(bancoUsuarios));
-        
+        proximoIdUsuario = 2;
+    } else {
+        bancoUsuarios = JSON.parse(rawUsers);
+        if(bancoUsuarios.length > 0) {
+            proximoIdUsuario = Math.max(...bancoUsuarios.map(u => u.id)) + 1;
+        }
+    }
+
+    const rawLogs = localStorage.getItem("historico_pontos_global");
+    if(!rawLogs) {
         localStorage.setItem("historico_pontos_global", JSON.stringify([
             { colaboradorId: 1, nome: "ADRIANA SANTARINE DE MENDONÇA DINIZ", data: "24/06/2026", tipo: "Entrada", hora: "08:00" },
             { colaboradorId: 1, nome: "ADRIANA SANTARINE DE MENDONÇA DINIZ", data: "24/06/2026", tipo: "Almoço Ida", hora: "12:00" },
             { colaboradorId: 1, nome: "ADRIANA SANTARINE DE MENDONÇA DINIZ", data: "24/06/2026", tipo: "Almoço Volta", hora: "13:00" },
             { colaboradorId: 1, nome: "ADRIANA SANTARINE DE MENDONÇA DINIZ", data: "24/06/2026", tipo: "Saída", hora: "18:00" }
         ]));
-    } else {
-        bancoUsuarios = JSON.parse(rawUsers);
     }
 }
 

@@ -174,9 +174,21 @@
                         <label class="form-label small fw-medium">Data de Término</label>
                         <input type="date" id="filtroRelatorioFim" class="form-control">
                     </div>
-                    <div class="col-12 d-flex gap-2 justify-content-end mt-3">
-                        <button type="button" class="btn btn-outline-secondary btn-sm px-3" onclick="filtrarRelatorioTela()">🔍 Filtrar na Tela</button>
-                        <button type="button" class="btn btn-success btn-sm px-4 fw-semibold" onclick="exportarPontosExcel()">📊 Baixar Excel Colorido</button>
+                    
+                    <div class="col-12 d-flex flex-wrap gap-2 align-items-center mt-3 border-top pt-3">
+                        <span class="small fw-bold text-muted me-2">Filtros Rápidos:</span>
+                        <button type="button" class="btn btn-outline-primary btn-sm px-3 fw-medium" onclick="aplicarFiltroRapido('hoje')">Hoje</button>
+                        <button type="button" class="btn btn-outline-primary btn-sm px-3 fw-medium" onclick="aplicarFiltroRapido('semana')">Últimos 7 Dias</button>
+                        <button type="button" class="btn btn-outline-primary btn-sm px-3 fw-medium" onclick="aplicarFiltroRapido('15dias')">15 Dias</button>
+                        
+                        <div class="d-flex align-items-center ms-2">
+                            <input type="month" id="filtroMesRapido" class="form-control form-control-sm border-primary text-primary fw-medium" title="Filtrar por Mês" onchange="aplicarFiltroRapido('mes')">
+                        </div>
+
+                        <div class="ms-auto d-flex gap-2">
+                            <button type="button" class="btn btn-outline-secondary btn-sm px-3" onclick="filtrarRelatorioTela()">🔍 Filtrar na Tela</button>
+                            <button type="button" class="btn btn-success btn-sm px-4 fw-semibold" onclick="exportarPontosExcel()">📊 Baixar Excel Colorido</button>
+                        </div>
                     </div>
                 </div>
 

@@ -1,4 +1,5 @@
 let usuarioLogado = null;
+let tipoPontoPendente = ""; // Guarda temporariamente o tipo de ponto selecionado para o pop-up
 
 document.addEventListener("DOMContentLoaded", () => {
     inicializarRelogio();
@@ -64,10 +65,10 @@ function executarLoginColaborador(event) {
 
 function renderizarFichaFuncionario() {
     document.getElementById("nomeFuncionarioConectado").innerHTML = `
-        <div class="text-center mt-3">
-            <img src="${usuarioLogado.foto}" style="width: 85px; height: 85px; border-radius: 50%; object-fit: cover; border: 3px solid #f97316; margin-bottom: 10px;" onerror="this.src='https://ui-avatars.com/api/?name=User'">
-            <h5 class="mb-0 text-dark fw-bold">${usuarioLogado.nome}</h5>
-            <p class="text-muted small mb-0">CPF: ${usuarioLogado.cpf}</p>
+        <div class="text-center mt-2">
+            <img src="${usuarioLogado.foto}" style="width: 75px; height: 75px; border-radius: 50%; object-fit: cover; border: 3px solid #f97316; margin-bottom: 8px;" onerror="this.src='https://ui-avatars.com/api/?name=User'">
+            <h6 class="mb-0 text-dark fw-bold">${usuarioLogado.nome}</h6>
+            <p class="text-muted" style="font-size: 0.75rem; margin-bottom: 0;">CPF: ${usuarioLogado.cpf}</p>
         </div>
     `;
 }
@@ -80,27 +81,48 @@ function executarLogoutColaborador() {
     irParaTela("login");
 }
 
-function tentarRegistrarPonto() {
+// NOVO: Abre o pop-up de confirmação com base no quadro clicado
+function solicitarMarcacaoPonto(tipo) {
+    tipoPontoPendente = tipo;
+    document.getElementById("txtTipoPontoConfirmar").innerText = tipo;
+    
+    // Abre o pop-up de segurança
+    new bootstrap.Modal(document.getElementById("modalConfirmarPonto")).show();
+}
+
+// NOVO: Executado somente após o colaborador confirmar a intenção no pop-up
+function confirmarEGravarPonto() {
+    // Fecha o pop-up de confirmação
+    bootstrap.Modal.getInstance(document.getElementById("modalConfirmarPonto")).hide();
+
     if (!navigator.geolocation) {
-        exibirAvisoColab("Erro", "GPS não suportado.");
+        exibirAvisoColab("Erro", "GPS não suportado pelo navegador.");
         return;
     }
+
     navigator.geolocation.getCurrentPosition(
         (position) => {
             const agora = new Date();
             const horaMarcada = agora.toLocaleTimeString("pt-BR", { hour: '2-digit', minute: '2-digit' });
+            
             const txtSemPontos = document.getElementById("txtSemPontos");
             if (txtSemPontos) txtSemPontos.style.display = "none";
 
+            // Injeta o novo registro estruturado na lista visual de hoje
             const containerRegistros = document.getElementById("listaRegistrosHoje");
             const novoLog = document.createElement("div");
             novoLog.className = "log-registro";
-            novoLog.innerHTML = `<strong>✔ Marcado:</strong> ${horaMarcada} - Validação geográfica ativa.`;
+            novoLog.innerHTML = `
+                <span class="tipo">● ${tipoPontoPendente}</span>
+                <span class="hora">${horaMarcada}</span>
+            `;
             containerRegistros.appendChild(novoLog);
 
-            exibirAvisoColab("🎯 Sucesso!", `Ponto das ${horaMarcada} registrado!`);
+            exibirAvisoColab("🎯 Sucesso!", `Seu ponto de <strong>${tipoPontoPendente}</strong> das ${horaMarcada} foi validado geograficamente e gravado!`);
         },
-        (error) => { exibirAvisoColab("Erro", "Ative a localização do aparelho."); },
+        (error) => { 
+            exibirAvisoColab("Erro de Autenticação", "Por favor, ative a localização/GPS do seu aparelho para validar o ponto."); 
+        },
         { enableHighAccuracy: true, timeout: 7000 }
     );
 }

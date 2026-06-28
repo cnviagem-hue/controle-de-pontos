@@ -15,6 +15,10 @@
         .sidebar-menu { list-style: none; padding: 0; flex-grow: 1; }
         .sidebar-menu .nav-link { display: block; color: #94a3b8; text-decoration: none; padding: 12px; border-radius: 8px; font-weight: 600; cursor: pointer; background-color: #1e293b; color: #10b981; }
         
+        /* NOVO BOTÃO COPIAR LINK SUPER ADMIN */
+        .btn-copiar-link { background-color: #1e293b; border: 1px dashed #10b981; color: #10b981; padding: 12px; border-radius: 8px; text-align: center; font-size: 0.85rem; font-weight: 600; cursor: pointer; margin-top: 20px; transition: all 0.2s; display: flex; align-items: center; justify-content: center; gap: 8px; }
+        .btn-copiar-link:hover { background-color: #10b981; color: #fff; }
+
         .btn-sidebar-logout { background: none; border: none; color: #ef4444; font-size: 0.9rem; font-weight: 600; width: 100%; text-align: center; padding: 12px; cursor: pointer; transition: 0.2s; margin-top: auto; }
         .btn-sidebar-logout:hover { color: #dc2626; text-decoration: underline; }
 
@@ -28,14 +32,22 @@
 </head>
 <body>
     <aside class="sidebar">
-        <div class="sidebar-header">
-            <h2>Ponto<span>Web</span></h2>
-            <div class="text-center text-xs text-muted mt-n2 mb-3" style="font-size: 0.75rem;">SUPER ADMIN</div>
+        <div style="width: 100%; display: flex; flex-direction: column; height: 100%;">
+            <div class="sidebar-header">
+                <h2>Ponto<span>Web</span></h2>
+                <div class="text-center text-xs text-muted mt-n2 mb-3" style="font-size: 0.75rem;">SUPER ADMIN</div>
+            </div>
+            
+            <ul class="sidebar-menu">
+                <li><a class="nav-link">🏢 Gestão de Empresas</a></li>
+            </ul>
+
+            <div class="btn-copiar-link" onclick="copiarLinkEmpresa()">
+                🔗 Copiar Link de Acesso
+            </div>
+
+            <button class="btn-sidebar-logout" onclick="sairSuperAdmin()">➔ Sair da Plataforma</button>
         </div>
-        <ul class="sidebar-menu">
-            <li><a class="nav-link">🏢 Gestão de Empresas</a></li>
-        </ul>
-        <button class="btn-sidebar-logout" onclick="sairSuperAdmin()">➔ Sair da Plataforma</button>
     </aside>
 
     <main class="main-content">
@@ -130,6 +142,41 @@
           <div class="modal-footer border-0 py-3 bg-light">
             <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancelar</button>
             <button type="button" class="btn btn-primary btn-sm px-4 fw-bold" onclick="confirmarEdicaoEmpresa()">Salvar Alterações</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal fade" id="modalFeedback" tabindex="-1" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg" style="border-radius:12px;">
+          <div class="modal-header bg-dark text-white py-3">
+            <h5 class="modal-title d-flex align-items-center gap-2 fs-6 fw-bold" id="modalTitulo">🔔 Notificação</h5>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+          </div>
+          <div class="modal-body p-4 text-center" id="modalMensagem">
+            </div>
+          <div class="modal-footer border-0 pt-0 d-flex justify-content-center">
+            <button type="button" class="btn btn-primary px-4 btn-sm fw-bold" data-bs-dismiss="modal">OK</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal fade" id="modalExclusao" tabindex="-1" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg" style="border-radius:12px;">
+          <div class="modal-header bg-dark text-white py-3">
+            <h5 class="modal-title d-flex align-items-center gap-2 fs-6 fw-bold">⚠️ Confirmar Exclusão</h5>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+          </div>
+          <div class="modal-body p-4 text-center">
+            <p class="mb-2">Tem certeza absoluta que deseja remover permanentemente a empresa <strong id="nomeEmpresaExclusao"></strong>?</p>
+            <p class="text-danger small mb-0">Esta ação não poderá ser desfeita e todo o acesso deste cliente será revogado imediatamente.</p>
+          </div>
+          <div class="modal-footer border-0 pt-0 d-flex justify-content-center gap-2">
+            <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Não, Cancelar</button>
+            <button type="button" class="btn btn-danger btn-sm px-3 fw-bold" onclick="executarExclusaoDefinitiva()">Sim, Excluir</button>
           </div>
         </div>
       </div>

@@ -11,7 +11,12 @@
         
         /* MENU LATERAL FIXO À ESQUERDA */
         .sidebar { width: 260px; background-color: #0f172a; color: #94a3b8; padding: 24px 16px; position: fixed; top: 0; left: 0; bottom: 0; display: flex; flex-direction: column; justify-content: space-between; z-index: 100; }
-        .sidebar-header h2 { font-size: 1.25rem; font-weight: 600; color: #f8fafc; margin-bottom: 32px; padding-bottom: 16px; border-bottom: 1px solid #334155; }
+        
+        /* AJUSTE DO CABEÇALHO PARA RECEBER O NOME DA EMPRESA */
+        .sidebar-header { margin-bottom: 32px; padding-bottom: 16px; border-bottom: 1px solid #334155; }
+        .sidebar-header h2 { font-size: 1.25rem; font-weight: 600; color: #f8fafc; margin-bottom: 4px; }
+        .empresa-destaque { color: #f97316; font-size: 0.85rem; font-weight: 700; text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; letter-spacing: 0.5px; }
+
         .sidebar-menu { list-style: none; width: 100%; padding: 0; }
         .sidebar-menu li { margin-bottom: 8px; }
         .sidebar-menu .nav-link { display: block; color: #94a3b8; text-decoration: none; padding: 12px; border-radius: 8px; font-weight: 500; transition: all 0.2s; cursor: pointer; }
@@ -63,9 +68,12 @@
 
     <aside class="sidebar">
         <div style="width: 100%; display: flex; flex-direction: column; height: 100%;">
+            
             <div class="sidebar-header">
                 <h2>Ponto Web</h2>
+                <div id="sidebarNomeEmpresa" class="empresa-destaque" title="Empresa Ativa">Carregando...</div>
             </div>
+
             <ul class="sidebar-menu">
                 <li><a class="nav-link active" id="menu-pessoal" onclick="alternarAba('pessoal')">👥 Pessoal</a></li>
                 <li><a class="nav-link" id="menu-relatorios" onclick="alternarAba('relatorios')">📊 Relatórios</a></li>

@@ -238,7 +238,7 @@ function copiarLinkColaborador() {
 function sincronizarFiltrosColaboradores() {
     const select = document.getElementById('filtroRelatorioColaborador');
     const valorSelecionado = select.value;
-    select.innerHTML = '<option value="todos">-- Todos os Colaboradores --</option>';
+    select.innerHTML = '<option value="todos">-- Selecione um Colaborador --</option>'; // Força a ação de escolha
     bancoUsuarios.forEach(u => {
         select.innerHTML += `<option value="${u.id}">${u.nome}</option>`;
     });
@@ -317,6 +317,7 @@ function processarLogsLocalStorage() {
     return listaFinal;
 }
 
+// AJUSTE: Não exibe nada até o ADM escolher um funcionário na lista
 function filtrarRelatorioTela() {
     const filtroColab = document.getElementById('filtroRelatorioColaborador').value;
     const filtroInicio = document.getElementById('filtroRelatorioInicio').value;
@@ -324,11 +325,12 @@ function filtrarRelatorioTela() {
     const tabelaBody = document.getElementById('tabelaRelatoriosBody');
     tabelaBody.innerHTML = "";
 
-    let dadosConsolidados = processarLogsLocalStorage();
-
-    if (filtroColab !== "todos") {
-        dadosConsolidados = dadosConsolidados.filter(r => r.colaboradorId == filtroColab);
+    if (filtroColab === "todos") {
+        tabelaBody.innerHTML = `<tr><td colspan="8" class="text-center text-muted small py-4">⚠️ Por favor, selecione um colaborador específico para carregar o relatório.</td></tr>`;
+        return;
     }
+
+    let dadosConsolidados = processarLogsLocalStorage().filter(r => r.colaboradorId == filtroColab);
 
     if (filtroInicio) {
         const dInicio = new Date(filtroInicio + "T00:00:00");
@@ -346,7 +348,7 @@ function filtrarRelatorioTela() {
     }
 
     if (dadosConsolidados.length === 0) {
-        tabelaBody.innerHTML = `<tr><td colspan="8" class="text-center text-muted small py-4">Nenhum registro encontrado para os filtros selecionados.</td></tr>`;
+        tabelaBody.innerHTML = `<tr><td colspan="8" class="text-center text-muted small py-4">Nenhum registro encontrado para este colaborador no período selecionado.</td></tr>`;
         return;
     }
 
@@ -382,96 +384,65 @@ function filtrarRelatorioTela() {
     tabelaBody.appendChild(trTotal);
 }
 
-// ADAPTAÇÃO CIRÚRGICA: Geração do Excel estruturado exatamente como o modelo profissional e limpo da imagem
+// ATUALIZAÇÃO CIRÚRGICA: Injeta XML de propriedades para forçar as cores (Laranja, Verde, Vermelho) no Excel nativo
 function exportarPontosExcel() {
     const filtroColab = document.getElementById('filtroRelatorioColaborador').value;
-    const filtroInicio = document.getElementById('filtroRelatorioInicio').value;
-    const filtroFim = document.getElementById('filtroRelatorioFim').value;
     
-    let dadosParaPlanilha = processarLogsLocalStorage();
-    
-    if (filtroColab !== "todos") {
-        dadosParaPlanilha = dadosParaPlanilha.filter(r => r.colaboradorId == filtroColab);
-    }
-    if (filtroInicio) {
-        const dInicio = new Date(filtroInicio + "T00:00:00");
-        dadosParaPlanilha = dadosParaPlanilha.filter(r => {
-            const p = r.data.split('/');
-            return new Date(p[2], p[1]-1, p[0]) >= dInicio;
-        });
-    }
-    if (filtroFim) {
-        const dFim = new Date(filtroFim + "T23:59:59");
-        dadosParaPlanilha = dadosParaPlanilha.filter(r => {
-            const p = r.data.split('/');
-            return new Date(p[2], p[1]-1, p[0]) <= dFim;
-        });
-    }
-
-    if (dadosParaPlanilha.length === 0) {
-        exibirAlertaTop("Sem Dados", "Não há dados consolidados para exportar.");
+    if (filtroColab === "todos") {
+        exibirAlertaTop("Selecione um Colaborador", "Por favor, defina qual colaborador deseja exportar para gerar o arquivo formatado.");
         return;
     }
 
-    // 1. Criação da matriz de linhas inicial (Header)
-    const matrizPlanilha = [];
+    let dadosParaPlanilha = processarLogsLocalStorage().filter(r => r.colaboradorId == filtroColab);
     
-    // Título Principal Estilizado (Igual o topo laranja/destacado do modelo)
-    matrizPlanilha.push(["ESPELHO DE PONTO CONSOLIDADO - PONTO WEB"]);
-    matrizPlanilha.push([`Gerado em: ${new Date().toLocaleDateString('pt-BR')} | Filtro Período Ativo`]);
-    matrizPlanilha.push([]); // Linha em branco para separação visual elegante
+    if (dadosParaPlanilha.length === 0) {
+        exibirAlertaTop("Sem Dados", "Não há dados consolidados para o colaborador filtrado.");
+        return;
+    }
 
-    // Linha de Cabeçalhos Oficiais da Tabela
-    matrizPlanilha.push(["Data", "Colaborador", "Entrada", "Almoço Ida", "Almoço Volta", "Saída", "Horas Trab.", "Horas Extras"]);
+    const colabNome = dadosParaPlanilha[0].nome;
+    const matrizPlanilha = [
+        ["DRE - ESPELHO DE PONTO EXECUTIVO"],
+        [`Colaborador: ${colabNome} | Emissão: ${new Date().toLocaleDateString('pt-BR')}`],
+        [],
+        ["Data", "Colaborador", "Entrada", "Almoço Ida", "Almoço Volta", "Saída", "Horas Trab.", "Horas Extras"]
+    ];
 
     let somaTrab = 0;
     let somaExtra = 0;
 
-    // 2. Preenchimento das linhas de dados dos colaboradores
     dadosParaPlanilha.forEach(r => {
         somaTrab += r.minutosTrabalhadosNum;
         somaExtra += r.minutosExtrasNum;
-        matrizPlanilha.push([
-            r.data,
-            r.nome,
-            r.entrada,
-            r.almocoIda,
-            r.almocoVolta,
-            r.saida,
-            r.horasTrabalhadas,
-            r.horasExtras
-        ]);
+        matrizPlanilha.push([r.data, r.nome, r.entrada, r.almocoIda, r.almocoVolta, r.saida, r.horasTrabalhadas, r.horasExtras]);
     });
 
-    // 3. Linha de Fechamento com o Total das Horas no final (Mesmo modelo da imagem)
-    matrizPlanilha.push([]); // Espaço
-    matrizPlanilha.push([
-        "TOTAL DE HORAS TRABALHADAS DO PERÍODO:", 
-        "", "", "", "", "", 
-        formatarMinutosParaString(somaTrab), 
-        formatarMinutosParaString(somaExtra)
-    ]);
+    matrizPlanilha.push([]);
+    matrizPlanilha.push(["TOTAL DE HORAS DO PERÍODO:", "", "", "", "", "", formatarMinutosParaString(somaTrab), formatarMinutosParaString(somaExtra)]);
 
-    // Cria o objeto Workbook usando os utilitários nativos da biblioteca SheetJS (XLSX)
     const worksheet = XLSX.utils.aoa_to_sheet(matrizPlanilha);
+
+    // INJEÇÃO DOS ESTILOS COLORIDOS NATIVOS NAS CÉLULAS DO SHEETJS XML
+    const orangeFill = { fill: { fgColor: { rgb: "F97316" } }, font: { bold: true, color: { rgb: "FFFFFF" }, size: 12 }, alignment: { horizontal: "center" } };
+    const greenHeader = { fill: { fgColor: { rgb: "16A34A" } }, font: { bold: true, color: { rgb: "FFFFFF" } }, alignment: { horizontal: "center" } };
+    const greyTotal = { fill: { fgColor: { rgb: "E5E7EB" } }, font: { bold: true, color: { rgb: "000000" } } };
+
+    // Aplica o topo laranja idêntico ao modelo DRE na linha 1
+    worksheet['A1'].s = orangeFill;
     
-    // Define a largura ideal de cada coluna para que não fique com os dados cortados (###)
+    // Aplica formatação cinza no fechamento de totais na última linha
+    const ultimaLinhaIndex = matrizPlanilha.length;
+    if(worksheet[`A${ultimaLinhaIndex}`]) worksheet[`A${ultimaLinhaIndex}`].s = greyTotal;
+    if(worksheet[`G${ultimaLinhaIndex}`]) worksheet[`G${ultimaLinhaIndex}`].s = { font: { bold: true, color: { rgb: "16A34A" } } };
+    if(worksheet[`H${ultimaLinhaIndex}`]) worksheet[`H${ultimaLinhaIndex}`].s = { font: { bold: true, color: { rgb: "EF4444" } } };
+
     worksheet['!cols'] = [
-        { wch: 12 }, // Data
-        { wch: 45 }, // Colaborador (largo o suficiente para o nome completo)
-        { wch: 10 }, // Entrada
-        { wch: 12 }, // Almoço Ida
-        { wch: 14 }, // Almoço Volta
-        { wch: 10 }, // Saída
-        { wch: 14 }, // Horas Trab.
-        { wch: 14 }  // Horas Extras
+        { wch: 12 }, { wch: 45 }, { wch: 10 }, { wch: 12 }, { wch: 14 }, { wch: 10 }, { wch: 14 }, { wch: 14 }
     ];
 
     const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, "Folha_Consolidada");
-    
-    // Faz o download imediato do arquivo diretamente na máquina do Administrador
-    XLSX.writeFile(workbook, `Espelho_Ponto_Executivo_${new Date().getFullYear()}.xlsx`);
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Espelho_Executivo");
+    XLSX.writeFile(workbook, `Espelho_Ponto_${colabNome.replace(/ /g, "_")}.xlsx`);
 }
 
 function inicializarDadosFicticios() {

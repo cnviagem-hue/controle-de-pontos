@@ -19,12 +19,12 @@
         .sidebar-menu .nav-link:hover { background-color: #1e293b; color: #fff; }
         .sidebar-menu .nav-link.active { background-color: #1e293b; color: #f97316; font-weight: 600; }
         
-        .btn-copiar-link { background-color: #1e293b; border: 1px dashed #f97316; color: #f97316; padding: 12px; border-radius: 8px; text-align: center; font-size: 0.85rem; font-weight: 600; cursor: pointer; margin-top: 20px; transition: all 0.2s; display: flex; align-items: center; justify-content: center; gap: 8px; }
+        .btn-copiar-link { background-color: #1e293b; border: 1px dashed #f97316; color: #f97316; padding: 12px; border-radius: 8px; text-align: center; font-size: 0.85rem; font-weight: 600; cursor: pointer; margin-top: 200px; transition: all 0.2s; display: flex; align-items: center; justify-content: center; gap: 8px; }
         .btn-copiar-link:hover { background-color: #f97316; color: #fff; }
 
         /* ÁREA DE CONTEÚDO PRINCIPAL */
         .main-content { flex-grow: 1; margin-left: 260px; padding: 32px; min-width: 0; width: calc(100% - 260px); }
-        .card-custom { background: #ffffff; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); padding: 32px; border: 1px solid #e2e8f0; width: 100%; max-width: 950px; margin-bottom: 24px; }
+        .card-custom { background: #ffffff; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); padding: 32px; border: 1px solid #e2e8f0; width: 100%; max-width: 1100px; margin-bottom: 24px; }
         
         .section-title { font-size: 1.15rem; font-weight: 600; color: #0f172a; margin-bottom: 24px; border-left: 4px solid #3b82f6; padding-left: 12px; }
         .endereco-box { background-color: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 15px; margin-top: 15px; display: none; }
@@ -33,7 +33,7 @@
         .tab-content-section { display: none; width: 100%; }
         .tab-content-section.active { display: block; }
 
-        /* RECIPIENTE DO OLHINHO CORRIGIDO COM EVENTO ATIVO */
+        /* RECIPIENTE DO OLHINHO */
         .password-container { position: relative; display: flex; align-items: center; width: 100%; }
         .password-container input { padding-right: 44px; width: 100%; }
         .btn-toggle-eye { position: absolute; right: 12px; background: none; border: none; font-size: 1.1rem; cursor: pointer; color: #94a3b8; transition: color 0.2s; user-select: none; padding: 0; margin: 0; display: flex; align-items: center; justify-content: center; height: 100%; }
@@ -42,6 +42,8 @@
         /* BARRA DE ROLAGEM LATERAL DA TABELA */
         .table-responsive { width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; border-radius: 8px; border: 1px solid #e2e8f0; }
         .table th, .table td { white-space: nowrap; padding: 14px 16px; text-align: left; }
+        
+        .avatar-table { width: 32px; height: 32px; border-radius: 50%; object-fit: cover; background-color: #e2e8f0; }
 
         @media (max-width: 768px) {
             body { flex-direction: column; }
@@ -83,15 +85,19 @@
                     <div class="row g-3">
                         <div class="col-md-6">
                             <label class="form-label fw-medium small">Nome Completo</label>
-                            <input type="text" id="cadNome" placeholder="Ex: Adriana S M Diniz" class="form-control" required>
+                            <input type="text" id="cadNome" placeholder="Ex: Carlos Eduardo de Souza" class="form-control" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-medium small">CPF do Colaborador</label>
+                            <input type="text" id="cadCpf" placeholder="Ex: 000.000.000-00" class="form-control" oninput="mascaraCPF(this)" required>
                         </div>
                         <div class="col-md-6">
                             <label class="form-label fw-medium small">Telefone / WhatsApp</label>
-                            <input type="text" id="cadTelefone" placeholder="(64) 98141-0002" class="form-control" oninput="mascaraTelefone(this)" required>
+                            <input type="text" id="cadTelefone" placeholder="Ex: (11) 99999-8888" class="form-control" oninput="mascaraTelefone(this)" required>
                         </div>
                         <div class="col-md-6">
                             <label class="form-label fw-medium small">E-mail de Acesso</label>
-                            <input type="email" id="cadEmail" placeholder="adriana@gmail.com" class="form-control" required>
+                            <input type="email" id="cadEmail" placeholder="Ex: carlos.souza@empresa.com" class="form-control" required>
                         </div>
                         <div class="col-md-6">
                             <label class="form-label fw-medium small">Senha Inicial</label>
@@ -99,6 +105,10 @@
                                 <input type="password" id="cadSenha" placeholder="Mínimo 6 dígitos" class="form-control" required>
                                 <button type="button" class="btn-toggle-eye" onclick="toggleInputSenha('cadSenha', this)">👁️</button>
                             </div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-medium small">Link/URL da Foto de Perfil (Opcional)</label>
+                            <input type="url" id="cadFoto" placeholder="Ex: https://site.com/suafoto.jpg" class="form-control">
                         </div>
                         <div class="col-12">
                             <label class="form-label fw-medium small">Dispositivo Autorizado</label>
@@ -120,9 +130,10 @@
                 <div class="table-responsive">
                     <table class="table table-hover align-middle mb-0">
                         <thead class="table-light">
-                            <!-- ORDEM DO CABEÇALHO PERFEITA CONFORME EXIBIDO NO SEU PRINT -->
                             <tr>
+                                <th>Foto</th>
                                 <th>Nome</th>
+                                <th>CPF</th>
                                 <th>Telefone</th>
                                 <th>E-mail</th>
                                 <th>Senha</th>
@@ -132,7 +143,7 @@
                             </tr>
                         </thead>
                         <tbody id="tabelaEquipe">
-                            <!-- Inserido dinamicamente pelo arquivo admin.js -->
+                            <!-- Inserido dinamicamente pelo admin.js -->
                         </tbody>
                     </table>
                 </div>
@@ -168,11 +179,11 @@
                     <div class="col-12"><span class="text-muted small fw-bold text-uppercase">Buscar Coordenadas por CEP</span></div>
                     <div class="col-md-8">
                         <label for="cepBusca" class="form-label small">Digite o CEP</label>
-                        <input type="text" id="cepBusca" placeholder="Ex: 75690-970" class="form-control" maxlength="9" oninput="mascaraCEP(this)">
+                        <input type="text" id="cepBusca" placeholder="Ex: 01001-000" class="form-control" maxlength="9" oninput="mascaraCEPHtml(this)">
                     </div>
                     <div class="col-md-4">
                         <label for="numeroBusca" class="form-label small">Número Comercial</label>
-                        <input type="text" id="numeroBusca" placeholder="Ex: 120" class="form-control">
+                        <input type="text" id="numeroBusca" placeholder="Ex: 500" class="form-control">
                     </div>
                     <div class="col-12">
                         <button type="button" id="btnBuscarCep" onclick="buscarCoordenadasPorCEP()" class="btn btn-primary w-100 btn-sm fw-semibold">
@@ -226,7 +237,7 @@
       </div>
     </div>
 
-    <!-- MODAL EDITAR COMPLETAMENTE A FICHA DO COLABORADOR -->
+    <!-- MODAL EDITAR FICHA -->
     <div class="modal fade" id="modalEditarFicha" tabindex="-1" aria-hidden="true">
       <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content border-0 shadow-lg" style="border-radius:16px;">
@@ -239,6 +250,10 @@
                   <div class="col-12">
                       <label class="form-label small fw-medium text-muted">Nome Completo</label>
                       <input type="text" id="editNome" class="form-control">
+                  </div>
+                  <div class="col-12">
+                      <label class="form-label small fw-medium text-muted">CPF</label>
+                      <input type="text" id="editCpf" class="form-control" oninput="mascaraCPF(this)">
                   </div>
                   <div class="col-12">
                       <label class="form-label small fw-medium text-muted">Telefone</label>
@@ -254,6 +269,10 @@
                           <input type="password" id="editSenha" class="form-control">
                           <button type="button" class="btn-toggle-eye" onclick="toggleInputSenha('editSenha', this)">👁️</button>
                       </div>
+                  </div>
+                  <div class="col-12">
+                      <label class="form-label small fw-medium text-muted">Link/URL da Foto</label>
+                      <input type="url" id="editFoto" class="form-control">
                   </div>
                   <div class="col-12">
                       <label class="form-label small fw-medium text-muted">Dispositivo Autorizado</label>

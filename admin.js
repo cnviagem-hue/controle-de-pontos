@@ -67,6 +67,13 @@ function mascaraCEPHtml(input) {
     input.value = valor;
 }
 
+function做Logout() {
+    // Limpa os dados de sessão do administrador de forma segura
+    localStorage.removeItem("usuario_logado");
+    sessionStorage.clear();
+    window.location.href = "index.html";
+}
+
 function otimizarEConverterFoto(fileInputElement) {
     return new Promise((resolve) => {
         const file = fileInputElement.files[0];
@@ -163,18 +170,19 @@ function renderTabelaComAtualizacao() {
             <td><span class="badge bg-secondary">Apenas ${u.permissao}</span></td>
             <td><span class="badge ${badgeStatus} px-2.5">${u.status}</span></td>
             <td class="text-center">
-                <button class="btn btn-sm btn-outline-primary me-1" onclick="abrirModalEditarFicha(${u.id})">✏️ Ficha</button>
-                <button class="btn btn-sm btn-outline-danger me-1" onclick="bloquearUsuario(${u.id})">🔒 ${u.status === 'ATIVO' ? 'Bloquear' : 'Ativar'}</button>
-                <button class="btn btn-sm btn-danger" onclick="solicitarExclusaoUsuario(${u.id})">🗑️ Excluir</button>
+                <button class="btn btn-sm btn-outline-primary me-1" onclick="abrirModalEditarFicha('${u.id}')">✏️ Ficha</button>
+                <button class="btn btn-sm btn-outline-danger me-1" onclick="bloquearUsuario('${u.id}')">🔒 ${u.status === 'ATIVO' ? 'Bloquear' : 'Ativar'}</button>
+                <button class="btn btn-sm btn-danger" onclick="solicitarExclusaoUsuario('${u.id}')">🗑️ Excluir</button>
             </td>
         `;
         tabela.appendChild(tr);
     });
 }
 
+// CORREÇÃO: Busca resiliente que funciona tanto com IDs numéricos quanto Strings
 function abrirModalEditarFicha(id) {
-    usuarioSelecionadoId = parseInt(id);
-    const u = bancoUsuarios.find(x => x.id === usuarioSelecionadoId);
+    usuarioSelecionadoId = id;
+    const u = bancoUsuarios.find(x => String(x.id) === String(id));
     if(!u) return;
 
     document.getElementById('editNome').value = u.nome;
@@ -189,7 +197,7 @@ function abrirModalEditarFicha(id) {
 }
 
 function confirmarEdicaoFicha() {
-    const u = bancoUsuarios.find(x => x.id === usuarioSelecionadoId);
+    const u = bancoUsuarios.find(x => String(x.id) === String(usuarioSelecionadoId));
     if(!u) return;
 
     otimizarEConverterFoto(document.getElementById('editFotoFile')).then(novaFotoBase64 => {
@@ -202,7 +210,7 @@ function confirmarEdicaoFicha() {
         
         if(novaFotoBase64) u.foto = novaFotoBase64;
 
-        bancoUsuarios = bancoUsuarios.map(x => x.id === u.id ? u : x);
+        bancoUsuarios = bancoUsuarios.map(x => String(x.id) === String(u.id) ? u : x);
         localStorage.setItem("banco_usuarios_ponto", JSON.stringify(bancoUsuarios));
         
         const elementoModal = document.getElementById('modalEditarFicha');
@@ -214,9 +222,10 @@ function confirmarEdicaoFicha() {
     });
 }
 
+// CORREÇÃO: Busca resiliente para abertura e disparo correto do Modal customizado do sistema
 function solicitarExclusaoUsuario(id) {
-    usuarioSelecionadoId = parseInt(id);
-    const u = bancoUsuarios.find(x => x.id === usuarioSelecionadoId);
+    usuarioSelecionadoId = id;
+    const u = bancoUsuarios.find(x => String(x.id) === String(id));
     if(!u) return;
 
     document.getElementById('modalTitulo').innerText = "⚠️ Confirmar Exclusão";
@@ -231,8 +240,8 @@ function solicitarExclusaoUsuario(id) {
     new bootstrap.Modal(document.getElementById('modalFeedback')).show();
 }
 
-function ejecutarExclusaoDefinitiva() {
-    bancoUsuarios = bancoUsuarios.filter(x => x.id !== usuarioSelecionadoId);
+function executarExclusaoDefinitiva() {
+    bancoUsuarios = bancoUsuarios.filter(x => String(x.id) !== String(usuarioSelecionadoId));
     localStorage.setItem("banco_usuarios_ponto", JSON.stringify(bancoUsuarios));
     
     const elementoModal = document.getElementById('modalFeedback');
@@ -250,7 +259,6 @@ function bolarTempoParaMinutos(strHora) {
     return parseInt(partes[0], 10) * 60 + parseInt(partes[1], 10);
 }
 
-// CORREÇÃO CIRÚRGICA: Removido o erro de sintaxe estrutural que congelava o script
 function formatarMinutosParaString(minutosTotais) {
     if(minutosTotais <= 0) return "00:00";
     const hrs = Math.floor(minutosTotais / 60);
@@ -259,7 +267,7 @@ function formatarMinutosParaString(minutosTotais) {
 }
 
 function bloquearUsuario(id) {
-    const u = bancoUsuarios.find(x => x.id === parseInt(id));
+    const u = bancoUsuarios.find(x => String(x.id) === String(id));
     if(!u) return;
     u.status = u.status === "ATIVO" ? "BLOQUEADO" : "ATIVO";
     localStorage.setItem("banco_usuarios_ponto", JSON.stringify(bancoUsuarios));
@@ -369,7 +377,7 @@ function filtrarRelatorioTela() {
         return;
     }
 
-    let dadosConsolidados = processarLogsLocalStorage().filter(r => r.colaboradorId == filtroColab);
+    let dadosConsolidados = processarLogsLocalStorage().filter(r => String(r.colaboradorId) === String(filtroColab));
 
     if (filtroInicio) {
         const dInicio = new Date(filtroInicio + "T00:00:00");
@@ -431,7 +439,7 @@ function exportarPontosExcel() {
         return;
     }
 
-    let dadosParaPlanilha = processarLogsLocalStorage().filter(r => r.colaboradorId == filtroColab);
+    let dadosParaPlanilha = processarLogsLocalStorage().filter(r => String(r.colaboradorId) === String(filtroColab));
     
     if (dadosParaPlanilha.length === 0) {
         exibirAlertaTop("Sem Dados", "Não há dados consolidados para o colaborador filtrado.");

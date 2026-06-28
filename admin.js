@@ -138,13 +138,13 @@ function cadastrarUsuario(event) {
         localStorage.setItem("banco_usuarios_ponto", JSON.stringify(bancoUsuarios));
         
         renderTabelaComAtualizacao();
+        sincronizarFiltrosColaboradores();
         
         document.getElementById('formUsuario').reset();
         exibirAlertaTop("👥 Cadastrado", `Colaborador <strong>${novoUser.nome}</strong> registrado com sucesso!`);
     });
 }
 
-// RENDERIZADOR BLINDADO CONTRA ERROS DE TIPO (STRING/NUMBER)
 function renderTabelaComAtualizacao() {
     const tabela = document.getElementById('tabelaEquipe');
     if(!tabela) return;
@@ -169,18 +169,17 @@ function renderTabelaComAtualizacao() {
             <td><span class="badge bg-secondary">Apenas ${u.permissao}</span></td>
             <td><span class="badge ${badgeStatus} px-2.5">${u.status}</span></td>
             <td class="text-center">
-                <button class="btn btn-sm btn-outline-primary me-1" onclick="abrirModalEditarFichaIndex('${i}')">✏️ Ficha</button>
-                <button class="btn btn-sm btn-outline-danger me-1" onclick="bloquearUsuarioIndex('${i}')">🔒 ${u.status === 'ATIVO' ? 'Bloquear' : 'Ativar'}</button>
-                <button class="btn btn-sm btn-danger" onclick="solicitarExclusaoUsuarioIndex('${i}')">🗑️ Excluir</button>
+                <button class="btn btn-sm btn-outline-primary me-1" onclick="abrirModalEditarFicha('${index}')">✏️ Ficha</button>
+                <button class="btn btn-sm btn-outline-danger me-1" onclick="bloquearUsuario('${index}')">🔒 ${u.status === 'ATIVO' ? 'Bloquear' : 'Ativar'}</button>
+                <button class="btn btn-sm btn-danger" onclick="solicitarExclusaoUsuario('${index}')">🗑️ Excluir</button>
             </td>
         `;
         tabela.appendChild(tr);
     });
 }
 
-// RESOLUÇÃO DEFINITIVA: Localização baseada na posição do Array para evitar conflitos de IDs gerados em lote
 function abrirModalEditarFicha(index) {
-    const idx = parseInt(index);
+    const idx = parseInt(index, 10);
     const u = bancoUsuarios[idx];
     if(!u) return;
     
@@ -220,14 +219,17 @@ function confirmarEdicaoFicha() {
         if(modalInstance) modalInstance.hide();
 
         renderTabelaComAtualizacao();
+        sincronizarFiltrosColaboradores();
         exibirAlertaTop("📝 Atualizado", "A ficha cadastral do colaborador foi alterada com sucesso.");
     });
 }
 
 function solicitarExclusaoUsuario(index) {
-    usuarioSelecionadoId = parseInt(id);
-    const u = bancoUsuarios[usuarioSelecionadoId];
+    const idx = parseInt(index, 10);
+    const u = bancoUsuarios[idx];
     if(!u) return;
+
+    usuarioSelecionadoId = idx;
 
     document.getElementById('modalTitulo').innerText = "⚠️ Confirmar Exclusão";
     document.getElementById('modalMensagem').innerHTML = `
@@ -239,11 +241,11 @@ function solicitarExclusaoUsuario(index) {
         <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Não, Cancelar</button>
         <button type="button" class="btn btn-danger btn-sm px-3" onclick="executarExclusaoDefinitiva()">Sim, Excluir</button>
     `;
-    
     new bootstrap.Modal(document.getElementById('modalFeedback')).show();
 }
 
-function ejecutarExclusaoDefinitiva() {
+function executarExclusaoDefinitiva() {
+    if (usuarioSelecionadoId === null) return;
     bancoUsuarios.splice(usuarioSelecionadoId, 1);
     localStorage.setItem("banco_usuarios_ponto", JSON.stringify(bancoUsuarios));
     
@@ -269,8 +271,9 @@ function formatarMinutosParaString(minutosTotais) {
     return `${hrs.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}`;
 }
 
-function bloquearUsuario(idx) {
-    const u = bancoUsuarios[parseInt(idx)];
+function bloquearUsuario(index) {
+    const idx = parseInt(index, 10);
+    const u = bancoUsuarios[idx];
     if(!u) return;
     u.status = u.status === "ATIVO" ? "BLOQUEADO" : "ATIVO";
     localStorage.setItem("banco_usuarios_ponto", JSON.stringify(bancoUsuarios));

@@ -1,6 +1,7 @@
 let usuarioSelecionadoId = null;
 let proximoIdUsuario = 1;
 let bancoUsuarios = [];
+let registrosPontoGlobais = []; 
 
 function alternarAba(nomeAba) {
     document.getElementById('menu-pessoal').classList.remove('active');
@@ -207,6 +208,23 @@ function confirmarEdicaoFicha() {
     });
 }
 
+function bolarTempoParaMinutos(strHora) {
+    if(!strDataFormatadaValida(strHora)) return null;
+    const partes = strHora.split(':');
+    return parseInt(partes[0], 10) * 60 + parseInt(partes[1], 10);
+}
+
+function strDataFormatadaValida(str) {
+    return str && str !== "-" && str.includes(":");
+}
+
+function formatarMinutosParaString(minutosTotais) {
+    if(minutosTotais <= 0) return "00:00";
+    const hrs = Math.floor(minutosTotais / 60);
+    const mins = minutosTotais % 60;
+    return `${hrs.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}`;
+}
+
 function bloquearUsuario(id) {
     const u = bancoUsuarios.find(x => x.id === id);
     if(!u) return;
@@ -232,7 +250,7 @@ function sincronizarFiltrosColaboradores() {
     select.value = valorSelecionado;
 }
 
-// SOLUÇÃO DOS RELATÓRIOS: Reorganiza os logs do localStorage estruturando as linhas por Data e Usuário
+// ARQUITETURA MATEMÁTICA REAL DE PROCESSAMENTO DIÁRIO DE JORNADA CONTRATUAL
 function processarLogsLocalStorage() {
     const logsBrutos = JSON.parse(localStorage.getItem("historico_pontos_global") || "[]");
     const espelhosAgrupados = {};
@@ -256,19 +274,59 @@ function processarLogsLocalStorage() {
         if (log.tipo === "Entrada") espelhosAgrupados[chaveChave].entrada = log.hora;
         if (log.tipo === "Almoço Ida") espelhosAgrupados[chaveChave].almocoIda = log.hora;
         if (log.tipo === "Almoço Volta") espelhosAgrupados[chaveChave].almocoVolta = log.hora;
-        if (log.tipo === "Saída") {
-            espelhosAgrupados[chaveChave].saida = log.hora;
-            // Cálculo básico fictício de horas para demonstração funcional
-            espelhosAgrupados[chaveChave].horasTrabalhadas = "08:00";
-            espelhosAgrupados[chaveChave].horasExtras = "00:00";
+        if (log.tipo === "Saída") espelhosAgrupados[chaveChave].saida = log.hora;
+    });
+
+    const listaFinal = Object.values(espelhosAgrupados);
+
+    // EXUTA AS CONTAS MATEMÁTICAS MINUTO A MINUTO BASEADO NO DIA DA SEMANA DO CONTRATO
+    listaFinal.forEach(r => {
+        let minutosTrabalhados = 0;
+
+        const mEntrada = bolarTempoParaMinutos(r.entrada);
+        const mAlmIda = bolarTempoParaMinutos(r.almocoIda);
+        const mAlmVolta = bolarTempoParaMinutos(r.almocoVolta);
+        const mSaida = bolarTempoParaMinutos(r.saida);
+
+        // Turno 1: Da Entrada até ir pro Almoço
+        if(mEntrada !== null && mAlmIda !== null && mAlmIda > mEntrada) {
+            minutosTrabalhados += (mAlmIda - mEntrada);
+        }
+        // Turno 2: Do retorno do Almoço até a Saída final
+        if(mAlmVolta !== null && mSaida !== null && mSaida > mAlmVolta) {
+            minutosTrabalhados += (mSaida - mAlmVolta);
+        }
+
+        r.horasTrabalhadas = formatarMinutosParaString(minutosTrabalhados);
+
+        // Identifica matemática exata com base no dia da semana correspondente à data
+        const partesData = r.data.split('/');
+        const objetoData = new Date(partesData[2], partesData[1] - 1, partesData[0]);
+        const diaDaSemana = objetoData.getDay(); // 0 = Domingo, 1 = Segunda, ..., 6 = Sábado
+
+        let cargaObrigatoriaDoDia = 480; // Padrão: 8 horas (Segunda a Sexta)
+        if (diaDaSemana === 6) {
+            cargaObrigatoriaDoDia = 240; // Sábado: 4 horas obrigatórias
+        } else if (diaDaSemana === 0) {
+            cargaObrigatoriaDoDia = 0; // Domingo: Não trabalha, tudo vira hora extra
+        }
+
+        // Calcula saldo real
+        if(minutosTrabalhados > cargaObrigatoriaDoDia) {
+            const extra = minutosTrabalhados - cargaObrigatoriaDoDia;
+            r.horasExtras = formatarMinutosParaString(extra);
+        } else {
+            r.horasExtras = "00:00";
         }
     });
 
-    return Object.values(espelhosAgrupados);
+    return listaFinal;
 }
 
 function filtrarRelatorioTela() {
     const filtroColab = document.getElementById('filtroRelatorioColaborador').value;
+    const filtroInicio = document.getElementById('filtroRelatorioInicio').value;
+    const filtroFim = document.getElementById('filtroRelatorioFim').value;
     const tabelaBody = document.getElementById('tabelaRelatoriosBody');
     tabelaBody.innerHTML = "";
 
@@ -276,6 +334,21 @@ function filtrarRelatorioTela() {
 
     if (filtroColab !== "todos") {
         dadosConsolidados = dadosConsolidados.filter(r => r.colaboradorId == filtroColab);
+    }
+
+    if (filtroInicio) {
+        const dInicio = new Date(filtroInicio + "T00:00:00");
+        dadosConsolidados = dadosConsolidados.filter(r => {
+            const p = r.data.split('/');
+            return new Date(p[2], p[1]-1, p[0]) >= dInicio;
+        });
+    }
+    if (filtroFim) {
+        const dFim = new Date(filtroFim + "T23:59:59");
+        dadosConsolidados = dadosConsolidados.filter(r => {
+            const p = r.data.split('/');
+            return new Date(p[2], p[1]-1, p[0]) <= dFim;
+        });
     }
 
     if (dadosConsolidados.length === 0) {
@@ -299,10 +372,14 @@ function filtrarRelatorioTela() {
     });
 }
 
-// SOLUÇÃO EXCEL: Baixa a planilha oficial estruturada com base nos logs unificados
 function exportarPontosExcel() {
-    const dadosParaPlanilha = processarLogsLocalStorage();
+    const filtroColab = document.getElementById('filtroRelatorioColaborador').value;
+    let dadosParaPlanilha = processarLogsLocalStorage();
     
+    if (filtroColab !== "todos") {
+        dadosParaPlanilha = dadosParaPlanilha.filter(r => r.colaboradorId == filtroColab);
+    }
+
     if (dadosParaPlanilha.length === 0) {
         exibirAlertaTop("Sem Dados", "Não há dados consolidados na folha ponto para exportar hoje.");
         return;
@@ -333,12 +410,12 @@ function inicializarDadosFicticios() {
         ];
         localStorage.setItem("banco_usuarios_ponto", JSON.stringify(bancoUsuarios));
         
-        // Alimenta o localStorage com dados de demonstração iniciais conforme imagem
+        // Simulação matemática perfeita: Adriana batendo ponto correto em um dia útil (24/06 - Quarta-feira)
         localStorage.setItem("historico_pontos_global", JSON.stringify([
-            { colaboradorId: 1, nome: "ADRIANA SANTARINE DE MENDONÇA DINIZ", data: "28/06/2026", tipo: "Entrada", hora: "09:54" },
-            { colaboradorId: 1, nome: "ADRIANA SANTARINE DE MENDONÇA DINIZ", data: "28/06/2026", tipo: "Almoço Ida", hora: "12:02" },
-            { colaboradorId: 1, nome: "ADRIANA SANTARINE DE MENDONÇA DINIZ", data: "28/06/2026", tipo: "Almoço Volta", hora: "13:00" },
-            { colaboradorId: 1, nome: "ADRIANA SANTARINE DE MENDONÇA DINIZ", data: "28/06/2026", tipo: "Saída", hora: "18:00" }
+            { colaboradorId: 1, nome: "ADRIANA SANTARINE DE MENDONÇA DINIZ", data: "24/06/2026", tipo: "Entrada", hora: "08:00" },
+            { colaboradorId: 1, nome: "ADRIANA SANTARINE DE MENDONÇA DINIZ", data: "24/06/2026", tipo: "Almoço Ida", hora: "12:00" },
+            { colaboradorId: 1, nome: "ADRIANA SANTARINE DE MENDONÇA DINIZ", data: "24/06/2026", tipo: "Almoço Volta", hora: "13:00" },
+            { colaboradorId: 1, nome: "ADRIANA SANTARINE DE MENDONÇA DINIZ", data: "24/06/2026", tipo: "Saída", hora: "18:00" }
         ]));
     } else {
         bancoUsuarios = JSON.parse(rawUsers);
@@ -374,6 +451,5 @@ function controlarCamposConfiguracao(bloquear) {
     document.getElementById("btnSalvarConfigs").disabled = bloquear;
 }
 
-// Inicializa dados e atualiza visual
 inicializarDadosFicticios();
 renderizarTabela();

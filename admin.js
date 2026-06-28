@@ -20,7 +20,6 @@ function alternarAba(nomeAba) {
 function exibirAlertaTop(titulo, message) {
     document.getElementById('modalTitulo').innerText = titulo;
     document.getElementById('modalMensagem').innerHTML = `<p class="fs-6 text-secondary mb-0">${message}</p>`;
-    document.getElementById('modalFeedbackFooter').innerHTML = `<button type="button" class="btn btn-primary px-4 btn-sm" data-bs-dismiss="modal">OK</button>`;
     new bootstrap.Modal(document.getElementById('modalFeedback')).show();
 }
 
@@ -71,13 +70,6 @@ function fazerLogout() {
     localStorage.removeItem("ponto_web_sessao_colab");
     sessionStorage.clear();
     window.location.href = "index.html";
-}
-
-function resetarBancoGeral() {
-    localStorage.removeItem("banco_usuarios_ponto");
-    inicializarDadosFicticios();
-    renderTabelaComAtualizacao();
-    sincronizarFiltrosColaboradores();
 }
 
 function otimizarEConverterFoto(fileInputElement) {
@@ -221,13 +213,27 @@ function confirmarEdicaoFicha() {
         bancoUsuarios[usuarioSelecionadoId] = u;
         localStorage.setItem("banco_usuarios_ponto", JSON.stringify(bancoUsuarios));
         
+        // Forma segura de fechar o modal
         const elementoModal = document.getElementById('modalEditarFicha');
         const modalInstance = bootstrap.Modal.getInstance(elementoModal);
-        if(modalInstance) modalInstance.hide();
+        if(modalInstance) {
+            modalInstance.hide();
+        } else {
+            // Fallback se a instância se perder (remover as classes do body manualmente)
+            elementoModal.classList.remove('show');
+            elementoModal.style.display = 'none';
+            document.body.classList.remove('modal-open');
+            const backdrop = document.querySelector('.modal-backdrop');
+            if (backdrop) backdrop.remove();
+        }
 
         renderTabelaComAtualizacao();
         sincronizarFiltrosColaboradores();
-        exibirAlertaTop("📝 Atualizado", "A ficha cadastral do colaborador foi alterada com sucesso.");
+        
+        // Timeout pequeno para garantir que a transição de fechamento do modal anterior não bloqueie o Alerta
+        setTimeout(() => {
+            exibirAlertaTop("📝 Atualizado", "A ficha cadastral do colaborador foi alterada com sucesso.");
+        }, 300);
     });
 }
 
@@ -237,18 +243,11 @@ function solicitarExclusaoUsuario(index) {
     if(!u) return;
 
     usuarioSelecionadoId = idx;
-
-    document.getElementById('modalTitulo').innerText = "⚠️ Confirmar Exclusão";
-    document.getElementById('modalMensagem').innerHTML = `
-        <p class="mb-2">Tem certeza absoluta que deseja remover permanentemente o funcionário <strong>${u.nome}</strong>?</p>
-        <p class="text-danger small mb-0">Esta ação não poderá ser desfeita.</p>
-    `;
     
-    document.getElementById('modalFeedbackFooter').innerHTML = `
-        <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Não, Cancelar</button>
-        <button type="button" class="btn btn-danger btn-sm px-3" onclick="executarExclusaoDefinitiva()">Sim, Excluir</button>
-    `;
-    new bootstrap.Modal(document.getElementById('modalFeedback')).show();
+    // Atualiza o nome no novo modal dedicado de exclusão
+    document.getElementById('nomeUsuarioExclusao').innerText = u.nome;
+    
+    new bootstrap.Modal(document.getElementById('modalExclusao')).show();
 }
 
 function executarExclusaoDefinitiva() {
@@ -256,13 +255,25 @@ function executarExclusaoDefinitiva() {
     bancoUsuarios.splice(usuarioSelecionadoId, 1);
     localStorage.setItem("banco_usuarios_ponto", JSON.stringify(bancoUsuarios));
     
-    const elementoModal = document.getElementById('modalFeedback');
+    // Forma segura de fechar o modal de exclusão
+    const elementoModal = document.getElementById('modalExclusao');
     const modalInstance = bootstrap.Modal.getInstance(elementoModal);
-    if(modalInstance) modalInstance.hide();
+    if(modalInstance) {
+        modalInstance.hide();
+    } else {
+        elementoModal.classList.remove('show');
+        elementoModal.style.display = 'none';
+        document.body.classList.remove('modal-open');
+        const backdrop = document.querySelector('.modal-backdrop');
+        if (backdrop) backdrop.remove();
+    }
 
     renderTabelaComAtualizacao();
     sincronizarFiltrosColaboradores();
-    exibirAlertaTop("🗑️ Removido", "O colaborador foi excluído da base com sucesso.");
+    
+    setTimeout(() => {
+        exibirAlertaTop("🗑️ Removido", "O colaborador foi excluído da base com sucesso.");
+    }, 300);
 }
 
 function bolarTempoParaMinutos(strHora) {
@@ -365,7 +376,7 @@ function processarLogsLocalStorage() {
         }
 
         if(minutosTrabalhados > cargaObrigatoriaDoDia) {
-            const extra = minutesTrabalhados - cargaObrigatoriaDoDia;
+            const extra = minutosTrabalhados - cargaObrigatoriaDoDia;
             r.minutosExtrasNum = extra;
             r.horasExtras = formatarMinutosParaString(extra);
         } else {
@@ -510,6 +521,7 @@ function exportarPontosExcel() {
     XLSX.writeFile(workbook, `Espelho_Ponto_${colabNome.replace(/ /g, "_")}.xlsx`);
 }
 
+// INICIALIZADOR: O único lugar onde limpamos e populamos os dados de teste da Adriana
 function inicializarDadosFicticios() {
     const rawUsers = localStorage.getItem("banco_usuarios_ponto");
     if(!rawUsers || JSON.parse(rawUsers).length === 0) {
@@ -538,7 +550,6 @@ function salvarConfiguracoes() {
     btnSalvar.classList.remove("btn-primary");
     btnSalvar.classList.add("btn-success");
     btnSalvar.innerText = "✓ Configurações Salvas com Sucesso!";
-    exibirAlertaTop("Configurações Salvas", "Cerca virtual gravada com segurança!");
     setTimeout(() => {
         btnSalvar.classList.remove("btn-success");
         btnSalvar.classList.add("btn-primary");

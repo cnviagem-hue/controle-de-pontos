@@ -7,19 +7,21 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
-        body { background-color: #f8fafc; font-family: 'Segoe UI', Arial, sans-serif; display: flex; min-height: 100vh; background-color: #f8fafc; color: #1e293b; }
+        body { background-color: #f8fafc; font-family: 'Segoe UI', Arial, sans-serif; display: flex; min-height: 100vh; }
         
-        .sidebar { width: 260px; background-color: #0f172a; color: #fff; padding: 24px 16px; flex-shrink: 0; display: flex; flex-direction: column; justify-content: space-between; position: fixed; height: 100vh; }
-        .sidebar-header { display: flex; align-items: center; gap: 12px; margin-bottom: 32px; padding-bottom: 16px; border-bottom: 1px solid #334155; }
-        .sidebar-header h2 { font-size: 1.25rem; font-weight: 600; color: #f8fafc; }
-        .sidebar-menu { list-style: none; flex-grow: 1; }
+        /* MENU LATERAL FIXO À ESQUERDA */
+        .sidebar { width: 260px; background-color: #0f172a; color: #94a3b8; padding: 24px 16px; position: fixed; top: 0; left: 0; bottom: 0; display: flex; flex-direction: column; justify-content: space-between; z-index: 100; }
+        .sidebar-header h2 { font-size: 1.25rem; font-weight: 600; color: #f8fafc; margin-bottom: 32px; padding-bottom: 16px; border-bottom: 1px solid #334155; }
+        .sidebar-menu { list-style: none; width: 100%; padding: 0; }
         .sidebar-menu li { margin-bottom: 8px; }
-        .sidebar-menu a { display: block; color: #94a3b8; text-decoration: none; padding: 12px; border-radius: 8px; font-weight: 500; transition: all 0.2s; cursor: pointer; }
-        .sidebar-menu li.active a, .sidebar-menu a:hover { background-color: #1e293b; color: #f97316; }
+        .sidebar-menu .nav-link { display: block; color: #94a3b8; text-decoration: none; padding: 12px; border-radius: 8px; font-weight: 500; transition: all 0.2s; cursor: pointer; }
+        .sidebar-menu .nav-link:hover { background-color: #1e293b; color: #fff; }
+        .sidebar-menu .nav-link.active { background-color: #1e293b; color: #f97316; font-weight: 600; }
         
         .btn-copiar-link { background-color: #1e293b; border: 1px dashed #f97316; color: #f97316; padding: 12px; border-radius: 8px; text-align: center; font-size: 0.85rem; font-weight: 600; cursor: pointer; margin-top: 20px; transition: all 0.2s; display: flex; align-items: center; justify-content: center; gap: 8px; }
         .btn-copiar-link:hover { background-color: #f97316; color: #fff; }
 
+        /* ÁREA DE CONTEÚDO CONFIGURADA CORRETAMENTE */
         .main-content { flex-grow: 1; margin-left: 260px; padding: 32px; min-width: 0; width: calc(100% - 260px); }
         .card-custom { background: #ffffff; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); padding: 32px; border: 1px solid #e2e8f0; width: 100%; max-width: 950px; margin-bottom: 24px; }
         
@@ -30,15 +32,15 @@
         .tab-content-section { display: none; width: 100%; }
         .tab-content-section.active { display: block; }
 
-        /* CONTAINER DO OLHINHO INTEGRADO */
-        .password-container { position: relative; display: flex; align-items: center; }
-        .password-container input { padding-right: 44px; }
-        .btn-toggle-eye { position: absolute; right: 12px; background: none; border: none; font-size: 1.2rem; cursor: pointer; color: #94a3b8; transition: color 0.2s; user-select: none; }
+        /* DESIGN DO CONTAINER DO OLHINHO */
+        .password-container { position: relative; display: flex; align-items: center; width: 100%; }
+        .password-container input { padding-right: 40px; width: 100%; }
+        .btn-toggle-eye { position: absolute; right: 12px; background: none; border: none; font-size: 1.1rem; cursor: pointer; color: #94a3b8; transition: color 0.2s; user-select: none; padding: 0; margin: 0; }
         .btn-toggle-eye:hover { color: #f97316; }
 
-        /* BARRA DE ROLAGEM LATERAL DA TABELA SE NECESSÁRIO */
-        .table-responsive { width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; border-radius: 8px; }
-        .table th, .table td { white-space: nowrap; }
+        /* BARRA DE ROLAGEM AUTOMÁTICA NA TABELA */
+        .table-responsive { width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; border-radius: 8px; border: 1px solid #e2e8f0; }
+        .table th, .table td { white-space: nowrap; padding: 12px 16px; }
 
         @media (max-width: 768px) {
             body { flex-direction: column; }
@@ -63,7 +65,7 @@
                 <li><a class="nav-link" id="menu-configs" onclick="alternarAba('configs')">⚙️ Configs</a></li>
             </ul>
         </div>
-        <div class="btn-copiar" onclick="copiarLinkColaborador()">
+        <div class="btn-copiar-link" onclick="copiarLinkColaborador()">
             🔗 Copiar Link do App
         </div>
     </aside>
@@ -77,15 +79,15 @@
                     <div class="row g-3">
                         <div class="col-md-6">
                             <label class="form-label fw-medium small">Nome Completo</label>
-                            <input type="text" id="cadNome" placeholder="Ex: João da Silva" class="form-control" required>
+                            <input type="text" id="cadNome" placeholder="Ex: Adriana S M Diniz" class="form-control" required>
                         </div>
                         <div class="col-md-6">
                             <label class="form-label fw-medium small">Telefone / WhatsApp</label>
-                            <input type="text" id="cadTelefone" placeholder="(00) 00000-0000" class="form-control" oninput="mascaraTelefone(this)" required>
+                            <input type="text" id="cadTelefone" placeholder="(64) 98141-0002" class="form-control" oninput="mascaraTelefone(this)" required>
                         </div>
                         <div class="col-md-6">
                             <label class="form-label fw-medium small">E-mail de Acesso</label>
-                            <input type="email" id="cadEmail" placeholder="joao@empresa.com" class="form-control" required>
+                            <input type="email" id="cadEmail" placeholder="adriana@gmail.com" class="form-control" required>
                         </div>
                         <div class="col-md-6">
                             <label class="form-label fw-medium small">Senha Inicial</label>
@@ -112,7 +114,7 @@
             <div class="card-custom">
                 <div class="section-title">Equipe Cadastrada</div>
                 <div class="table-responsive">
-                    <table class="table table-hover align-middle">
+                    <table class="table table-hover align-middle mb-0">
                         <thead class="table-light">
                             <tr>
                                 <th>Nome</th>
@@ -134,7 +136,7 @@
         <div id="conteudo-relatorios" class="tab-content-section">
             <div class="card-custom">
                 <div class="section-title">Espelhos de Ponto e Relatórios</div>
-                <p class="text-muted small">Consulte os fechamentos da folha ponto.</p>
+                <p class="text-muted small">Consulte abaixo os fechamentos de ponto.</p>
                 <div class="alert alert-info py-2 small">Nenhum registro pendente para hoje.</div>
             </div>
         </div>
@@ -177,9 +179,91 @@
                         <input type="text" id="latitude" class="form-control">
                     </div>
                     <div class="col-md-6">
-                        <label Editorial for="longitude" class="form-label small fw-medium">Longitude</label>
+                        <label for="longitude" class="form-label small fw-medium">Longitude</label>
                         <input type="text" id="longitude" class="form-control">
                     </div>
                 </div>
 
-                <div id="boxEndereco
+                <div id="boxEndereco" class="endereco-box">
+                    <div class="endereco-titulo">📍 Endereço Identificado:</div>
+                    <div id="enderecoTexto" class="text-success small fw-medium"></div>
+                </div>
+
+                <div class="mb-4 mt-4">
+                    <label for="raioTolerancia" class="form-label fw-medium small">Raio de Tolerância (metros)</label>
+                    <input type="number" id="raioTolerancia" class="form-control" value="50">
+                </div>
+
+                <button type="button" class="btn btn-primary w-100 py-2 fw-bold" onclick="salvarConfiguracoes()">Salvar Configurações</button>
+            </div>
+        </div>
+
+    </main>
+
+    <div class="modal fade" id="modalFeedback" tabindex="-1" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg" style="border-radius:16px;">
+          <div class="modal-header bg-dark text-white py-3" style="border-top-left-radius:16px; border-top-right-radius:16px;">
+            <h5 class="modal-title d-flex align-items-center gap-2" id="modalTitulo">🔔 Notificação</h5>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body p-4 text-center">
+            <p id="modalMensagem" class="fs-6 text-secondary mb-0"></p>
+          </div>
+          <div class="modal-footer border-0 pt-0 d-flex justify-content-center">
+            <button type="button" class="btn btn-primary px-4 btn-sm" data-bs-dismiss="modal">OK</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal fade" id="modalEditarFicha" tabindex="-1" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg" style="border-radius:16px;">
+          <div class="modal-header bg-primary text-white py-3" style="border-top-left-radius:16px; border-top-right-radius:16px;">
+            <h5 class="modal-title">📝 Editar Ficha do Colaborador</h5>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body p-4">
+              <div class="row g-3">
+                  <div class="col-12">
+                      <label class="form-label small fw-medium text-muted">Nome Completo</label>
+                      <input type="text" id="editNome" class="form-control">
+                  </div>
+                  <div class="col-12">
+                      <label class="form-label small fw-medium text-muted">Telefone</label>
+                      <input type="text" id="editTelefone" class="form-control" oninput="mascaraTelefone(this)">
+                  </div>
+                  <div class="col-12">
+                      <label class="form-label small fw-medium text-muted">E-mail</label>
+                      <input type="email" id="editEmail" class="form-control">
+                  </div>
+                  <div class="col-12">
+                      <label class="form-label small fw-medium text-muted">Senha de Acesso</label>
+                      <div class="password-container">
+                          <input type="password" id="editSenha" class="form-control">
+                          <button type="button" class="btn-toggle-eye" onclick="toggleInputSenha('editSenha', this)">👁️</button>
+                      </div>
+                  </div>
+                  <div class="col-12">
+                      <label class="form-label small fw-medium text-muted">Dispositivo Autorizado</label>
+                      <select id="editPermissao" class="form-select">
+                          <option value="Celular">Apenas Celular</option>
+                          <option value="PC">Apenas PC</option>
+                          <option value="Ambos">Celular e PC (Ambos)</option>
+                      </select>
+                  </div>
+              </div>
+          </div>
+          <div class="modal-footer bg-light py-2">
+            <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancelar</button>
+            <button type="button" class="btn btn-primary btn-sm px-3" onclick="confirmarEdicaoFicha()">Salvar Ficha</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="admin.js"></script>
+</body>
+</html>

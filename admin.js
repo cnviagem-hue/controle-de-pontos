@@ -73,15 +73,11 @@ function fazerLogout() {
     window.location.href = "index.html";
 }
 
-// ADICIONADO: Função extra de socorro para limpar registros corrompidos na fase de teste
 function resetarBancoGeral() {
-    if(confirm("Deseja limpar os cadastros repetidos e reiniciar a base de dados de teste limpa?")) {
-        localStorage.removeItem("banco_usuarios_ponto");
-        inicializarDadosFicticios();
-        renderTabelaComAtualizacao();
-        sincronizarFiltrosColaboradores();
-        exibirAlertaTop("Base Reiniciada", "Registros duplicados limpos com sucesso!");
-    }
+    localStorage.removeItem("banco_usuarios_ponto");
+    inicializarDadosFicticios();
+    renderTabelaComAtualizacao();
+    sincronizarFiltrosColaboradores();
 }
 
 function otimizarEConverterFoto(fileInputElement) {
@@ -156,7 +152,6 @@ function cadastrarUsuario(event) {
     });
 }
 
-// CORREÇÃO CIRÚRGICA: Mapeamento de escopo 'index' perfeitamente amarrado
 function renderTabelaComAtualizacao() {
     const tabela = document.getElementById('tabelaEquipe');
     if(!tabela) return;
@@ -370,7 +365,7 @@ function processarLogsLocalStorage() {
         }
 
         if(minutosTrabalhados > cargaObrigatoriaDoDia) {
-            const extra = minutosTrabalhados - cargaObrigatoriaDoDia;
+            const extra = minutesTrabalhados - cargaObrigatoriaDoDia;
             r.minutosExtrasNum = extra;
             r.horasExtras = formatarMinutosParaString(extra);
         } else {

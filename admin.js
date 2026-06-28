@@ -75,7 +75,6 @@ function otimizarEConverterFoto(fileInputElement) {
             const img = new Image();
             img.onload = function () {
                 const canvas = document.createElement('canvas');
-                // Redimensiona para resolução leve de perfil (Ex: max 150x150)
                 const MAX_WIDTH = 150;
                 const MAX_HEIGHT = 150;
                 let width = img.width;
@@ -96,7 +95,6 @@ function otimizarEConverterFoto(fileInputElement) {
                 canvas.height = height;
                 const ctx = canvas.getContext('2d');
                 ctx.drawImage(img, 0, 0, width, height);
-                // Comprime a qualidade para 70% para ficar ultra-leve
                 const dataUrl = canvas.toDataURL('image/jpeg', 0.7);
                 resolve(dataUrl);
             };
@@ -111,7 +109,6 @@ async function cadastrarUsuario(event) {
     
     let fotoBase64 = await otimizarEConverterFoto(document.getElementById('cadFotoFile'));
     
-    // Se o usuário não selecionou nenhuma foto, gera o avatar com as iniciais do nome de forma limpa
     if(!fotoBase64) {
         fotoBase64 = `https://ui-avatars.com/api/?name=${encodeURIComponent(document.getElementById('cadNome').value)}&background=f97316&color=fff`;
     }
@@ -180,7 +177,7 @@ function abrirModalEditarFicha(id) {
     document.getElementById('editTelefone').value = u.telefone;
     document.getElementById('editEmail').value = u.email;
     document.getElementById('editSenha').value = u.senha;
-    document.getElementById('editFotoFile').value = ""; // Reseta o input do arquivo para novas alterações
+    document.getElementById('editFotoFile').value = ""; 
     document.getElementById('editPermissao').value = u.permissao;
 
     new bootstrap.Modal(document.getElementById('modalEditarFicha')).show();
@@ -199,7 +196,6 @@ async function confirmarEdicaoFicha() {
     u.senha = document.getElementById('editSenha').value.trim();
     u.permissao = document.getElementById('editPermissao').value;
     
-    // Altera a foto apenas se uma nova foto tiver sido upada
     if(novaFotoBase64) {
         u.foto = novaFotoBase64;
     }
@@ -275,7 +271,7 @@ function restaurarBotaoBusca() {
     btn.innerText = "🔍 Buscar Localização Exata";
 }
 
-function obterLocalizacaoAtual() {
+function obtenerLocalizacaoAtual() {
     if (!navigator.geolocation) {
         exibirAlertaTop("Erro", "Sem suporte a GPS.");
         return;
@@ -293,8 +289,31 @@ function obterLocalizacaoAtual() {
     );
 }
 
+// NOVO: Faz o botão mudar de cor de azul para verde com animação suave e altera o texto por 3 segundos
 function salvarConfiguracoes() {
-    exibirAlertaTop("Configurações Salvas", "Cerca virtual salva com sucesso!");
+    const btnSalvar = document.getElementById("btnSalvarConfigs");
+    
+    // Altera para o estado "Salvo" de sucesso (Verde)
+    btnSalvar.classList.remove("btn-primary");
+    btnSalvar.classList.add("btn-success");
+    btnSalvar.innerText = "✓ Configurações Salvas com Sucesso!";
+    
+    // Alerta pop-up de reforço nativo do sistema
+    exibirAlertaTop("Configurações Salvas", "Cerca virtual e parâmetros da empresa gravados com sucesso!");
+
+    // Retorna ao estado original após 3 segundos
+    setTimeout(() => {
+        btnSalvar.classList.remove("btn-success");
+        btnSalvar.classList.add("btn-primary");
+        btnSalvar.innerText = "Salvar Configurações";
+    }, 3000);
+}
+
+// NOVO: Coloca o foco visual no input da empresa quando o botão de lápis/editar é acionado
+function focarEdicaoConfigs() {
+    const inputNome = document.getElementById("nomeEmpresa");
+    inputNome.focus();
+    inputNome.select();
 }
 
 const dadosSalvos = localStorage.getItem("banco_usuarios_ponto");

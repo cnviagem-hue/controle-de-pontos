@@ -7,163 +7,66 @@
     <!-- Bootstrap 5 CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
         body {
-            /* Fundo escuro combinando com o menu lateral do Admin */
             background-color: #0f172a; 
             font-family: 'Segoe UI', Arial, sans-serif;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            min-height: 100vh;
-            overflow: hidden;
-            position: relative;
+            display: flex; align-items: center; justify-content: center;
+            min-height: 100vh; overflow: hidden; position: relative;
         }
 
-        /* Efeitos visuais sutis no fundo para dar um tom mais moderno */
         body::before {
-            content: "";
-            position: absolute;
-            top: -10%;
-            left: -10%;
-            width: 400px;
-            height: 400px;
+            content: ""; position: absolute; top: -10%; left: -10%;
+            width: 400px; height: 400px;
             background: radial-gradient(circle, rgba(249,115,22,0.15) 0%, rgba(15,23,42,0) 70%);
-            border-radius: 50%;
-            z-index: 0;
+            border-radius: 50%; z-index: 0;
         }
         body::after {
-            content: "";
-            position: absolute;
-            bottom: -10%;
-            right: -5%;
-            width: 500px;
-            height: 500px;
+            content: ""; position: absolute; bottom: -10%; right: -5%;
+            width: 500px; height: 500px;
             background: radial-gradient(circle, rgba(59,130,246,0.1) 0%, rgba(15,23,42,0) 70%);
-            border-radius: 50%;
-            z-index: 0;
+            border-radius: 50%; z-index: 0;
         }
 
-        .login-wrapper {
-            width: 100%;
-            max-width: 420px;
-            padding: 20px;
-            z-index: 1;
-        }
-
+        .login-wrapper { width: 100%; max-width: 420px; padding: 20px; z-index: 1; }
         .login-card {
-            background: #ffffff;
-            border-radius: 16px;
-            box-shadow: 0 15px 35px rgba(0,0,0,0.3);
-            padding: 40px 32px;
-            width: 100%;
-            position: relative;
+            background: #ffffff; border-radius: 16px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.3); padding: 40px 32px; width: 100%; position: relative;
         }
 
-        .logo-area {
-            text-align: center;
-            margin-bottom: 32px;
-        }
-
-        .logo-area h2 {
-            font-size: 2rem;
-            color: #0f172a;
-            font-weight: 800;
-            letter-spacing: -0.5px;
-            margin-bottom: 4px;
-        }
-
-        .logo-area span {
-            color: #f97316; /* Laranja da marca */
-        }
+        .logo-area { text-align: center; margin-bottom: 32px; }
+        .logo-area h2 { font-size: 2rem; color: #0f172a; font-weight: 800; letter-spacing: -0.5px; margin-bottom: 4px; }
+        .logo-area span { color: #f97316; }
 
         .form-control {
-            background-color: #f8fafc;
-            border: 1px solid #cbd5e1;
-            padding: 12px 16px;
-            border-radius: 8px;
-            font-size: 0.95rem;
-            color: #334155;
-            transition: all 0.2s;
+            background-color: #f8fafc; border: 1px solid #cbd5e1; padding: 12px 16px;
+            border-radius: 8px; font-size: 0.95rem; color: #334155; transition: all 0.2s;
         }
-
         .form-control:focus {
-            background-color: #ffffff;
-            border-color: #f97316;
-            box-shadow: 0 0 0 4px rgba(249, 115, 22, 0.1);
+            background-color: #ffffff; border-color: #f97316; box-shadow: 0 0 0 4px rgba(249, 115, 22, 0.1);
         }
 
-        .password-container {
-            position: relative;
-            display: flex;
-            align-items: center;
-        }
-
-        .password-container input {
-            padding-right: 45px;
-        }
-
+        .password-container { position: relative; display: flex; align-items: center; }
+        .password-container input { padding-right: 45px; }
         .btn-toggle-eye {
-            position: absolute;
-            right: 12px;
-            background: none;
-            border: none;
-            font-size: 1.1rem;
-            cursor: pointer;
-            color: #94a3b8;
-            transition: color 0.2s;
-            padding: 0;
+            position: absolute; right: 12px; background: none; border: none; font-size: 1.1rem; cursor: pointer; color: #94a3b8; transition: color 0.2s; padding: 0;
         }
-
-        .btn-toggle-eye:hover {
-            color: #f97316;
-        }
+        .btn-toggle-eye:hover { color: #f97316; }
 
         .btn-login {
-            background-color: #f97316;
-            color: #ffffff;
-            border: none;
-            padding: 14px;
-            border-radius: 8px;
-            font-weight: 700;
-            font-size: 1rem;
-            width: 100%;
-            margin-top: 24px;
-            transition: all 0.3s;
-            box-shadow: 0 4px 6px rgba(249, 115, 22, 0.2);
+            background-color: #f97316; color: #ffffff; border: none; padding: 14px;
+            border-radius: 8px; font-weight: 700; font-size: 1rem; width: 100%; margin-top: 24px; transition: all 0.3s; box-shadow: 0 4px 6px rgba(249, 115, 22, 0.2);
         }
-
         .btn-login:hover {
-            background-color: #ea580c;
-            box-shadow: 0 6px 12px rgba(249, 115, 22, 0.3);
-            transform: translateY(-1px);
+            background-color: #ea580c; box-shadow: 0 6px 12px rgba(249, 115, 22, 0.3); transform: translateY(-1px);
         }
 
         .alert-error {
-            display: none;
-            background-color: #fef2f2;
-            color: #ef4444;
-            border: 1px solid #fca5a5;
-            padding: 10px;
-            border-radius: 8px;
-            font-size: 0.85rem;
-            font-weight: 600;
-            text-align: center;
-            margin-bottom: 20px;
-            animation: shake 0.4s ease-in-out;
+            display: none; background-color: #fef2f2; color: #ef4444; border: 1px solid #fca5a5;
+            padding: 10px; border-radius: 8px; font-size: 0.85rem; font-weight: 600; text-align: center; margin-bottom: 20px; animation: shake 0.4s ease-in-out;
         }
 
-        .footer-text {
-            text-align: center;
-            color: #64748b;
-            font-size: 0.8rem;
-            margin-top: 24px;
-            font-weight: 500;
-        }
+        .footer-text { text-align: center; color: #64748b; font-size: 0.8rem; margin-top: 24px; font-weight: 500; }
 
         @keyframes shake {
             0%, 100% { transform: translateX(0); }
@@ -174,10 +77,8 @@
     </style>
 </head>
 <body>
-
     <div class="login-wrapper">
         <div class="login-card">
-            
             <div class="logo-area">
                 <h2>Ponto<span>Web</span></h2>
                 <p class="text-muted small fw-medium">Acesso Restrito à Gestão</p>
@@ -229,17 +130,10 @@
             const senha = document.getElementById("senhaAdmin").value.trim();
             const erro = document.getElementById("msgErro");
 
-            // ⚠️ Criei um usuário e senha fixos aqui para o administrador acessar
-            const EMAIL_CORRETO = "admin@pontoweb.com";
-            const SENHA_CORRETA = "admin123";
-
-            if (email === EMAIL_CORRETO && senha === SENHA_CORRETA) {
+            // SEUS DADOS APROVADOS AQUI
+            if (email === "cnviagem@gmail.com" && senha === "123456") {
                 erro.style.display = "none";
-                
-                // Grava uma sessão temporária para indicar que o Admin logou
                 sessionStorage.setItem("admin_autenticado", "true");
-                
-                // Redireciona para o Painel Admin que já aprovamos!
                 window.location.href = "admin.html";
             } else {
                 erro.style.display = "block";

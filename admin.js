@@ -706,7 +706,6 @@ function salvarConfiguracoes() {
     
     localStorage.setItem("configuracoes_empresa", JSON.stringify(configs));
 
-    // ATUALIZA O NOME DA EMPRESA NO MENU LATERAL IMEDIATAMENTE
     const elSidebar = document.getElementById("sidebarNomeEmpresa");
     if(elSidebar) elSidebar.innerText = configs.nomeEmpresa;
 
@@ -724,30 +723,31 @@ function salvarConfiguracoes() {
     }, 3000);
 }
 
+// ESTA É A FUNÇÃO QUE FOI AJUSTADA PARA OUVIR O LOGIN
 function carregarConfiguracoes() {
     const configSalva = localStorage.getItem("configuracoes_empresa");
-    if(configSalva) {
-        const configs = JSON.parse(configSalva);
-        document.getElementById("nomeEmpresa").value = configs.nomeEmpresa || "UniCesumar";
-        document.getElementById("cepBusca").value = configs.cep || "";
-        document.getElementById("numeroBusca").value = configs.numero || "";
-        document.getElementById("latitude").value = configs.latitude || "";
-        document.getElementById("longitude").value = configs.longitude || "";
-        document.getElementById("raioTolerancia").value = configs.raio || "50";
-        if(configs.endereco) {
-            document.getElementById("boxEndereco").style.display = "block";
-            document.getElementById("enderecoTexto").innerText = configs.endereco;
-        }
-        
-        // CARREGA O NOME DA EMPRESA NO MENU LATERAL AO ABRIR O PAINEL
-        const elSidebar = document.getElementById("sidebarNomeEmpresa");
-        if(elSidebar) elSidebar.innerText = configs.nomeEmpresa || "UniCesumar";
-        
-    } else {
-        // Fallback caso não tenha configuração salva
-        const elSidebar = document.getElementById("sidebarNomeEmpresa");
-        if(elSidebar) elSidebar.innerText = "UniCesumar";
+    const nomeSessao = sessionStorage.getItem("nome_empresa_ativa"); 
+
+    let configs = configSalva ? JSON.parse(configSalva) : {};
+    
+    // A mágica acontece aqui: A prioridade 1 é sempre o nome que veio do Login. Se não tiver login, puxa o salvo.
+    const nomeExibicao = nomeSessao || configs.nomeEmpresa || "UniCesumar";
+
+    document.getElementById("nomeEmpresa").value = nomeExibicao;
+    document.getElementById("cepBusca").value = configs.cep || "";
+    document.getElementById("numeroBusca").value = configs.numero || "";
+    document.getElementById("latitude").value = configs.latitude || "";
+    document.getElementById("longitude").value = configs.longitude || "";
+    document.getElementById("raioTolerancia").value = configs.raio || "50";
+    
+    if(configs.endereco) {
+        document.getElementById("boxEndereco").style.display = "block";
+        document.getElementById("enderecoTexto").innerText = configs.endereco;
     }
+
+    // CARREGA O NOME EXATO NO MENU LATERAL
+    const elSidebar = document.getElementById("sidebarNomeEmpresa");
+    if(elSidebar) elSidebar.innerText = nomeExibicao;
 }
 
 function focarEdicaoConfigs() {

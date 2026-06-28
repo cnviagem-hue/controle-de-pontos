@@ -160,16 +160,16 @@
             <div class="card-custom">
                 <div class="section-title">
                     <span>Configuração da Empresa</span>
-                    <button type="button" class="btn btn-link btn-sm text-decoration-none p-0 fw-semibold" onclick="focarEdicaoConfigs()">✏️ Editar Parâmetros</button>
+                    <button type="button" id="btnEditarConfigs" class="btn btn-link btn-sm text-decoration-none p-0 fw-semibold" onclick="focarEdicaoConfigs()">✏️ Editar Parâmetros</button>
                 </div>
                 <div class="mb-4">
                     <label for="nomeEmpresa" class="form-label fw-medium small">Nome da Empresa</label>
-                    <input type="text" id="nomeEmpresa" class="form-control" value="UniCesumar">
+                    <input type="text" id="nomeEmpresa" class="form-control" value="UniCesumar" disabled>
                 </div>
 
                 <div class="section-title">Cerca Virtual Antifraude</div>
                 <div class="mb-4">
-                    <button type="button" class="btn btn-outline-primary btn-sm fw-semibold" onclick="obterLocalizacaoAtual()">
+                    <button type="button" id="btnGpsConfigs" class="btn btn-outline-primary btn-sm fw-semibold" onclick="obterLocalizacaoAtual()" disabled>
                         📍 Obter Localização Atual (Dispositivo GPS)
                     </button>
                 </div>
@@ -178,14 +178,14 @@
                     <div class="col-12"><span class="text-muted small fw-bold text-uppercase">Buscar Coordenadas por CEP</span></div>
                     <div class="col-md-8">
                         <label for="cepBusca" class="form-label small">Digite o CEP</label>
-                        <input type="text" id="cepBusca" placeholder="Ex: 01001-000" class="form-control" maxlength="9" oninput="mascaraCEPHtml(this)">
+                        <input type="text" id="cepBusca" placeholder="Ex: 01001-000" class="form-control" maxlength="9" oninput="mascaraCEPHtml(this)" disabled>
                     </div>
                     <div class="col-md-4">
                         <label for="numeroBusca" class="form-label small">Número Comercial</label>
-                        <input type="text" id="numeroBusca" placeholder="Ex: 500" class="form-control">
+                        <input type="text" id="numeroBusca" placeholder="Ex: 500" class="form-control" disabled>
                     </div>
                     <div class="col-12">
-                        <button type="button" id="btnBuscarCep" onclick="buscarCoordenadasPorCEP()" class="btn btn-primary w-100 btn-sm fw-semibold">
+                        <button type="button" id="btnBuscarCep" onclick="buscarCoordenadasPorCEP()" class="btn btn-primary w-100 btn-sm fw-semibold" disabled>
                             🔍 Buscar Localização Exata e Gerar Lat/Lng
                         </button>
                     </div>
@@ -194,11 +194,11 @@
                 <div class="row g-3 mb-4">
                     <div class="col-md-6">
                         <label for="latitude" class="form-label small fw-medium">Latitude</label>
-                        <input type="text" id="latitude" class="form-control">
+                        <input type="text" id="latitude" class="form-control" disabled>
                     </div>
                     <div class="col-md-6">
                         <label for="longitude" class="form-label small fw-medium">Longitude</label>
-                        <input type="text" id="longitude" class="form-control">
+                        <input type="text" id="longitude" class="form-control" disabled>
                     </div>
                 </div>
 
@@ -209,10 +209,10 @@
 
                 <div class="mb-4 mt-4">
                     <label for="raioTolerancia" class="form-label fw-medium small">Raio de Tolerância (metros)</label>
-                    <input type="number" id="raioTolerancia" class="form-control" value="50">
+                    <input type="number" id="raioTolerancia" class="form-control" value="50" disabled>
                 </div>
 
-                <button type="button" id="btnSalvarConfigs" class="btn btn-primary w-100 py-2 fw-bold" onclick="salvarConfiguracoes()">Salvar Configurações</button>
+                <button type="button" id="btnSalvarConfigs" class="btn btn-primary w-100 py-2 fw-bold" onclick="salvarConfiguracoes()" disabled>Salvar Configurações</button>
             </div>
         </div>
 

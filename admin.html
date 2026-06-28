@@ -116,7 +116,22 @@
                             <label class="form-label fw-medium small">Foto de Perfil (Otimização Automática)</label>
                             <input type="file" id="cadFotoFile" accept="image/*" class="form-control">
                         </div>
-                        <div class="col-12">
+                        
+                        <div class="col-12 mt-3 mb-0"><span class="text-muted small fw-bold text-uppercase">Carga Horária Diária (Esperada)</span></div>
+                        <div class="col-md-4 mt-1">
+                            <label class="form-label fw-medium small">Segunda a Sexta</label>
+                            <input type="time" id="cadCargaSegSex" class="form-control" value="08:00" required>
+                        </div>
+                        <div class="col-md-4 mt-1">
+                            <label class="form-label fw-medium small">Sábado</label>
+                            <input type="time" id="cadCargaSab" class="form-control" value="04:00" required>
+                        </div>
+                        <div class="col-md-4 mt-1">
+                            <label class="form-label fw-medium small">Domingo</label>
+                            <input type="time" id="cadCargaDom" class="form-control" value="00:00" required>
+                        </div>
+
+                        <div class="col-12 mt-3">
                             <label class="form-label fw-medium small">Dispositivo Autorizado</label>
                             <select id="cadPermissao" class="form-select">
                                 <option value="Celular">Apenas Celular</option>
@@ -346,7 +361,22 @@
                       <label class="form-label small fw-medium text-muted">Alterar Foto de Perfil</label>
                       <input type="file" id="editFotoFile" accept="image/*" class="form-control">
                   </div>
-                  <div class="col-12">
+                  
+                  <div class="col-12 mt-3 mb-0"><span class="text-muted small fw-bold text-uppercase">Carga Horária Diária (Esperada)</span></div>
+                  <div class="col-md-4 mt-1">
+                      <label class="form-label small fw-medium text-muted">Seg a Sex</label>
+                      <input type="time" id="editCargaSegSex" class="form-control">
+                  </div>
+                  <div class="col-md-4 mt-1">
+                      <label class="form-label small fw-medium text-muted">Sábado</label>
+                      <input type="time" id="editCargaSab" class="form-control">
+                  </div>
+                  <div class="col-md-4 mt-1">
+                      <label class="form-label small fw-medium text-muted">Domingo</label>
+                      <input type="time" id="editCargaDom" class="form-control">
+                  </div>
+
+                  <div class="col-12 mt-3">
                       <label class="form-label small fw-medium text-muted">Dispositivo Autorizado</label>
                       <select id="editPermissao" class="form-select">
                           <option value="Celular">Apenas Celular</option>

@@ -317,7 +317,6 @@ function sincronizarFiltrosColaboradores() {
     select.value = valorSelecionado;
 }
 
-// ADICIONADO: LÓGICA DE FILTROS RÁPIDOS (Hoje, Semana, 15 Dias, Mês)
 function aplicarFiltroRapido(tipo) {
     const inputInicio = document.getElementById('filtroRelatorioInicio');
     const inputFim = document.getElementById('filtroRelatorioFim');
@@ -396,12 +395,31 @@ function processarLogsLocalStorage() {
         const mAlmIda = bolarTempoParaMinutos(r.almocoIda);
         const mAlmVolta = bolarTempoParaMinutos(r.almocoVolta);
         const mSaida = bolarTempoParaMinutos(r.saida);
+        
+        // CÁLCULO PARCIAL PARA EXIBIÇÃO DE HORAS "EM TEMPO REAL" DO DIA DE HOJE
+        let calcAlmIda = mAlmIda;
+        let calcSaida = mSaida;
 
-        if(mEntrada !== null && mAlmIda !== null && mAlmIda > mEntrada) {
-            minutosTrabalhados += (mAlmIda - mEntrada);
+        const hojeStr = new Date().toLocaleDateString('pt-BR');
+        if (r.data === hojeStr) {
+            const agora = new Date();
+            const mAtual = agora.getHours() * 60 + agora.getMinutes();
+
+            // Bateu entrada, mas não saiu para o almoço (Ponto aberto de manhã/tarde)
+            if (mEntrada !== null && mAlmIda === null && mSaida === null) {
+                calcAlmIda = mAtual; 
+            }
+            // Voltou do almoço, mas não bateu saída ainda (Ponto aberto final da tarde)
+            if (mAlmVolta !== null && mSaida === null) {
+                calcSaida = mAtual;
+            }
         }
-        if(mAlmVolta !== null && mSaida !== null && mSaida > mAlmVolta) {
-            minutosTrabalhados += (mSaida - mAlmVolta);
+
+        if(mEntrada !== null && calcAlmIda !== null && calcAlmIda > mEntrada) {
+            minutosTrabalhados += (calcAlmIda - mEntrada);
+        }
+        if(mAlmVolta !== null && calcSaida !== null && calcSaida > mAlmVolta) {
+            minutosTrabalhados += (calcSaida - mAlmVolta);
         }
 
         r.minutosTrabalhadosNum = minutosTrabalhados;

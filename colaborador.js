@@ -62,7 +62,6 @@ function executarLoginColaborador(event) {
     }
 }
 
-// INJETA FOTO OTIMIZADA, NOME E CPF NA TELA DO COLABORADOR
 function renderizarFichaFuncionario() {
     document.getElementById("nomeFuncionarioConectado").innerHTML = `
         <div class="text-center mt-3">

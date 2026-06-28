@@ -1,5 +1,5 @@
 let usuarioLogado = null;
-let tipoPontoPendente = ""; // Guarda temporariamente o tipo de ponto selecionado para o pop-up
+let tipoPontoPendente = ""; 
 
 document.addEventListener("DOMContentLoaded", () => {
     inicializarRelogio();
@@ -36,7 +36,7 @@ function verificarSessaoExistente() {
     }
 }
 
-function executarLoginColaborador(event) {
+function ejecutarLoginColaborador(event) {
     event.preventDefault();
     const email = document.getElementById("loginEmail").value.trim().toLowerCase();
     const senha = document.getElementById("loginSenha").value.trim();
@@ -81,18 +81,14 @@ function executarLogoutColaborador() {
     irParaTela("login");
 }
 
-// NOVO: Abre o pop-up de confirmação com base no quadro clicado
 function solicitarMarcacaoPonto(tipo) {
     tipoPontoPendente = tipo;
     document.getElementById("txtTipoPontoConfirmar").innerText = tipo;
-    
-    // Abre o pop-up de segurança
     new bootstrap.Modal(document.getElementById("modalConfirmarPonto")).show();
 }
 
-// NOVO: Executado somente após o colaborador confirmar a intenção no pop-up
+// AJUSTE REALIZADO AQUI: Agora extrai a data (DD/MM/AAAA) e injeta no histórico e na estrutura para a futura integração do admin
 function confirmarEGravarPonto() {
-    // Fecha o pop-up de confirmação
     bootstrap.Modal.getInstance(document.getElementById("modalConfirmarPonto")).hide();
 
     if (!navigator.geolocation) {
@@ -103,22 +99,24 @@ function confirmarEGravarPonto() {
     navigator.geolocation.getCurrentPosition(
         (position) => {
             const agora = new Date();
+            const dataInjetada = agora.toLocaleDateString("pt-BR"); // Formato DD/MM/AAAA
             const horaMarcada = agora.toLocaleTimeString("pt-BR", { hour: '2-digit', minute: '2-digit' });
             
             const txtSemPontos = document.getElementById("txtSemPontos");
             if (txtSemPontos) txtSemPontos.style.display = "none";
 
-            // Injeta o novo registro estruturado na lista visual de hoje
+            // Renderiza na tela com a data incluída no meio do log de forma organizada
             const containerRegistros = document.getElementById("listaRegistrosHoje");
             const novoLog = document.createElement("div");
             novoLog.className = "log-registro";
             novoLog.innerHTML = `
                 <span class="tipo">● ${tipoPontoPendente}</span>
+                <span class="data-log">(${dataInjetada})</span>
                 <span class="hora">${horaMarcada}</span>
             `;
             containerRegistros.appendChild(novoLog);
 
-            exibirAvisoColab("🎯 Sucesso!", `Seu ponto de <strong>${tipoPontoPendente}</strong> das ${horaMarcada} foi validado geograficamente e gravado!`);
+            exibirAvisoColab("🎯 Sucesso!", `Seu ponto de <strong>${tipoPontoPendente}</strong> das ${horaMarcada} foi validado geograficamente e gravado no dia ${dataInjetada}!`);
         },
         (error) => { 
             exibirAvisoColab("Erro de Autenticação", "Por favor, ative a localização/GPS do seu aparelho para validar o ponto."); 

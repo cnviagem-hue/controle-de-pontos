@@ -1,6 +1,6 @@
 let usuarioSelecionadoId = null;
 let proximoIdUsuario = 1;
-let bancoUsuarios = []; // Garante a retenção e salvamento de dados estruturados
+let bancoUsuarios = [];
 
 function alternarAba(nomeAba) {
     document.getElementById('menu-pessoal').classList.remove('active');
@@ -19,7 +19,6 @@ function exibirAlertaTop(titulo, mensagem) {
     new bootstrap.Modal(document.getElementById('modalFeedback')).show();
 }
 
-// CORREÇÃO DO OLHINHO: Altera o tipo e o emoji em tempo de execução estável
 function toggleInputSenha(idInput, botao) {
     const input = document.getElementById(idInput);
     if(input.type === "password") {
@@ -45,7 +44,19 @@ function mascaraTelefone(input) {
     input.value = v;
 }
 
-function mascaraCEP(input) {
+function mascaraCPF(input) {
+    let v = input.value.replace(/\D/g, '');
+    if (v.length > 9) {
+        v = v.replace(/^(\d{3})(\d{3})(\d{3})(\d{2})$/, '$1.$2.$3-$4');
+    } else if (v.length > 6) {
+        v = v.replace(/^(\d{3})(\d{3})(\d{0,3})$/, '$1.$2.$3');
+    } else if (v.length > 3) {
+        v = v.replace(/^(\d{3})(\d{0,3})$/, '$1.$2');
+    }
+    input.value = v;
+}
+
+function mascaraCEPHtml(input) {
     let valor = input.value.replace(/\D/g, '');
     if (valor.length > 5) valor = valor.replace(/^(\d{5})(\d)/, '$1-$2');
     input.value = valor;
@@ -54,17 +65,29 @@ function mascaraCEP(input) {
 function cadastrarUsuario(event) {
     event.preventDefault();
     
+    let urlFoto = document.getElementById('cadFoto').value.trim();
+    // Se não colocar foto, gera um avatar bonito baseado no nome dele
+    if(!urlFoto) {
+        urlFoto = `https://ui-avatars.com/api/?name=${encodeURIComponent(document.getElementById('cadNome').value)}&background=f97316&color=fff`;
+    }
+    
     const novoUser = {
         id: proximoIdUsuario,
         nome: document.getElementById('cadNome').value.trim(),
+        cpf: document.getElementById('cadCpf').value.trim(),
         telefone: document.getElementById('cadTelefone').value.trim(),
         email: document.getElementById('cadEmail').value.trim(),
         senha: document.getElementById('cadSenha').value.trim(),
+        foto: urlFoto,
         permissao: document.getElementById('cadPermissao').value,
         status: "ATIVO"
     };
 
     bancoUsuarios.push(novoUser);
+    
+    // Sincroniza com o LocalStorage para a tela do colaborador conseguir ler em tempo real!
+    localStorage.setItem("banco_usuarios_ponto", JSON.stringify(bancoUsuarios));
+    
     renderizarTabela();
     proximoIdUsuario++;
     
@@ -72,13 +95,12 @@ function cadastrarUsuario(event) {
     exibirAlertaTop("👥 Cadastrado", `Colaborador <strong>${novoUser.nome}</strong> registrado com sucesso!`);
 }
 
-// CORREÇÃO DO ALINHAMENTO DA TABELA: Renderiza exatamente na mesma ordem dos cabeçalhos HTML
 function renderizarTabela() {
     const tabela = document.getElementById('tabelaEquipe');
     tabela.innerHTML = "";
     
     if(bancoUsuarios.length === 0) {
-        tabela.innerHTML = `<tr><td colspan="7" class="text-center text-muted small py-3">Nenhum funcionário cadastrado na base.</td></tr>`;
+        tabela.innerHTML = `<tr><td colspan="9" class="text-center text-muted small py-3">Nenhum funcionário cadastrado na base.</td></tr>`;
         return;
     }
 
@@ -86,12 +108,13 @@ function renderizarTabela() {
         const badgeStatus = u.status === "ATIVO" ? 'bg-success-subtle text-success border border-success-subtle' : 'bg-danger-subtle text-danger border border-danger-subtle';
         const tr = document.createElement('tr');
         
-        // ORDEM EXATA DAS COLUNAS: Nome | Telefone | E-mail | Senha | Permissão | Status | Ações
         tr.innerHTML = `
+            <td><img src="${u.foto}" class="avatar-table" onerror="this.src='https://ui-avatars.com/api/?name=User&background=cbd5e1'"></td>
             <td class="fw-medium">${u.nome}</td>
+            <td class="text-dark small">${u.cpf}</td>
             <td class="text-secondary small">${u.telefone}</td>
             <td class="text-muted small">${u.email}</td>
-            <td><code class="text-dark font-monospace fw-bold" style="letter-spacing:1px;">${u.senha}</code></td>
+            <td><code class="text-dark font-monospace fw-bold">${u.senha}</code></td>
             <td><span class="badge bg-secondary">Apenas ${u.permissao}</span></td>
             <td><span class="badge ${badgeStatus} px-2.5">${u.status}</span></td>
             <td class="text-center">
@@ -109,9 +132,11 @@ function abrirModalEditarFicha(id) {
     if(!u) return;
 
     document.getElementById('editNome').value = u.nome;
+    document.getElementById('editCpf').value = u.cpf;
     document.getElementById('editTelefone').value = u.telefone;
     document.getElementById('editEmail').value = u.email;
     document.getElementById('editSenha').value = u.senha;
+    document.getElementById('editFoto').value = u.foto.includes("ui-avatars.com") ? "" : u.foto;
     document.getElementById('editPermissao').value = u.permissao;
 
     new bootstrap.Modal(document.getElementById('modalEditarFicha')).show();
@@ -121,12 +146,20 @@ function confirmarEdicaoFicha() {
     const u = bancoUsuarios.find(x => x.id === usuarioSelecionadoId);
     if(!u) return;
 
+    let urlFoto = document.getElementById('editFoto').value.trim();
+    if(!urlFoto) {
+        urlFoto = `https://ui-avatars.com/api/?name=${encodeURIComponent(document.getElementById('editNome').value)}&background=f97316&color=fff`;
+    }
+
     u.nome = document.getElementById('editNome').value.trim();
+    u.cpf = document.getElementById('editCpf').value.trim();
     u.telefone = document.getElementById('editTelefone').value.trim();
     u.email = document.getElementById('editEmail').value.trim();
     u.senha = document.getElementById('editSenha').value.trim();
+    u.foto = urlFoto;
     u.permissao = document.getElementById('editPermissao').value;
 
+    localStorage.setItem("banco_usuarios_ponto", JSON.stringify(bancoUsuarios));
     bootstrap.Modal.getInstance(document.getElementById('modalEditarFicha')).hide();
     renderizarTabela();
     exibirAlertaTop("📝 Atualizado", "A ficha cadastral do colaborador foi alterada com sucesso.");
@@ -136,13 +169,14 @@ function bloquearUsuario(id) {
     const u = bancoUsuarios.find(x => x.id === id);
     if(!u) return;
     u.status = u.status === "ATIVO" ? "BLOQUEADO" : "ATIVO";
+    localStorage.setItem("banco_usuarios_ponto", JSON.stringify(bancoUsuarios));
     renderizarTabela();
 }
 
 function copiarLinkColaborador() {
     const linkApp = window.location.origin + "/colaborador.html";
     navigator.clipboard.writeText(linkApp).then(() => {
-        exibirAlertaTop("🔗 Link Copiado", "O link do app do colaborador foi copiado.");
+        exibirAlertaTop("🔗 Link Copiado", "O link de acesso do colaborador foi copiado para sua área de transferência!");
     });
 }
 
@@ -181,10 +215,10 @@ async function buscarCoordenadasPorCEP() {
             document.getElementById('enderecoTexto').innerText = logradouroExtenso;
             document.getElementById('boxEndereco').style.display = 'block';
         } else {
-            exibirAlertaTop("Aviso", "Número não mapeado. Gerando coordenadas aproximadas do logradouro.");
+            exibirAlertaTop("Aviso", "Número não mapeado pelo mapa global. Gerando dados da rua.");
         }
     } catch (e) {
-        exibirAlertaTop("Erro", "Falha na comunicação com o servidor de mapas.");
+        exibirAlertaTop("Erro", "Falha externa de conexão com mapas.");
     } finally {
         restaurarBotaoBusca();
     }
@@ -198,27 +232,32 @@ function restaurarBotaoBusca() {
 
 function obterLocalizacaoAtual() {
     if (!navigator.geolocation) {
-        exibirAlertaTop("Erro", "Seu dispositivo não possui suporte a GPS.");
+        exibirAlertaTop("Erro", "Sem suporte a GPS.");
         return;
     }
     navigator.geolocation.getCurrentPosition(
         (pos) => {
             document.getElementById('latitude').value = pos.coords.latitude;
             document.getElementById('longitude').value = pos.coords.longitude;
-            document.getElementById('enderecoTexto').innerText = "Localização definida via hardware GPS.";
+            document.getElementById('enderecoTexto').innerText = "Coordenadas fixadas por satélite ativo.";
             document.getElementById('boxEndereco').style.display = 'block';
             exibirAlertaTop("📍 GPS Capturado", "Coordenadas injetadas!");
         },
-        (err) => {
-            exibirAlertaTop("Erro", "Permissão de GPS negada.");
-        },
+        (err) => { exibirAlertaTop("Erro", "GPS desativado."); },
         { enableHighAccuracy: true, timeout: 8000 }
     );
 }
 
 function salvarConfiguracoes() {
-    exibirAlertaTop("Configurações Salvas", "Configurações da empresa atualizadas!");
+    exibirAlertaTop("Configurações Salvas", "Cerca virtual salva com sucesso!");
 }
 
-// Inicializa a tabela vazia ou com placeholders de forma limpa
+// Resgata dados caso existam para persistência de teste local
+const dadosSalvos = localStorage.getItem("banco_usuarios_ponto");
+if(dadosSalvos) {
+    bancoUsuarios = JSON.parse(dadosSalvos);
+    if(bancoUsuarios.length > 0) {
+        proximoIdUsuario = Math.max(...bancoUsuarios.map(u => u.id)) + 1;
+    }
+}
 renderizarTabela();

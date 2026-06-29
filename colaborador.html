@@ -319,32 +319,45 @@
     <script src="colaborador.js"></script>
 
     <script>
-        document.addEventListener("DOMContentLoaded", () => {
-            // Qual gaveta (empresa) este colaborador pertence?
-            const emailGaveta = localStorage.getItem("ponto_web_email_empresa_colab");
-            let nomeExibicao = "Empresa Parceira";
+        function atualizarNomeEmpresaBadge() {
+            let emailGaveta = localStorage.getItem("ponto_web_email_empresa_colab");
+            let nomeExibicao = "";
 
             if (emailGaveta && emailGaveta !== "default") {
-                // Procura o nome da empresa correspondente a este e-mail lá no Super Admin
-                const bancoEmpresas = JSON.parse(localStorage.getItem("banco_empresas_web")) || [];
-                const empresaEncontrada = bancoEmpresas.find(e => e.email === emailGaveta);
+                emailGaveta = emailGaveta.trim().toLowerCase();
                 
-                if (empresaEncontrada) {
-                    nomeExibicao = empresaEncontrada.nome;
+                // 1. Prioriza o nome personalizado que o RH salvou nas Configurações
+                const configs = JSON.parse(localStorage.getItem("configuracoes_empresa_" + emailGaveta)) || {};
+                if (configs.nomeEmpresa) {
+                    nomeExibicao = configs.nomeEmpresa;
                 } else {
-                    // Fallback para as configurações da empresa, caso o Super Admin delete o cadastro principal
-                    const configs = JSON.parse(localStorage.getItem("configuracoes_empresa_" + emailGaveta)) || {};
-                    if (configs.nomeEmpresa) {
-                        nomeExibicao = configs.nomeEmpresa;
+                    // 2. Se não tiver nas Configs, busca no banco do Super Admin
+                    const bancoEmpresas = JSON.parse(localStorage.getItem("banco_empresas_web")) || [];
+                    const empresaEncontrada = bancoEmpresas.find(e => e.email && e.email.trim().toLowerCase() === emailGaveta);
+                    if (empresaEncontrada && empresaEncontrada.nome) {
+                        nomeExibicao = empresaEncontrada.nome;
                     }
+                }
+            } else if (emailGaveta === "default") {
+                const configs = JSON.parse(localStorage.getItem("configuracoes_empresa_default")) || JSON.parse(localStorage.getItem("configuracoes_empresa")) || {};
+                if (configs.nomeEmpresa) {
+                    nomeExibicao = configs.nomeEmpresa;
                 }
             }
 
+            if (!nomeExibicao) {
+                nomeExibicao = "Empresa Parceira";
+            }
+
             const elNome = document.getElementById("nomeEmpresaBadge");
-            if(elNome) {
+            if(elNome && elNome.innerText !== nomeExibicao) {
                 elNome.innerText = nomeExibicao;
             }
-        });
+        }
+
+        // Executa ao carregar e fica monitorando (pois o login do JS não recarrega a página)
+        document.addEventListener("DOMContentLoaded", atualizarNomeEmpresaBadge);
+        setInterval(atualizarNomeEmpresaBadge, 500);
     </script>
 </body>
 </html>

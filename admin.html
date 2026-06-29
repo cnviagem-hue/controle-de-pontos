@@ -70,7 +70,7 @@
         <div style="width: 100%; display: flex; flex-direction: column; height: 100%;">
             
             <div class="sidebar-header">
-                <h2>Ponto Web</h2>
+                <h2>Ponto Web <span class="badge bg-primary ms-1" style="font-size: 0.5rem; vertical-align: middle;">☁️</span></h2>
                 <div id="sidebarNomeEmpresa" class="empresa-destaque" title="Empresa Ativa">Carregando...</div>
             </div>
 
@@ -148,14 +148,14 @@
                             </select>
                         </div>
                         <div class="col-12 mt-4">
-                            <button type="submit" class="btn btn-success w-100 py-2 fw-semibold">➕ Cadastrar Usuário</button>
+                            <button type="submit" id="btnSalvarUsuario" class="btn btn-success w-100 py-2 fw-semibold">➕ Cadastrar Usuário</button>
                         </div>
                     </div>
                 </form>
             </div>
 
             <div class="card-custom">
-                <div class="section-title">Equipe Cadastrada</div>
+                <div class="section-title">Equipe Cadastrada <span id="statusNuvemEquipe" class="badge bg-primary ms-2" style="font-size: 0.7rem;">☁️ Nuvem Online</span></div>
                 <div class="table-responsive">
                     <table class="table table-hover align-middle mb-0">
                         <thead class="table-light">
@@ -209,7 +209,7 @@
                         </div>
 
                         <div class="ms-auto d-flex gap-2">
-                            <button type="button" class="btn btn-outline-secondary btn-sm px-3" onclick="filtrarRelatorioTela()">🔍 Filtrar na Tela</button>
+                            <button type="button" id="btnFiltrarTela" class="btn btn-outline-secondary btn-sm px-3" onclick="filtrarRelatorioTela()">🔍 Filtrar na Tela</button>
                             <button type="button" class="btn btn-success btn-sm px-4 fw-semibold" onclick="exportarPontosExcel()">📊 Baixar Excel Colorido</button>
                         </div>
                     </div>
@@ -230,7 +230,7 @@
                             </tr>
                         </thead>
                         <tbody id="tabelaRelatoriosBody">
-                            </tbody>
+                        </tbody>
                     </table>
                 </div>
             </div>
@@ -239,12 +239,12 @@
         <div id="conteudo-configs" class="tab-content-section">
             <div class="card-custom">
                 <div class="section-title">
-                    <span>Configuração da Empresa</span>
+                    <span>Configuração da Empresa <span class="badge bg-primary ms-2" style="font-size: 0.7rem;">☁️ Nuvem Online</span></span>
                     <button type="button" id="btnEditarConfigs" class="btn btn-link btn-sm text-decoration-none p-0 fw-semibold" onclick="focarEdicaoConfigs()">✏️ Editar Parâmetros</button>
                 </div>
                 <div class="mb-4">
                     <label for="nomeEmpresa" class="form-label fw-medium small">Nome da Empresa</label>
-                    <input type="text" id="nomeEmpresa" class="form-control" value="UniCesumar" disabled>
+                    <input type="text" id="nomeEmpresa" class="form-control" value="" disabled>
                 </div>
 
                 <div class="section-title">Cerca Virtual Antifraude</div>
@@ -305,8 +305,7 @@
             <h5 class="modal-title d-flex align-items-center gap-2" id="modalTitulo">🔔 Notificação</h5>
             <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
           </div>
-          <div class="modal-body p-4 text-center" id="modalMensagem">
-            </div>
+          <div class="modal-body p-4 text-center" id="modalMensagem"></div>
           <div class="modal-footer border-0 pt-0 d-flex justify-content-center" id="modalFeedbackFooter">
             <button type="button" class="btn btn-primary px-4 btn-sm" data-bs-dismiss="modal">OK</button>
           </div>
@@ -327,7 +326,7 @@
           </div>
           <div class="modal-footer border-0 pt-0 d-flex justify-content-center gap-2">
             <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Não, Cancelar</button>
-            <button type="button" class="btn btn-danger btn-sm px-3" onclick="executarExclusaoDefinitiva()">Sim, Excluir</button>
+            <button type="button" id="btnConfirmarExclusao" class="btn btn-danger btn-sm px-3" onclick="executarExclusaoDefinitiva()">Sim, Excluir</button>
           </div>
         </div>
       </div>
@@ -396,15 +395,17 @@
           </div>
           <div class="modal-footer bg-light py-2">
             <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancelar</button>
-            <button type="button" class="btn btn-primary btn-sm px-3" onclick="confirmarEdicaoFicha()">Salvar Ficha</button>
+            <button type="button" id="btnConfirmarEdicao" class="btn btn-primary btn-sm px-3" onclick="confirmarEdicaoFicha()">Salvar Ficha</button>
           </div>
         </div>
       </div>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    
+    <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore-compat.js"></script>
     
     <script src="admin.js"></script>
 </body>

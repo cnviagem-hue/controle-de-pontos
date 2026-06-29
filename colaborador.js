@@ -52,18 +52,13 @@ function exibirAvisoColab(titulo, mensagem) {
     new bootstrap.Modal(document.getElementById("modalFeedbackColab")).show();
 }
 
-// ==========================================
-// CORREÇÃO: BUSCA INTELIGENTE DO NOME DA EMPRESA
-// ==========================================
 async function buscarNomeEmpresaNuvem() {
     let nomeFinal = "Empresa Parceira";
     try {
-        // 1. Tenta pegar o nome customizado pelo RH nas configurações
         const confSnap = await db.collection("configuracoes_empresa").where("empresaEmail", "==", PREFIXO_DB_EMPRESA).get();
         if (!confSnap.empty && confSnap.docs[0].data().nomeEmpresa) {
             nomeFinal = confSnap.docs[0].data().nomeEmpresa;
         } else {
-            // 2. Se não achar, pega o nome original do Super Admin
             const empSnap = await db.collection("empresas_clientes").where("email", "==", PREFIXO_DB_EMPRESA).get();
             if (!empSnap.empty && empSnap.docs[0].data().nome) {
                 nomeFinal = empSnap.docs[0].data().nome;
@@ -73,7 +68,6 @@ async function buscarNomeEmpresaNuvem() {
         console.error("Erro ao buscar nome da empresa:", error);
     }
     
-    // Salva na memória para não gastar o banco nas próximas vezes
     localStorage.setItem("ponto_web_nome_empresa_colab", nomeFinal);
     if(typeof atualizarNomeEmpresaBadge === 'function') atualizarNomeEmpresaBadge();
 }
@@ -88,7 +82,6 @@ function verificarSessaoExistente() {
         renderizarHistoricoHoje(); 
         irParaTela("horarios");
         
-        // Verifica se a memória está desatualizada e busca da nuvem se necessário
         const nomeSalvo = localStorage.getItem("ponto_web_nome_empresa_colab");
         if (!nomeSalvo || nomeSalvo === "Empresa Parceira" || nomeSalvo === "Sua Empresa") {
             buscarNomeEmpresaNuvem();
@@ -100,7 +93,7 @@ function verificarSessaoExistente() {
     }
 }
 
-async function executarLoginColaborador(event) {
+async function ejecutarLoginColaborador(event) {
     event.preventDefault();
     const email = document.getElementById("loginEmail").value.trim().toLowerCase();
     const senha = document.getElementById("loginSenha").value.trim();
@@ -114,16 +107,13 @@ async function executarLoginColaborador(event) {
 
         if (!snapshot.empty) {
             const encontrarUser = snapshot.docs[0].data();
-            
             PREFIXO_DB_EMPRESA = encontrarUser.empresaEmail;
 
-            // Trava 1: Usuário Bloqueado
             if(encontrarUser.status === "BLOQUEADO") {
                 exibirAvisoColab("🔒 Acesso Suspenso", "Sua conta foi temporariamente desativada pelo gestor.");
                 return;
             }
             
-            // Trava 2: VALIDAÇÃO DE DISPOSITIVO AUTORIZADO
             const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
             
             if (encontrarUser.permissao === "Celular" && !isMobile) {
@@ -136,7 +126,6 @@ async function executarLoginColaborador(event) {
                 return;
             }
 
-            // Sucesso: Libera o login
             usuarioLogado = encontrarUser;
             localStorage.setItem("ponto_web_sessao_colab", JSON.stringify(usuarioLogado));
             localStorage.setItem("ponto_web_email_empresa_colab", PREFIXO_DB_EMPRESA); 
@@ -145,9 +134,7 @@ async function executarLoginColaborador(event) {
             renderizarHistoricoHoje();
             irParaTela("horarios");
             
-            // Dispara a busca do nome em segundo plano para não travar a tela
             buscarNomeEmpresaNuvem();
-            
             exibirAvisoColab("🔓 Logado", `Ficha validada na Nuvem com sucesso!`);
         } else {
             exibirAvisoColab("❌ Erro de Entrada", "E-mail ou senha incorretos.");
@@ -173,7 +160,6 @@ function renderizarFichaFuncionario() {
 
 async function solicitarMarcacaoPonto(tipo) {
     const hojeStr = new Date().toLocaleDateString("pt-BR");
-    
     try {
         const snapshot = await db.collection("historico_pontos")
             .where("colaboradorId", "==", String(usuarioLogado.id))
@@ -191,10 +177,27 @@ async function solicitarMarcacaoPonto(tipo) {
         new bootstrap.Modal(document.getElementById("modalConfirmarPonto")).show();
 
     } catch (error) {
-        exibirAvisoColab("⚠️ Erro", "Não foi possível consultar seu histórico na Nuvem. Verifique a internet.");
+        exibirAlertaTop("⚠️ Erro", "Não foi possível consultar seu histórico na Nuvem.");
     }
 }
 
+// ==========================================
+// INTEGRAÇÃO: CÁLCULO CIENTÍFICO DA DISTÂNCIA
+// ==========================================
+function calcularDistanciaHaversine(lat1, lon1, lat2, lon2) {
+    const R = 6371000; // Raio da Terra em metros
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLon = (lon2 - lon1) * Math.PI / 180;
+    const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+              Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+              Math.sin(dLon / 2) * Math.sin(dLon / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    return R * c; 
+}
+
+// ==========================================
+// FUNÇÃO ATUALIZADA: VALIDAÇÃO E TRAVA ABSOLUTA
+// ==========================================
 function confirmarEGravarPonto() {
     if (!navigator.geolocation) {
         exibirAvisoColab("Erro", "GPS não suportado pelo navegador.");
@@ -203,34 +206,74 @@ function confirmarEGravarPonto() {
 
     const btn = document.getElementById("btnGravarPonto");
     btn.disabled = true;
-    btn.innerHTML = "⏳ Validando GPS...";
+    btn.innerHTML = "⏳ Validando GPS Inteligente...";
 
+    // Forçamos alta precisão e limpamos o cache de localização
     navigator.geolocation.getCurrentPosition(
         async (position) => {
-            const agora = new Date();
-            const dataInjetada = agora.toLocaleDateString("pt-BR"); 
-            const horaMarcada = agora.toLocaleTimeString("pt-BR", { hour: '2-digit', minute: '2-digit' });
-            
-            const novoPonto = {
-                colaboradorId: String(usuarioLogado.id),
-                nome: usuarioLogado.nome,
-                data: dataInjetada,
-                tipo: tipoPontoPendente,
-                hora: horaMarcada,
-                empresaEmail: PREFIXO_DB_EMPRESA,
-                latitudeGravada: position.coords.latitude,
-                longitudeGravada: position.coords.longitude,
-                timestamp: firebase.firestore.FieldValue.serverTimestamp()
-            };
-            
+            const usuarioLat = position.coords.latitude;
+            const usuarioLng = position.coords.longitude;
+
             try {
+                btn.innerHTML = "⏳ Validando Cerca Virtual...";
+                
+                // 1. Busca os parâmetros configurados em tempo real na nuvem para essa empresa
+                const configSnapshot = await db.collection("configuracoes_empresa")
+                                             .where("empresaEmail", "==", PREFIXO_DB_EMPRESA)
+                                             .get();
+
+                if (!configSnapshot.empty) {
+                    const configEmpresa = configSnapshot.docs[0].data();
+                    
+                    // Se o RH configurou coordenadas válidas no painel
+                    if (configEmpresa.latitude && configEmpresa.longitude) {
+                        const empresaLat = parseFloat(configEmpresa.latitude);
+                        const empresaLng = parseFloat(configEmpresa.longitude);
+                        const raioMaximo = parseInt(configEmpresa.raio, 10) || 50;
+
+                        // 2. Calcula a distância matemática exata
+                        const distanciaRealMetros = calcularDistanciaHaversine(usuarioLat, usuarioLng, empresaLat, empresaLng);
+
+                        // 3. TRAVA ANTIFRAUDE ABSOLUTA: Se estiver fora, bloqueia antes de gravar!
+                        if (distanciaRealMetros > raioMaximo) {
+                            bootstrap.Modal.getInstance(document.getElementById("modalConfirmarPonto")).hide();
+                            
+                            const metrosFora = Math.round(distanciaRealMetros);
+                            exibirAvisoColab(
+                                "🚫 Ponto Bloqueado (Fora do Raio)", 
+                                `A cerca virtual barrou o seu registro.<br><br>Você está a <strong>${metrosFora} metros</strong> do local de trabalho.<br>O limite máximo autorizado é de <strong>${raioMaximo} metros</strong>.`
+                            );
+                            return; // Encerra a execução IMEDIATAMENTE. Nada viaja para o banco de dados!
+                        }
+                    }
+                }
+
+                // 4. Sucesso: Se passou pela trava ou não tem cerca configurada, grava na nuvem
+                const agora = new Date();
+                const dataInjetada = agora.toLocaleDateString("pt-BR"); 
+                const horaMarcada = agora.toLocaleTimeString("pt-BR", { hour: '2-digit', minute: '2-digit' });
+                
+                const novoPonto = {
+                    colaboradorId: String(usuarioLogado.id),
+                    nome: usuarioLogado.nome,
+                    data: dataInjetada,
+                    tipo: tipoPontoPendente,
+                    hora: horaMarcada,
+                    empresaEmail: PREFIXO_DB_EMPRESA,
+                    latitudeGravada: usuarioLat,
+                    longitudeGravada: usuarioLng,
+                    timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                };
+                
                 btn.innerHTML = "⏳ Gravando na Nuvem...";
                 await db.collection("historico_pontos").add(novoPonto);
                 
                 bootstrap.Modal.getInstance(document.getElementById("modalConfirmarPonto")).hide();
                 renderizarHistoricoHoje(); 
                 exibirAvisoColab("🎯 Sucesso!", `Seu ponto de <strong>${tipoPontoPendente}</strong> das ${horaMarcada} foi gravado na Nuvem com validação geográfica ativa!`);
+                
             } catch (error) {
+                console.error(error);
                 exibirAvisoColab("⚠️ Erro de Gravação", "Ocorreu uma falha ao enviar o ponto para a nuvem.");
             } finally {
                 btn.disabled = false;
@@ -239,17 +282,18 @@ function confirmarEGravarPonto() {
         },
         (error) => { 
             bootstrap.Modal.getInstance(document.getElementById("modalConfirmarPonto")).hide();
-            exibirAvisoColab("Erro de Autenticação", "Por favor, ative o GPS do seu aparelho para validar o ponto.");
+            exibirAvisoColab("Erro de Autenticação", "Por favor, ative o GPS de alta precisão do seu aparelho para validar o ponto.");
             btn.disabled = false;
             btn.innerHTML = "Sim, Gravar";
         },
-        { enableHighAccuracy: true, timeout: 7000 }
+        { enableHighAccuracy: true, timeout: 8000, maximumAge: 0 }
     );
 }
 
 async function renderizarHistoricoHoje() {
     const hojeStr = new Date().toLocaleDateString("pt-BR");
     const containerRegistros = document.getElementById("listaRegistrosHoje");
+    if (!containerRegistros) return;
     containerRegistros.innerHTML = `<div class="text-center text-muted small py-2">⏳ Puxando histórico da Nuvem...</div>`;
 
     try {

@@ -20,7 +20,7 @@ let usuarioSelecionadoId = null;
 let bancoUsuarios = [];
 
 document.addEventListener("DOMContentLoaded", async () => {
-    // CORREÇÃO DA TRAVA: Agora valida se o ADMIN DA EMPRESA está autenticado legitimamente
+    // Valida se o ADMIN DA EMPRESA está autenticado legitimamente
     if (!sessionStorage.getItem("admin_autenticado") || !PREFIXO_EMPRESA) {
         window.location.href = "login-admin.html"; 
         return;
@@ -78,7 +78,6 @@ function mascaraTelefone(input) {
     input.value = v;
 }
 
-// Restante das lógicas mantidas intactas para não violar a regra de validação
 function mascaraCPF(input) {
     let v = input.value.replace(/\D/g, '');
     if (v.length > 9) {
@@ -145,7 +144,7 @@ function otimizarEConverterFoto(fileInputElement) {
 
 async function carregarUsuariosDaNuvem() {
     const tabela = document.getElementById('tabelaEquipe');
-    tabela.innerHTML = `<tr><td colspan="10" class="text-center text-muted small py-3">⏳ Carregando dados da Nuvem...</td></tr>`;
+    if(tabela) tabela.innerHTML = `<tr><td colspan="10" class="text-center text-muted small py-3">⏳ Carregando dados da Nuvem...</td></tr>`;
     
     try {
         const snapshot = await db.collection("usuarios_ponto").where("empresaEmail", "==", PREFIXO_EMPRESA).get();
@@ -156,7 +155,7 @@ async function carregarUsuariosDaNuvem() {
         renderTabelaComAtualizacao();
         sincronizarFiltrosColaboradores();
     } catch (error) {
-        tabela.innerHTML = `<tr><td colspan="10" class="text-center text-danger small py-3">⚠️ Erro ao carregar equipe.</td></tr>`;
+        if(tabela) tabela.innerHTML = `<tr><td colspan="10" class="text-center text-danger small py-3">⚠️ Erro ao carregar equipe.</td></tr>`;
     }
 }
 
@@ -388,7 +387,7 @@ function bolarTempoParaMinutos(strHora) {
 function formatarMinutosParaString(minutosTotais) {
     if(minutosTotais <= 0) return "00:00";
     const hrs = Math.floor(minutosTotais / 60);
-    const mins = minutesTotais % 60;
+    const mins = minutosTotais % 60;
     return `${hrs.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}`;
 }
 
@@ -427,11 +426,15 @@ function aplicarFiltroRapido(tipo) {
         fim = new Date(anoSelecionado, mesSelecionado, 0); 
     }
 
-    inputInicio.value = formatarDataInput(inicio);
-    inputFim.value = formatarDataInput(fim);
+    if(inputInicio) inputInicio.value = formatarDataInput(inicio);
+    if(inputFim) inputFim.value = formatarDataInput(fim);
 
     filtrarRelatorioTela();
 }
+
+// ==========================================
+// SEÇÃO CORRIGIDA: RELATÓRIOS CONECTADOS À NUVEM
+// ==========================================
 
 async function puxarLogsEFiltrar() {
     const filtroColab = document.getElementById('filtroRelatorioColaborador').value;
@@ -441,12 +444,14 @@ async function puxarLogsEFiltrar() {
     let dadosBrutosNuvem = [];
 
     try {
+        // Consulta baseada no email da empresa ativa para isolar dados de forma segura
         const queryRef = db.collection("historico_pontos").where("empresaEmail", "==", PREFIXO_EMPRESA);
         const snapshot = await queryRef.get();
         
         snapshot.forEach(doc => {
             const data = doc.data();
             if (!data.data) return; 
+            // Filtra o colaborador específico selecionado ou puxa todos
             if (filtroColab === "todos" || String(data.colaboradorId) === String(filtroColab)) {
                 dadosBrutosNuvem.push(data);
             }
@@ -474,7 +479,6 @@ function consolidarLogsBrutos(logsArray) {
                 data: log.data,
                 colaboradorId: log.colaboradorId,
                 nome: log.nome || "Colaborador",
-                text: "-",
                 entrada: "-",
                 almocoIda: "-",
                 almocoVolta: "-",
@@ -574,355 +578,3 @@ async function filtrarRelatorioTela() {
     tabelaBody.innerHTML = "";
 
     if (filtroColab === "todos") {
-        tabelaBody.innerHTML = `<tr><td colspan="8" class="text-center text-muted small py-4">⚠️ Por favor, selecione um colaborador específico para carregar o relatório.</td></tr>`;
-        return;
-    }
-
-    let dadosConsolidados = await puxarLogsEFiltrar();
-
-    if (filtroInicio) {
-        const dInicio = new Date(filtroInicio + "T00:00:00");
-        dadosConsolidados = dadosConsolidados.filter(r => {
-            if(!r.data) return false;
-            const p = r.data.split('/');
-            if(p.length !== 3) return false;
-            return new Date(p[2], p[1]-1, p[0]) >= dInicio;
-        });
-    }
-    if (filtroFim) {
-        const dFim = new Date(filtroFim + "T23:59:59");
-        dadosConsolidados = dadosConsolidados.filter(r => {
-            if(!r.data) return false;
-            const p = r.data.split('/');
-            if(p.length !== 3) return false;
-            return new Date(p[2], p[1]-1, p[0]) <= dFim;
-        });
-    }
-
-    if (dadosConsolidados.length === 0) {
-        tabelaBody.innerHTML = `<tr><td colspan="8" class="text-center text-muted small py-4">Nenhum registro encontrado para este colaborador no período selecionado.</td></tr>`;
-        return;
-    }
-
-    let acumuladorTrabalhadas = 0;
-    let acumuladorExtras = 0;
-
-    dadosConsolidados.sort((a,b) => {
-        if(!a.data || !b.data) return 0;
-        const pa = a.data.split('/');
-        const pb = b.data.split('/');
-        if(pa.length !== 3 || pb.length !== 3) return 0;
-        return new Date(pa[2], pa[1]-1, pa[0]) - new Date(pb[2], pb[1]-1, pb[0]);
-    });
-
-    dadosConsolidados.forEach(r => {
-        acumuladorTrabalhadas += r.minutosTrabalhadosNum;
-        acumuladorExtras += r.minutosExtrasNum;
-
-        const tr = document.createElement('tr');
-        tr.innerHTML = `
-            <td><strong>${r.data}</strong></td>
-            <td>${r.nome}</td>
-            <td><span class="badge bg-light text-dark border">${r.entrada}</span></td>
-            <td><span class="badge bg-light text-dark border">${r.almocoIda}</span></td>
-            <td><span class="badge bg-light text-dark border">${r.almocoVolta}</span></td>
-            <td><span class="badge bg-light text-dark border">${r.saida}</span></td>
-            <td class="text-success fw-bold">${r.horasTrabalhadas}</td>
-            <td class="text-danger fw-bold">${r.horasExtras}</td>
-        `;
-        tabelaBody.appendChild(tr);
-    });
-
-    const trTotal = document.createElement('tr');
-    trTotal.style.backgroundColor = "#e5e7eb";
-    trTotal.className = "table-secondary fw-bold text-dark";
-    trTotal.innerHTML = `
-        <td colspan="6" class="text-end pe-3">TOTAL DO PERÍODO SELECIONADO:</td>
-        <td class="text-success fw-extrabold">${formatarMinutosParaString(acumuladorTrabalhadas)}</td>
-        <td class="text-danger fw-extrabold">${formatarMinutosParaString(acumuladorExtras)}</td>
-    `;
-    tabelaBody.appendChild(trTotal);
-}
-
-async function exportarPontosExcel() {
-    const filtroColab = document.getElementById('filtroRelatorioColaborador').value;
-    
-    if (filtroColab === "todos") {
-        exibirAlertaTop("Selecione um Colaborador", "Por favor, defina qual colaborador deseja exportar para gerar o arquivo formatado.");
-        return;
-    }
-
-    let dadosParaPlanilha = await puxarLogsEFiltrar();
-    
-    const filtroInicio = document.getElementById('filtroRelatorioInicio').value;
-    const filtroFim = document.getElementById('filtroRelatorioFim').value;
-    
-    if (filtroInicio) {
-        const dInicio = new Date(filtroInicio + "T00:00:00");
-        dadosParaPlanilha = dadosParaPlanilha.filter(r => {
-            if(!r.data) return false;
-            const p = r.data.split('/');
-            if(p.length !== 3) return false;
-            return new Date(p[2], p[1]-1, p[0]) >= dInicio;
-        });
-    }
-    if (filtroFim) {
-        const dFim = new Date(filtroFim + "T23:59:59");
-        dadosParaPlanilha = dadosParaPlanilha.filter(r => {
-            if(!r.data) return false;
-            const p = r.data.split('/');
-            if(p.length !== 3) return false;
-            return new Date(p[2], p[1]-1, p[0]) <= dFim;
-        });
-    }
-    
-    if (dadosParaPlanilha.length === 0) {
-        exibirAlertaTop("Sem Dados", "Não há dados consolidados para o colaborador filtrado.");
-        return;
-    }
-
-    dadosParaPlanilha.sort((a,b) => {
-        if (!a.data || !b.data) return 0;
-        const pa = a.data.split('/');
-        const pb = b.data.split('/');
-        if(pa.length !== 3 || pb.length !== 3) return 0;
-        return new Date(pa[2], pa[1]-1, pa[0]) - new Date(pb[2], pb[1]-1, pb[0]);
-    });
-
-    const colabNome = dadosParaPlanilha[0].nome;
-    const dataEmissao = new Date().toLocaleDateString('pt-BR');
-    
-    const matrizPlanilha = [
-        ["DRE - ESPELHO DE PONTO EXECUTIVO"],
-        [`Colaborador: ${colabNome} | Emissão: ${dataEmissao}`],
-        [],
-        ["Data", "Colaborador", "Entrada", "Almoço Ida", "Almoço Volta", "Saída", "Horas Trab.", "Horas Extras"]
-    ];
-
-    let somaTrab = 0;
-    let somaExtra = 0;
-
-    dadosParaPlanilha.forEach(r => {
-        somaTrab += r.minutosTrabalhadosNum;
-        somaExtra += r.minutosExtrasNum;
-        matrizPlanilha.push([r.data, r.nome, r.entrada, r.almocoIda, r.almocoVolta, r.saida, r.horasTrabalhadas, r.horasExtras]);
-    });
-
-    matrizPlanilha.push([]);
-    matrizPlanilha.push(["TOTAL DE HORAS TRABALHADAS DO PERÍODO:", "", "", "", "", "", formatarMinutosParaString(somaTrab), formatarMinutosParaString(somaExtra)]);
-
-    const worksheet = XLSX.utils.aoa_to_sheet(matrizPlanilha);
-
-    const orangeFill = { fill: { fgColor: { rgb: "F97316" } }, font: { bold: true, color: { rgb: "FFFFFF" }, size: 12 }, alignment: { horizontal: "center", vertical: "center" } };
-    const greyTotalAlignRight = { fill: { fgColor: { rgb: "E5E7EB" } }, font: { bold: true, color: { rgb: "000000" } }, alignment: { horizontal: "right", vertical: "center" } };
-    const greyTotalGreen = { fill: { fgColor: { rgb: "E5E7EB" } }, font: { bold: true, color: { rgb: "16A34A" } }, alignment: { horizontal: "center", vertical: "center" } };
-    const greyTotalRed = { fill: { fgColor: { rgb: "E5E7EB" } }, font: { bold: true, color: { rgb: "EF4444" } }, alignment: { horizontal: "center", vertical: "center" } };
-
-    worksheet['A1'].s = orangeFill;
-    
-    const ultimaLinhaIndex = matrizPlanilha.length;
-    if(worksheet[`A${ultimaLinhaIndex}`]) worksheet[`A${ultimaLinhaIndex}`].s = greyTotalAlignRight;
-    if(worksheet[`G${ultimaLinhaIndex}`]) worksheet[`G${ultimaLinhaIndex}`].s = greyTotalGreen;
-    if(worksheet[`H${ultimaLinhaIndex}`]) worksheet[`H${ultimaLinhaIndex}`].s = greyTotalRed;
-
-    worksheet['!merges'] = [
-        { s: { r: 0, c: 0 }, e: { r: 0, c: 7 } }, 
-        { s: { r: 1, c: 0 }, e: { r: 1, c: 7 } }, 
-        { s: { r: ultimaLinhaIndex - 1, c: 0 }, e: { r: ultimaLinhaIndex - 1, c: 5 } } 
-    ];
-
-    worksheet['!cols'] = [
-        { wch: 12 }, { wch: 45 }, { wch: 10 }, { wch: 12 }, { wch: 14 }, { wch: 10 }, { wch: 14 }, { wch: 14 }
-    ];
-
-    const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, "Espelho_Executivo");
-    XLSX.writeFile(workbook, `Espelho_Ponto_${colabNome.replace(/ /g, "_")}.xlsx`);
-}
-
-let idConfigNuvemAtual = null;
-
-async function buscarCoordenadasPorCEP() {
-    const cepInput = document.getElementById("cepBusca").value.replace(/\D/g, '');
-    const numInput = document.getElementById("numeroBusca").value.trim();
-
-    if (cepInput.length !== 8) {
-        exibirAlertaTop("⚠️ Aviso", "Por favor, digite um CEP válido com 8 dígitos.");
-        return;
-    }
-
-    const btn = document.getElementById("btnBuscarCep");
-    const textoOriginal = btn.innerText;
-    btn.innerText = "⏳ Buscando Endereço...";
-    btn.disabled = true;
-
-    try {
-        const resViaCep = await fetch(`https://viacep.com.br/ws/${cepInput}/json/`);
-        const dadosCep = await resViaCep.json();
-
-        if (dadosCep.erro) throw new Error("CEP não encontrado na base de dados.");
-
-        const enderecoCompleto = `${dadosCep.logradouro}${numInput ? ', ' + numInput : ''}, ${dadosCep.bairro}, ${dadosCep.localidade} - ${dadosCep.uf}`;
-        
-        btn.innerText = "⏳ Buscando Coordenadas...";
-
-        const query = encodeURIComponent(`${dadosCep.logradouro}, ${dadosCep.localidade}, ${dadosCep.uf}, Brazil`);
-        const resGeo = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${query}&limit=1`);
-        const dadosGeo = await resGeo.json();
-
-        if (dadosGeo.length > 0) {
-            document.getElementById("latitude").value = dadosGeo[0].lat;
-            document.getElementById("longitude").value = dadosGeo[0].lon;
-            document.getElementById("boxEndereco").style.display = "block";
-            document.getElementById("enderecoTexto").innerText = enderecoCompleto;
-            exibirAlertaTop("📍 Sucesso", "Endereço e coordenadas localizados com sucesso!");
-        } else {
-            const queryGenerica = encodeURIComponent(`${dadosCep.localidade}, ${dadosCep.uf}, Brazil`);
-            const resGeoGen = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${queryGenerica}&limit=1`);
-            const dadosGeoGen = await resGeoGen.json();
-
-            if(dadosGeoGen.length > 0) {
-                document.getElementById("latitude").value = dadosGeoGen[0].lat;
-                document.getElementById("longitude").value = dadosGeoGen[0].lon;
-                document.getElementById("boxEndereco").style.display = "block";
-                document.getElementById("enderecoTexto").innerText = `${enderecoCompleto} (Coordenada aproximada pela cidade)`;
-                exibirAlertaTop("📍 Sucesso Parcial", "Coordenadas aproximadas localizadas pela cidade.");
-            } else {
-                throw new Error("Não foi possível encontrar as coordenadas exatas para este CEP.");
-            }
-        }
-    } catch (error) {
-        exibirAlertaTop("⚠️ Erro", error.message || "Falha ao buscar dados de localização.");
-        document.getElementById("boxEndereco").style.display = "none";
-    } finally {
-        btn.innerText = textoOriginal;
-        btn.disabled = false;
-    }
-}
-
-function obterLocalizacaoAtual() {
-    if (!navigator.geolocation) {
-        exibirAlertaTop("Erro", "Geolocalização não é suportada pelo seu navegador.");
-        return;
-    }
-
-    const btn = document.getElementById("btnGpsConfigs");
-    const textoOriginal = btn.innerText;
-    btn.innerText = "⏳ Buscando...";
-    btn.disabled = true;
-
-    navigator.geolocation.getCurrentPosition(
-        (position) => {
-            document.getElementById("latitude").value = position.coords.latitude;
-            document.getElementById("longitude").value = position.coords.longitude;
-            document.getElementById("boxEndereco").style.display = "block";
-            document.getElementById("enderecoTexto").innerText = "Localização capturada via GPS do dispositivo.";
-            
-            btn.innerText = textoOriginal;
-            btn.disabled = false;
-            exibirAlertaTop("📍 Sucesso", "Coordenadas capturadas com sucesso via GPS!");
-        },
-        (error) => {
-            btn.innerText = textoOriginal;
-            btn.disabled = false;
-            exibirAlertaTop("⚠️ Erro de GPS", "Não foi possível obter a localização. Verifique as permissões do navegador.");
-        },
-        { enableHighAccuracy: true, timeout: 10000 }
-    );
-}
-
-async function salvarConfiguracoes() {
-    const btnSalvar = document.getElementById("btnSalvarConfigs");
-    btnSalvar.disabled = true;
-    btnSalvar.innerHTML = "⏳ Salvando na Nuvem...";
-
-    const configs = {
-        empresaEmail: PREFIXO_EMPRESA,
-        nomeEmpresa: document.getElementById("nomeEmpresa").value || sessionStorage.getItem("nome_empresa_ativa"),
-        cep: document.getElementById("cepBusca").value,
-        numero: document.getElementById("numeroBusca").value,
-        latitude: document.getElementById("latitude").value,
-        longitude: document.getElementById("longitude").value,
-        raio: document.getElementById("raioTolerancia").value,
-        endereco: document.getElementById("enderecoTexto").innerText
-    };
-    
-    try {
-        if (idConfigNuvemAtual) {
-            await db.collection("configuracoes_empresa").doc(idConfigNuvemAtual).update(configs);
-        } else {
-            const docRef = await db.collection("configuracoes_empresa").add(configs);
-            idConfigNuvemAtual = docRef.id;
-        }
-
-        const elSidebar = document.getElementById("sidebarNomeEmpresa");
-        if(elSidebar) elSidebar.innerText = configs.nomeEmpresa;
-
-        controlarCamposConfiguracao(true);
-        btnSalvar.classList.remove("btn-primary");
-        btnSalvar.classList.add("btn-success");
-        btnSalvar.innerText = "✓ Configurações Salvas na Nuvem!";
-        
-        setTimeout(() => {
-            btnSalvar.classList.remove("btn-success");
-            btnSalvar.classList.add("btn-primary");
-            btnSalvar.innerText = "Salvar Configurações";
-        }, 3000);
-
-    } catch (error) {
-        exibirAlertaTop("⚠️ Erro", "Falha ao salvar configurações na nuvem.");
-        btnSalvar.disabled = false;
-        btnSalvar.innerText = "Salvar Configurações";
-    }
-}
-
-async function carregarConfigsNuvem() {
-    try {
-        const snapshot = await db.collection("configuracoes_empresa").where("empresaEmail", "==", PREFIXO_EMPRESA).get();
-        let configs = {};
-        
-        if (!snapshot.empty) {
-            const doc = snapshot.docs[0];
-            configs = doc.data();
-            idConfigNuvemAtual = doc.id;
-        }
-        
-        const nomeExibicao = configs.nomeEmpresa || sessionStorage.getItem("nome_empresa_ativa") || "Empresa Parceira";
-
-        document.getElementById("nomeEmpresa").value = nomeExibicao;
-        document.getElementById("cepBusca").value = configs.cep || "";
-        document.getElementById("numeroBusca").value = configs.numero || "";
-        document.getElementById("latitude").value = configs.latitude || "";
-        document.getElementById("longitude").value = configs.longitude || "";
-        document.getElementById("raioTolerancia").value = configs.raio || "50";
-        
-        if(configs.endereco) {
-            document.getElementById("boxEndereco").style.display = "block";
-            document.getElementById("enderecoTexto").innerText = configs.endereco;
-        }
-
-        const elSidebar = document.getElementById("sidebarNomeEmpresa");
-        if(elSidebar) elSidebar.innerText = nomeExibicao;
-
-    } catch (error) {
-        console.error("Erro ao carregar configs:", error);
-    }
-}
-
-function focarEdicaoConfigs() {
-    controlarCamposConfiguracao(false);
-    document.getElementById("nomeEmpresa").focus();
-}
-
-function controlarCamposConfiguracao(bloquear) {
-    document.getElementById("nomeEmpresa").disabled = bloquear;
-    document.getElementById("cepBusca").disabled = bloquear;
-    document.getElementById("numeroBusca").disabled = bloquear;
-    document.getElementById("latitude").disabled = bloquear;
-    document.getElementById("longitude").disabled = bloquear;
-    document.getElementById("raioTolerancia").disabled = bloquear;
-    document.getElementById("btnSalvarConfigs").disabled = bloquear;
-    
-    document.getElementById("btnGpsConfigs").disabled = bloquear;
-    document.getElementById("btnBuscarCep").disabled = bloquear;
-}

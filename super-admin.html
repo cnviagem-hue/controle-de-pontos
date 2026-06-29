@@ -63,10 +63,18 @@
                         <label class="form-label fw-bold small text-muted">CNPJ</label>
                         <input type="text" id="cadCnpj" class="form-control" oninput="mascaraCNPJ(this)" required>
                     </div>
-                    <div class="col-md-12">
-                        <label class="form-label fw-bold small text-muted">Endereço Completo</label>
-                        <input type="text" id="cadEndereco" class="form-control" required>
+                    
+                    <!-- CAMPO CEP E ENDEREÇO INTELIGENTE -->
+                    <div class="col-md-3">
+                        <label class="form-label fw-bold small text-muted">CEP</label>
+                        <input type="text" id="cadCep" class="form-control" placeholder="00000-000" maxlength="9" oninput="mascaraCEPSuper(this)" onblur="buscarCepSuper()" required>
                     </div>
+                    <div class="col-md-9">
+                        <label class="form-label fw-bold small text-muted">Endereço Completo</label>
+                        <input type="text" id="cadEndereco" class="form-control" placeholder="Rua, Número, Bairro, Cidade - UF" required>
+                    </div>
+                    <!-- FIM CAMPO CEP -->
+
                     <div class="col-md-4">
                         <label class="form-label fw-bold small text-muted">WhatsApp / Telefone</label>
                         <input type="text" id="cadWhatsapp" class="form-control" oninput="mascaraTelefone(this)" required>

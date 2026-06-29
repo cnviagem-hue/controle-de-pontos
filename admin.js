@@ -18,7 +18,6 @@ const PREFIXO_EMPRESA = sessionStorage.getItem("email_empresa_ativa");
 
 let usuarioSelecionadoId = null;
 let bancoUsuarios = [];
-let logsBrutosNuvem = [];
 
 document.addEventListener("DOMContentLoaded", async () => {
     if (!sessionStorage.getItem("admin_autenticado") || !PREFIXO_EMPRESA) {
@@ -42,7 +41,6 @@ function alternarAba(nomeAba) {
 
     if(nomeAba === 'relatorios') {
         sincronizarFiltrosColaboradores();
-        // Não filtra a tela de cara, espera o usuário apertar o botão ou escolhe filtros
     }
 }
 
@@ -176,7 +174,7 @@ async function cadastrarUsuario(event) {
         
         const novoUser = {
             id: String(new Date().getTime()), 
-            empresaEmail: PREFIXO_EMPRESA, // Vinculo Forte
+            empresaEmail: PREFIXO_EMPRESA, 
             nome: document.getElementById('cadNome').value.trim(),
             cpf: document.getElementById('cadCpf').value.trim(),
             telefone: document.getElementById('cadTelefone').value.trim(),
@@ -371,7 +369,7 @@ function copiarLinkColaborador() {
 }
 
 // ==========================================
-// RELATÓRIOS E HORAS (LÓGICA INTACTA, DADOS DA NUVEM)
+// RELATÓRIOS E HORAS (BLINDADO CONTRA ERROS DO GOOGLE)
 // ==========================================
 function sincronizarFiltrosColaboradores() {
     const select = document.getElementById('filtroRelatorioColaborador');
@@ -434,19 +432,54 @@ function aplicarFiltroRapido(tipo) {
 
     inputInicio.value = formatarDataInput(inicio);
     inputFim.value = formatarDataInput(fim);
+
+    filtrarRelatorioTela();
 }
 
-// O segredo para manter a lógica exata de cálculos que você validou
+// Bypassa a obrigatoriedade de Índice Composto no Firebase e filtra na memória local
+async function puxarLogsEFiltrar() {
+    const filtroColab = document.getElementById('filtroRelatorioColaborador').value;
+    const btn = document.getElementById('btnFiltrarTela');
+    if(btn) { btn.disabled = true; btn.innerHTML = "⏳ Buscando na Nuvem..."; }
+
+    let dadosBrutosNuvem = [];
+
+    try {
+        const queryRef = db.collection("historico_pontos").where("empresaEmail", "==", PREFIXO_EMPRESA);
+        const snapshot = await queryRef.get();
+        
+        snapshot.forEach(doc => {
+            const data = doc.data();
+            // Trava de segurança para dados corrompidos
+            if (!data.data) return; 
+            if (filtroColab === "todos" || String(data.colaboradorId) === String(filtroColab)) {
+                dadosBrutosNuvem.push(data);
+            }
+        });
+        
+    } catch (error) {
+        console.error("Erro no Firebase:", error);
+        exibirAlertaTop("⚠️ Erro", "Falha ao consultar a base de dados. O Google bloqueou a solicitação.");
+    } finally {
+        if(btn) { btn.disabled = false; btn.innerHTML = "🔍 Filtrar na Tela"; }
+    }
+
+    return consolidarLogsBrutos(dadosBrutosNuvem);
+}
+
 function consolidarLogsBrutos(logsArray) {
     const espelhosAgrupados = {};
 
     logsArray.forEach(log => {
+        // Ignora qualquer sujeira de testes passados que possa quebrar a tela
+        if(!log.data || !log.colaboradorId) return; 
+        
         const chaveChave = `${log.data}_${log.colaboradorId}`;
         if (!espelhosAgrupados[chaveChave]) {
             espelhosAgrupados[chaveChave] = {
                 data: log.data,
                 colaboradorId: log.colaboradorId,
-                nome: log.nome,
+                nome: log.nome || "Colaborador",
                 entrada: "-",
                 almocoIda: "-",
                 almocoVolta: "-",
@@ -501,66 +534,40 @@ function consolidarLogsBrutos(logsArray) {
         r.horasTrabalhadas = formatarMinutosParaString(minutosTrabalhados);
 
         const partesData = r.data.split('/');
-        const objetoData = new Date(partesData[2], partesData[1] - 1, partesData[0]);
-        const diaDaSemana = objetoData.getDay(); 
+        // Previne erro caso a data venha mal formatada
+        if (partesData.length === 3) {
+            const objetoData = new Date(partesData[2], partesData[1] - 1, partesData[0]);
+            const diaDaSemana = objetoData.getDay(); 
 
-        const user = bancoUsuarios.find(u => String(u.id) === String(r.colaboradorId));
-        const cargaSegSex = user ? (user.cargaSegSex || "08:00") : "08:00";
-        const cargaSab = user ? (user.cargaSab || "04:00") : "04:00";
-        const cargaDom = user ? (user.cargaDom || "00:00") : "00:00";
+            const user = bancoUsuarios.find(u => String(u.id) === String(r.colaboradorId));
+            const cargaSegSex = user ? (user.cargaSegSex || "08:00") : "08:00";
+            const cargaSab = user ? (user.cargaSab || "04:00") : "04:00";
+            const cargaDom = user ? (user.cargaDom || "00:00") : "00:00";
 
-        let cargaObrigatoriaDoDia = 0; 
-        if (diaDaSemana === 6) { 
-            const minCalc = bolarTempoParaMinutos(cargaSab);
-            cargaObrigatoriaDoDia = minCalc !== null ? minCalc : 240;
-        } else if (diaDaSemana === 0) { 
-            const minCalc = bolarTempoParaMinutos(cargaDom);
-            cargaObrigatoriaDoDia = minCalc !== null ? minCalc : 0;
-        } else { 
-            const minCalc = bolarTempoParaMinutos(cargaSegSex);
-            cargaObrigatoriaDoDia = minCalc !== null ? minCalc : 480;
-        }
+            let cargaObrigatoriaDoDia = 0; 
+            if (diaDaSemana === 6) { 
+                const minCalc = bolarTempoParaMinutos(cargaSab);
+                cargaObrigatoriaDoDia = minCalc !== null ? minCalc : 240;
+            } else if (diaDaSemana === 0) { 
+                const minCalc = bolarTempoParaMinutos(cargaDom);
+                cargaObrigatoriaDoDia = minCalc !== null ? minCalc : 0;
+            } else { 
+                const minCalc = bolarTempoParaMinutos(cargaSegSex);
+                cargaObrigatoriaDoDia = minCalc !== null ? minCalc : 480;
+            }
 
-        if(minutosTrabalhados > cargaObrigatoriaDoDia) {
-            const extra = minutosTrabalhados - cargaObrigatoriaDoDia;
-            r.minutosExtrasNum = extra;
-            r.horasExtras = formatarMinutosParaString(extra);
-        } else {
-            r.minutosExtrasNum = 0;
-            r.horasExtras = "00:00";
+            if(minutosTrabalhados > cargaObrigatoriaDoDia) {
+                const extra = minutosTrabalhados - cargaObrigatoriaDoDia;
+                r.minutosExtrasNum = extra;
+                r.horasExtras = formatarMinutosParaString(extra);
+            } else {
+                r.minutosExtrasNum = 0;
+                r.horasExtras = "00:00";
+            }
         }
     });
 
     return listaFinal;
-}
-
-// Bota a inteligência na Nuvem: Puxa só do colaborador escolhido
-async function puxarLogsEFiltrar() {
-    const filtroColab = document.getElementById('filtroRelatorioColaborador').value;
-    const btn = document.getElementById('btnFiltrarTela');
-    if(btn) { btn.disabled = true; btn.innerHTML = "⏳ Buscando na Nuvem..."; }
-
-    let dadosBrutosNuvem = [];
-
-    try {
-        let queryRef = db.collection("historico_pontos").where("empresaEmail", "==", PREFIXO_EMPRESA);
-        if (filtroColab !== "todos") {
-            queryRef = queryRef.where("colaboradorId", "==", filtroColab);
-        }
-        
-        const snapshot = await queryRef.get();
-        snapshot.forEach(doc => {
-            dadosBrutosNuvem.push(doc.data());
-        });
-        
-    } catch (error) {
-        console.error(error);
-        exibirAlertaTop("⚠️ Erro", "Falha ao carregar registros da nuvem.");
-    } finally {
-        if(btn) { btn.disabled = false; btn.innerHTML = "🔍 Filtrar na Tela"; }
-    }
-
-    return consolidarLogsBrutos(dadosBrutosNuvem);
 }
 
 async function filtrarRelatorioTela() {
@@ -577,20 +584,23 @@ async function filtrarRelatorioTela() {
         return;
     }
 
-    // Puxa e calcula
     let dadosConsolidados = await puxarLogsEFiltrar();
 
     if (filtroInicio) {
         const dInicio = new Date(filtroInicio + "T00:00:00");
         dadosConsolidados = dadosConsolidados.filter(r => {
+            if(!r.data) return false;
             const p = r.data.split('/');
+            if(p.length !== 3) return false;
             return new Date(p[2], p[1]-1, p[0]) >= dInicio;
         });
     }
     if (filtroFim) {
         const dFim = new Date(filtroFim + "T23:59:59");
         dadosConsolidados = dadosConsolidados.filter(r => {
+            if(!r.data) return false;
             const p = r.data.split('/');
+            if(p.length !== 3) return false;
             return new Date(p[2], p[1]-1, p[0]) <= dFim;
         });
     }
@@ -603,10 +613,12 @@ async function filtrarRelatorioTela() {
     let acumuladorTrabalhadas = 0;
     let acumuladorExtras = 0;
 
-    // Ordenar por data crescente
+    // Ordenar por data crescente para visualização lógica
     dadosConsolidados.sort((a,b) => {
+        if(!a.data || !b.data) return 0;
         const pa = a.data.split('/');
         const pb = b.data.split('/');
+        if(pa.length !== 3 || pb.length !== 3) return 0;
         return new Date(pa[2], pa[1]-1, pa[0]) - new Date(pb[2], pb[1]-1, pb[0]);
     });
 
@@ -649,21 +661,24 @@ async function exportarPontosExcel() {
 
     let dadosParaPlanilha = await puxarLogsEFiltrar();
     
-    // Aplica o filtro de datas do visor
     const filtroInicio = document.getElementById('filtroRelatorioInicio').value;
     const filtroFim = document.getElementById('filtroRelatorioFim').value;
     
     if (filtroInicio) {
         const dInicio = new Date(filtroInicio + "T00:00:00");
         dadosParaPlanilha = dadosParaPlanilha.filter(r => {
+            if(!r.data) return false;
             const p = r.data.split('/');
+            if(p.length !== 3) return false;
             return new Date(p[2], p[1]-1, p[0]) >= dInicio;
         });
     }
     if (filtroFim) {
         const dFim = new Date(filtroFim + "T23:59:59");
         dadosParaPlanilha = dadosParaPlanilha.filter(r => {
+            if(!r.data) return false;
             const p = r.data.split('/');
+            if(p.length !== 3) return false;
             return new Date(p[2], p[1]-1, p[0]) <= dFim;
         });
     }
@@ -674,8 +689,10 @@ async function exportarPontosExcel() {
     }
 
     dadosParaPlanilha.sort((a,b) => {
+        if (!a.data || !b.data) return 0;
         const pa = a.data.split('/');
         const pb = b.data.split('/');
+        if(pa.length !== 3 || pb.length !== 3) return 0;
         return new Date(pa[2], pa[1]-1, pa[0]) - new Date(pb[2], pb[1]-1, pb[0]);
     });
 
@@ -731,7 +748,7 @@ async function exportarPontosExcel() {
 }
 
 // ==========================================
-// CONFIGURAÇÕES GPS (NUVEM)
+// CONFIGURAÇÕES GPS E CERCA VIRTUAL (NUVEM)
 // ==========================================
 let idConfigNuvemAtual = null;
 

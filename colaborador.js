@@ -52,6 +52,32 @@ function exibirAvisoColab(titulo, mensagem) {
     new bootstrap.Modal(document.getElementById("modalFeedbackColab")).show();
 }
 
+// ==========================================
+// CORREÇÃO: BUSCA INTELIGENTE DO NOME DA EMPRESA
+// ==========================================
+async function buscarNomeEmpresaNuvem() {
+    let nomeFinal = "Empresa Parceira";
+    try {
+        // 1. Tenta pegar o nome customizado pelo RH nas configurações
+        const confSnap = await db.collection("configuracoes_empresa").where("empresaEmail", "==", PREFIXO_DB_EMPRESA).get();
+        if (!confSnap.empty && confSnap.docs[0].data().nomeEmpresa) {
+            nomeFinal = confSnap.docs[0].data().nomeEmpresa;
+        } else {
+            // 2. Se não achar, pega o nome original do Super Admin
+            const empSnap = await db.collection("empresas_clientes").where("email", "==", PREFIXO_DB_EMPRESA).get();
+            if (!empSnap.empty && empSnap.docs[0].data().nome) {
+                nomeFinal = empSnap.docs[0].data().nome;
+            }
+        }
+    } catch (error) {
+        console.error("Erro ao buscar nome da empresa:", error);
+    }
+    
+    // Salva na memória para não gastar o banco nas próximas vezes
+    localStorage.setItem("ponto_web_nome_empresa_colab", nomeFinal);
+    if(typeof atualizarNomeEmpresaBadge === 'function') atualizarNomeEmpresaBadge();
+}
+
 function verificarSessaoExistente() {
     const sessaoSalva = localStorage.getItem("ponto_web_sessao_colab");
     if (sessaoSalva) {
@@ -62,8 +88,13 @@ function verificarSessaoExistente() {
         renderizarHistoricoHoje(); 
         irParaTela("horarios");
         
-        // Garante que a badge do nome da empresa mostre certo ao carregar a sessão
-        if(typeof atualizarNomeEmpresaBadge === 'function') atualizarNomeEmpresaBadge();
+        // Verifica se a memória está desatualizada e busca da nuvem se necessário
+        const nomeSalvo = localStorage.getItem("ponto_web_nome_empresa_colab");
+        if (!nomeSalvo || nomeSalvo === "Empresa Parceira" || nomeSalvo === "Sua Empresa") {
+            buscarNomeEmpresaNuvem();
+        } else {
+            if(typeof atualizarNomeEmpresaBadge === 'function') atualizarNomeEmpresaBadge();
+        }
     } else {
         irParaTela("login");
     }
@@ -79,13 +110,11 @@ async function executarLoginColaborador(event) {
     btn.innerHTML = "⏳ Conectando à Nuvem...";
 
     try {
-        // Busca o funcionário globalmente na coleção 'usuarios_ponto'
         const snapshot = await db.collection("usuarios_ponto").where("email", "==", email).where("senha", "==", senha).get();
 
         if (!snapshot.empty) {
             const encontrarUser = snapshot.docs[0].data();
             
-            // A empresa a qual ele pertence foi gravada no momento do cadastro pelo RH
             PREFIXO_DB_EMPRESA = encontrarUser.empresaEmail;
 
             // Trava 1: Usuário Bloqueado
@@ -112,19 +141,12 @@ async function executarLoginColaborador(event) {
             localStorage.setItem("ponto_web_sessao_colab", JSON.stringify(usuarioLogado));
             localStorage.setItem("ponto_web_email_empresa_colab", PREFIXO_DB_EMPRESA); 
             
-            // Busca o nome da empresa UMA ÚNICA VEZ para evitar custo de leitura no Google
-            const empSnapshot = await db.collection("empresas_clientes").where("email", "==", PREFIXO_DB_EMPRESA).get();
-            if(!empSnapshot.empty) {
-                localStorage.setItem("ponto_web_nome_empresa_colab", empSnapshot.docs[0].data().nome);
-            } else {
-                localStorage.setItem("ponto_web_nome_empresa_colab", "Empresa Parceira");
-            }
-            
             renderizarFichaFuncionario();
             renderizarHistoricoHoje();
             irParaTela("horarios");
             
-            if(typeof atualizarNomeEmpresaBadge === 'function') atualizarNomeEmpresaBadge();
+            // Dispara a busca do nome em segundo plano para não travar a tela
+            buscarNomeEmpresaNuvem();
             
             exibirAvisoColab("🔓 Logado", `Ficha validada na Nuvem com sucesso!`);
         } else {
@@ -152,7 +174,6 @@ function renderizarFichaFuncionario() {
 async function solicitarMarcacaoPonto(tipo) {
     const hojeStr = new Date().toLocaleDateString("pt-BR");
     
-    // Verifica se já bateu esse ponto hoje consultando a nuvem
     try {
         const snapshot = await db.collection("historico_pontos")
             .where("colaboradorId", "==", String(usuarioLogado.id))
@@ -204,7 +225,6 @@ function confirmarEGravarPonto() {
             
             try {
                 btn.innerHTML = "⏳ Gravando na Nuvem...";
-                // Grava o Ponto oficial no Banco da Nuvem
                 await db.collection("historico_pontos").add(novoPonto);
                 
                 bootstrap.Modal.getInstance(document.getElementById("modalConfirmarPonto")).hide();
@@ -233,7 +253,6 @@ async function renderizarHistoricoHoje() {
     containerRegistros.innerHTML = `<div class="text-center text-muted small py-2">⏳ Puxando histórico da Nuvem...</div>`;
 
     try {
-        // Puxa o histórico de hoje direto da Nuvem
         const snapshot = await db.collection("historico_pontos")
             .where("colaboradorId", "==", String(usuarioLogado.id))
             .where("data", "==", hojeStr)
@@ -246,7 +265,6 @@ async function renderizarHistoricoHoje() {
             return;
         }
 
-        // Ordenar os logs (como pegamos do firestore, ordenamos no array)
         let logsDeHoje = [];
         snapshot.forEach(doc => logsDeHoje.push(doc.data()));
         

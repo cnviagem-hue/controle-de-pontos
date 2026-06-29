@@ -1,27 +1,34 @@
-// SISTEMA DE GAVETAS (ISOLAMENTO DE DADOS MULTI-EMPRESA)
-const PREFIXO_EMPRESA = sessionStorage.getItem("email_empresa_ativa") || "default";
-const DB_USUARIOS = "banco_usuarios_ponto_" + PREFIXO_EMPRESA;
-const DB_CONFIGS = "configuracoes_empresa_" + PREFIXO_EMPRESA;
-const DB_LOGS = "historico_pontos_global_" + PREFIXO_EMPRESA;
+// ==========================================
+// CONFIGURAÇÃO FIREBASE (NUVEM OFICIAL)
+// ==========================================
+const firebaseConfig = {
+  apiKey: "AIzaSyAY8VH8f3SKpDvKdm0fzG-9X7gAm-yUEF4",
+  authDomain: "ld-controle-de-ponto.firebaseapp.com",
+  projectId: "ld-controle-de-ponto",
+  storageBucket: "ld-controle-de-ponto.firebasestorage.app",
+  messagingSenderId: "825252476177",
+  appId: "1:825252476177:web:042610ab02abe5e964c8b0"
+};
 
-// Migração segura: Se for a Caldas Novas logando, puxa os dados velhos para a nova gaveta e não perde nada
-function migrarDadosSaaS() {
-    if(PREFIXO_EMPRESA !== "default") {
-        if(!localStorage.getItem(DB_USUARIOS) && localStorage.getItem("banco_usuarios_ponto")) {
-            localStorage.setItem(DB_USUARIOS, localStorage.getItem("banco_usuarios_ponto"));
-        }
-        if(!localStorage.getItem(DB_CONFIGS) && localStorage.getItem("configuracoes_empresa")) {
-            localStorage.setItem(DB_CONFIGS, localStorage.getItem("configuracoes_empresa"));
-        }
-        if(!localStorage.getItem(DB_LOGS) && localStorage.getItem("historico_pontos_global")) {
-            localStorage.setItem(DB_LOGS, localStorage.getItem("historico_pontos_global"));
-        }
-    }
-}
-migrarDadosSaaS();
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+
+// Pega de qual empresa o RH logou
+const PREFIXO_EMPRESA = sessionStorage.getItem("email_empresa_ativa"); 
 
 let usuarioSelecionadoId = null;
 let bancoUsuarios = [];
+let logsBrutosNuvem = [];
+
+document.addEventListener("DOMContentLoaded", async () => {
+    if (!sessionStorage.getItem("admin_autenticado") || !PREFIXO_EMPRESA) {
+        window.location.href = "login-admin.html"; 
+    }
+    document.getElementById("sidebarNomeEmpresa").innerText = sessionStorage.getItem("nome_empresa_ativa");
+    
+    await carregarConfigsNuvem();
+    await carregarUsuariosDaNuvem();
+});
 
 function alternarAba(nomeAba) {
     document.getElementById('menu-pessoal').classList.remove('active');
@@ -35,7 +42,7 @@ function alternarAba(nomeAba) {
 
     if(nomeAba === 'relatorios') {
         sincronizarFiltrosColaboradores();
-        filtrarRelatorioTela();
+        // Não filtra a tela de cara, espera o usuário apertar o botão ou escolhe filtros
     }
 }
 
@@ -90,16 +97,8 @@ function mascaraCEPHtml(input) {
 }
 
 function fazerLogout() {
-    localStorage.removeItem("ponto_web_sessao_colab");
     sessionStorage.clear();
     window.location.href = "login-admin.html";
-}
-
-function resetarBancoGeral() {
-    localStorage.removeItem(DB_USUARIOS);
-    inicializarDadosFicticios();
-    renderTabelaComAtualizacao();
-    sincronizarFiltrosColaboradores();
 }
 
 function otimizarEConverterFoto(fileInputElement) {
@@ -143,9 +142,33 @@ function otimizarEConverterFoto(fileInputElement) {
     });
 }
 
-function cadastrarUsuario(event) {
+// ==========================================
+// GESTÃO DE PESSOAL (NUVEM)
+// ==========================================
+async function carregarUsuariosDaNuvem() {
+    const tabela = document.getElementById('tabelaEquipe');
+    tabela.innerHTML = `<tr><td colspan="10" class="text-center text-muted small py-3">⏳ Carregando dados da Nuvem...</td></tr>`;
+    
+    try {
+        const snapshot = await db.collection("usuarios_ponto").where("empresaEmail", "==", PREFIXO_EMPRESA).get();
+        bancoUsuarios = [];
+        snapshot.forEach(doc => {
+            bancoUsuarios.push({ firebaseId: doc.id, ...doc.data() });
+        });
+        renderTabelaComAtualizacao();
+        sincronizarFiltrosColaboradores();
+    } catch (error) {
+        tabela.innerHTML = `<tr><td colspan="10" class="text-center text-danger small py-3">⚠️ Erro ao carregar equipe.</td></tr>`;
+    }
+}
+
+async function cadastrarUsuario(event) {
     event.preventDefault();
-    otimizarEConverterFoto(document.getElementById('cadFotoFile')).then(fotoBase64 => {
+    const btnSalvar = document.getElementById("btnSalvarUsuario");
+    btnSalvar.disabled = true;
+    btnSalvar.innerHTML = "⏳ Salvando...";
+
+    otimizarEConverterFoto(document.getElementById('cadFotoFile')).then(async (fotoBase64) => {
         let foto = fotoBase64;
         if(!foto) {
             foto = `https://ui-avatars.com/api/?name=${encodeURIComponent(document.getElementById('cadNome').value)}&background=f97316&color=fff`;
@@ -153,10 +176,11 @@ function cadastrarUsuario(event) {
         
         const novoUser = {
             id: String(new Date().getTime()), 
+            empresaEmail: PREFIXO_EMPRESA, // Vinculo Forte
             nome: document.getElementById('cadNome').value.trim(),
             cpf: document.getElementById('cadCpf').value.trim(),
             telefone: document.getElementById('cadTelefone').value.trim(),
-            email: document.getElementById('cadEmail').value.trim(),
+            email: document.getElementById('cadEmail').value.trim().toLowerCase(),
             senha: document.getElementById('cadSenha').value.trim(),
             foto: foto,
             permissao: document.getElementById('cadPermissao').value,
@@ -166,18 +190,25 @@ function cadastrarUsuario(event) {
             cargaDom: document.getElementById('cadCargaDom').value || "00:00"
         };
 
-        bancoUsuarios.push(novoUser);
-        localStorage.setItem(DB_USUARIOS, JSON.stringify(bancoUsuarios));
-        
-        renderTabelaComAtualizacao();
-        sincronizarFiltrosColaboradores();
-        
-        document.getElementById('formUsuario').reset();
-        document.getElementById('cadCargaSegSex').value = "08:00";
-        document.getElementById('cadCargaSab').value = "04:00";
-        document.getElementById('cadCargaDom').value = "00:00";
+        try {
+            const docRef = await db.collection("usuarios_ponto").add(novoUser);
+            bancoUsuarios.push({ firebaseId: docRef.id, ...novoUser });
+            
+            renderTabelaComAtualizacao();
+            sincronizarFiltrosColaboradores();
+            
+            document.getElementById('formUsuario').reset();
+            document.getElementById('cadCargaSegSex').value = "08:00";
+            document.getElementById('cadCargaSab').value = "04:00";
+            document.getElementById('cadCargaDom').value = "00:00";
 
-        exibirAlertaTop("👥 Cadastrado", `Colaborador <strong>${novoUser.nome}</strong> registrado com sucesso!`);
+            exibirAlertaTop("☁️ Salvo na Nuvem", `Colaborador <strong>${novoUser.nome}</strong> registrado globalmente!`);
+        } catch (error) {
+            exibirAlertaTop("⚠️ Erro", "Falha ao gravar colaborador na nuvem.");
+        } finally {
+            btnSalvar.disabled = false;
+            btnSalvar.innerHTML = "➕ Cadastrar Usuário";
+        }
     });
 }
 
@@ -187,7 +218,7 @@ function renderTabelaComAtualizacao() {
     tabela.innerHTML = "";
     
     if(bancoUsuarios.length === 0) {
-        tabela.innerHTML = `<tr><td colspan="10" class="text-center text-muted small py-3">Nenhum funcionário cadastrado na base.</td></tr>`;
+        tabela.innerHTML = `<tr><td colspan="10" class="text-center text-muted small py-3">Nenhum funcionário cadastrado.</td></tr>`;
         return;
     }
 
@@ -206,7 +237,7 @@ function renderTabelaComAtualizacao() {
             <td><span class="badge ${badgeStatus} px-2.5">${u.status}</span></td>
             <td class="text-center">
                 <button class="btn btn-sm btn-outline-primary me-1" onclick="abrirModalEditarFicha('${index}')">✏️ Ficha</button>
-                <button class="btn btn-sm btn-outline-danger me-1" onclick="bloquearUsuario('${index}')">🔒 ${u.status === 'ATIVO' ? 'Bloquear' : 'Ativar'}</button>
+                <button class="btn btn-sm btn-outline-warning me-1" onclick="bloquearUsuario('${index}')">🔒 ${u.status === 'ATIVO' ? 'Bloquear' : 'Ativar'}</button>
                 <button class="btn btn-sm btn-danger" onclick="solicitarExclusaoUsuario('${index}')">🗑️ Excluir</button>
             </td>
         `;
@@ -236,46 +267,47 @@ function abrirModalEditarFicha(index) {
     new bootstrap.Modal(document.getElementById('modalEditarFicha')).show();
 }
 
-function confirmarEdicaoFicha() {
+async function confirmarEdicaoFicha() {
     if (usuarioSelecionadoId === null) return;
     const u = bancoUsuarios[usuarioSelecionadoId];
     if(!u) return;
 
-    otimizarEConverterFoto(document.getElementById('editFotoFile')).then(novaFotoBase64 => {
-        u.nome = document.getElementById('editNome').value.trim();
-        u.cpf = document.getElementById('editCpf').value.trim();
-        u.telefone = document.getElementById('editTelefone').value.trim();
-        u.email = document.getElementById('editEmail').value.trim();
-        u.senha = document.getElementById('editSenha').value.trim();
-        u.permissao = document.getElementById('editPermissao').value;
-        
-        u.cargaSegSex = document.getElementById('editCargaSegSex').value || "08:00";
-        u.cargaSab = document.getElementById('editCargaSab').value || "04:00";
-        u.cargaDom = document.getElementById('editCargaDom').value || "00:00";
+    const btnEdit = document.getElementById("btnConfirmarEdicao");
+    btnEdit.disabled = true;
+    btnEdit.innerHTML = "⏳ Atualizando...";
 
-        if(novaFotoBase64) u.foto = novaFotoBase64;
+    otimizarEConverterFoto(document.getElementById('editFotoFile')).then(async (novaFotoBase64) => {
+        const dadosAtualizados = {
+            nome: document.getElementById('editNome').value.trim(),
+            cpf: document.getElementById('editCpf').value.trim(),
+            telefone: document.getElementById('editTelefone').value.trim(),
+            email: document.getElementById('editEmail').value.trim().toLowerCase(),
+            senha: document.getElementById('editSenha').value.trim(),
+            permissao: document.getElementById('editPermissao').value,
+            cargaSegSex: document.getElementById('editCargaSegSex').value || "08:00",
+            cargaSab: document.getElementById('editCargaSab').value || "04:00",
+            cargaDom: document.getElementById('editCargaDom').value || "00:00"
+        };
 
-        bancoUsuarios[usuarioSelecionadoId] = u;
-        localStorage.setItem(DB_USUARIOS, JSON.stringify(bancoUsuarios));
-        
-        const elementoModal = document.getElementById('modalEditarFicha');
-        const modalInstance = bootstrap.Modal.getInstance(elementoModal);
-        if(modalInstance) {
-            modalInstance.hide();
-        } else {
-            elementoModal.classList.remove('show');
-            elementoModal.style.display = 'none';
-            document.body.classList.remove('modal-open');
-            const backdrop = document.querySelector('.modal-backdrop');
-            if (backdrop) backdrop.remove();
+        if(novaFotoBase64) dadosAtualizados.foto = novaFotoBase64;
+
+        try {
+            await db.collection("usuarios_ponto").doc(u.firebaseId).update(dadosAtualizados);
+            Object.assign(u, dadosAtualizados);
+            
+            bootstrap.Modal.getInstance(document.getElementById('modalEditarFicha')).hide();
+            renderTabelaComAtualizacao();
+            sincronizarFiltrosColaboradores();
+            
+            setTimeout(() => {
+                exibirAlertaTop("☁️ Atualizado", "A ficha do colaborador foi alterada na nuvem.");
+            }, 300);
+        } catch (error) {
+            exibirAlertaTop("⚠️ Erro", "Falha ao editar colaborador.");
+        } finally {
+            btnEdit.disabled = false;
+            btnEdit.innerHTML = "Salvar Ficha";
         }
-
-        renderTabelaComAtualizacao();
-        sincronizarFiltrosColaboradores();
-        
-        setTimeout(() => {
-            exibirAlertaTop("📝 Atualizado", "A ficha cadastral do colaborador foi alterada com sucesso.");
-        }, 300);
     });
 }
 
@@ -289,29 +321,67 @@ function solicitarExclusaoUsuario(index) {
     new bootstrap.Modal(document.getElementById('modalExclusao')).show();
 }
 
-function executarExclusaoDefinitiva() {
+async function executarExclusaoDefinitiva() {
     if (usuarioSelecionadoId === null) return;
-    bancoUsuarios.splice(usuarioSelecionadoId, 1);
-    localStorage.setItem(DB_USUARIOS, JSON.stringify(bancoUsuarios));
     
-    const elementoModal = document.getElementById('modalExclusao');
-    const modalInstance = bootstrap.Modal.getInstance(elementoModal);
-    if(modalInstance) {
-        modalInstance.hide();
-    } else {
-        elementoModal.classList.remove('show');
-        elementoModal.style.display = 'none';
-        document.body.classList.remove('modal-open');
-        const backdrop = document.querySelector('.modal-backdrop');
-        if (backdrop) backdrop.remove();
-    }
+    const u = bancoUsuarios[usuarioSelecionadoId];
+    const btnConf = document.getElementById("btnConfirmarExclusao");
+    btnConf.disabled = true;
+    btnConf.innerHTML = "⏳ Excluindo...";
 
-    renderTabelaComAtualizacao();
-    sincronizarFiltrosColaboradores();
-    
-    setTimeout(() => {
-        exibirAlertaTop("🗑️ Removido", "O colaborador foi excluído da base com sucesso.");
-    }, 300);
+    try {
+        await db.collection("usuarios_ponto").doc(u.firebaseId).delete();
+        bancoUsuarios.splice(usuarioSelecionadoId, 1);
+        
+        bootstrap.Modal.getInstance(document.getElementById('modalExclusao')).hide();
+        renderTabelaComAtualizacao();
+        sincronizarFiltrosColaboradores();
+        
+        setTimeout(() => {
+            exibirAlertaTop("🗑️ Removido", "O colaborador foi excluído permanentemente da nuvem.");
+        }, 300);
+    } catch (error) {
+        exibirAlertaTop("⚠️ Erro", "Falha ao excluir colaborador.");
+    } finally {
+        btnConf.disabled = false;
+        btnConf.innerHTML = "Sim, Excluir";
+    }
+}
+
+async function bloquearUsuario(index) {
+    const idx = parseInt(index, 10);
+    const u = bancoUsuarios[idx];
+    if(!u) return;
+
+    const novoStatus = u.status === "ATIVO" ? "BLOQUEADO" : "ATIVO";
+    try {
+        await db.collection("usuarios_ponto").doc(u.firebaseId).update({ status: novoStatus });
+        u.status = novoStatus;
+        renderTabelaComAtualizacao();
+    } catch (error) {
+        exibirAlertaTop("⚠️ Erro", "Falha ao mudar status do usuário na nuvem.");
+    }
+}
+
+function copiarLinkColaborador() {
+    const linkApp = window.location.origin + "/colaborador.html";
+    navigator.clipboard.writeText(linkApp).then(() => {
+        exibirAlertaTop("🔗 Link Copiado", "O link de acesso do colaborador foi copiado.");
+    });
+}
+
+// ==========================================
+// RELATÓRIOS E HORAS (LÓGICA INTACTA, DADOS DA NUVEM)
+// ==========================================
+function sincronizarFiltrosColaboradores() {
+    const select = document.getElementById('filtroRelatorioColaborador');
+    if(!select) return;
+    const valorSelecionado = select.value;
+    select.innerHTML = '<option value="todos">-- Selecione um Colaborador --</option>'; 
+    bancoUsuarios.forEach(u => {
+        select.innerHTML += `<option value="${u.id}">${u.nome}</option>`;
+    });
+    select.value = valorSelecionado;
 }
 
 function bolarTempoParaMinutos(strHora) {
@@ -325,33 +395,6 @@ function formatarMinutosParaString(minutosTotais) {
     const hrs = Math.floor(minutosTotais / 60);
     const mins = minutosTotais % 60;
     return `${hrs.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}`;
-}
-
-function bloquearUsuario(index) {
-    const idx = parseInt(index, 10);
-    const u = bancoUsuarios[idx];
-    if(!u) return;
-    u.status = u.status === "ATIVO" ? "BLOQUEADO" : "ATIVO";
-    localStorage.setItem(DB_USUARIOS, JSON.stringify(bancoUsuarios));
-    renderTabelaComAtualizacao();
-}
-
-function copiarLinkColaborador() {
-    const linkApp = window.location.origin + "/colaborador.html";
-    navigator.clipboard.writeText(linkApp).then(() => {
-        exibirAlertaTop("🔗 Link Copiado", "O link de acesso do colaborador foi copiado.");
-    });
-}
-
-function sincronizarFiltrosColaboradores() {
-    const select = document.getElementById('filtroRelatorioColaborador');
-    if(!select) return;
-    const valorSelecionado = select.value;
-    select.innerHTML = '<option value="todos">-- Selecione um Colaborador --</option>'; 
-    bancoUsuarios.forEach(u => {
-        select.innerHTML += `<option value="${u.id}">${u.nome}</option>`;
-    });
-    select.value = valorSelecionado;
 }
 
 function aplicarFiltroRapido(tipo) {
@@ -391,15 +434,13 @@ function aplicarFiltroRapido(tipo) {
 
     inputInicio.value = formatarDataInput(inicio);
     inputFim.value = formatarDataInput(fim);
-
-    filtrarRelatorioTela();
 }
 
-function processarLogsLocalStorage() {
-    const logsBrutos = JSON.parse(localStorage.getItem(DB_LOGS) || "[]");
+// O segredo para manter a lógica exata de cálculos que você validou
+function consolidarLogsBrutos(logsArray) {
     const espelhosAgrupados = {};
 
-    logsBrutos.forEach(log => {
+    logsArray.forEach(log => {
         const chaveChave = `${log.data}_${log.colaboradorId}`;
         if (!espelhosAgrupados[chaveChave]) {
             espelhosAgrupados[chaveChave] = {
@@ -493,12 +534,42 @@ function processarLogsLocalStorage() {
     return listaFinal;
 }
 
-function filtrarRelatorioTela() {
+// Bota a inteligência na Nuvem: Puxa só do colaborador escolhido
+async function puxarLogsEFiltrar() {
+    const filtroColab = document.getElementById('filtroRelatorioColaborador').value;
+    const btn = document.getElementById('btnFiltrarTela');
+    if(btn) { btn.disabled = true; btn.innerHTML = "⏳ Buscando na Nuvem..."; }
+
+    let dadosBrutosNuvem = [];
+
+    try {
+        let queryRef = db.collection("historico_pontos").where("empresaEmail", "==", PREFIXO_EMPRESA);
+        if (filtroColab !== "todos") {
+            queryRef = queryRef.where("colaboradorId", "==", filtroColab);
+        }
+        
+        const snapshot = await queryRef.get();
+        snapshot.forEach(doc => {
+            dadosBrutosNuvem.push(doc.data());
+        });
+        
+    } catch (error) {
+        console.error(error);
+        exibirAlertaTop("⚠️ Erro", "Falha ao carregar registros da nuvem.");
+    } finally {
+        if(btn) { btn.disabled = false; btn.innerHTML = "🔍 Filtrar na Tela"; }
+    }
+
+    return consolidarLogsBrutos(dadosBrutosNuvem);
+}
+
+async function filtrarRelatorioTela() {
     const filtroColab = document.getElementById('filtroRelatorioColaborador').value;
     const filtroInicio = document.getElementById('filtroRelatorioInicio').value;
     const filtroFim = document.getElementById('filtroRelatorioFim').value;
     const tabelaBody = document.getElementById('tabelaRelatoriosBody');
     if(!tabelaBody) return;
+    
     tabelaBody.innerHTML = "";
 
     if (filtroColab === "todos") {
@@ -506,7 +577,8 @@ function filtrarRelatorioTela() {
         return;
     }
 
-    let dadosConsolidados = processarLogsLocalStorage().filter(r => String(r.colaboradorId) === String(filtroColab));
+    // Puxa e calcula
+    let dadosConsolidados = await puxarLogsEFiltrar();
 
     if (filtroInicio) {
         const dInicio = new Date(filtroInicio + "T00:00:00");
@@ -530,6 +602,13 @@ function filtrarRelatorioTela() {
 
     let acumuladorTrabalhadas = 0;
     let acumuladorExtras = 0;
+
+    // Ordenar por data crescente
+    dadosConsolidados.sort((a,b) => {
+        const pa = a.data.split('/');
+        const pb = b.data.split('/');
+        return new Date(pa[2], pa[1]-1, pa[0]) - new Date(pb[2], pb[1]-1, pb[0]);
+    });
 
     dadosConsolidados.forEach(r => {
         acumuladorTrabalhadas += r.minutosTrabalhadosNum;
@@ -560,7 +639,7 @@ function filtrarRelatorioTela() {
     tabelaBody.appendChild(trTotal);
 }
 
-function exportarPontosExcel() {
+async function exportarPontosExcel() {
     const filtroColab = document.getElementById('filtroRelatorioColaborador').value;
     
     if (filtroColab === "todos") {
@@ -568,12 +647,37 @@ function exportarPontosExcel() {
         return;
     }
 
-    let dadosParaPlanilha = processarLogsLocalStorage().filter(r => String(r.colaboradorId) === String(filtroColab));
+    let dadosParaPlanilha = await puxarLogsEFiltrar();
+    
+    // Aplica o filtro de datas do visor
+    const filtroInicio = document.getElementById('filtroRelatorioInicio').value;
+    const filtroFim = document.getElementById('filtroRelatorioFim').value;
+    
+    if (filtroInicio) {
+        const dInicio = new Date(filtroInicio + "T00:00:00");
+        dadosParaPlanilha = dadosParaPlanilha.filter(r => {
+            const p = r.data.split('/');
+            return new Date(p[2], p[1]-1, p[0]) >= dInicio;
+        });
+    }
+    if (filtroFim) {
+        const dFim = new Date(filtroFim + "T23:59:59");
+        dadosParaPlanilha = dadosParaPlanilha.filter(r => {
+            const p = r.data.split('/');
+            return new Date(p[2], p[1]-1, p[0]) <= dFim;
+        });
+    }
     
     if (dadosParaPlanilha.length === 0) {
         exibirAlertaTop("Sem Dados", "Não há dados consolidados para o colaborador filtrado.");
         return;
     }
+
+    dadosParaPlanilha.sort((a,b) => {
+        const pa = a.data.split('/');
+        const pb = b.data.split('/');
+        return new Date(pa[2], pa[1]-1, pa[0]) - new Date(pb[2], pb[1]-1, pb[0]);
+    });
 
     const colabNome = dadosParaPlanilha[0].nome;
     const dataEmissao = new Date().toLocaleDateString('pt-BR');
@@ -625,6 +729,11 @@ function exportarPontosExcel() {
     XLSX.utils.book_append_sheet(workbook, worksheet, "Espelho_Executivo");
     XLSX.writeFile(workbook, `Espelho_Ponto_${colabNome.replace(/ /g, "_")}.xlsx`);
 }
+
+// ==========================================
+// CONFIGURAÇÕES GPS (NUVEM)
+// ==========================================
+let idConfigNuvemAtual = null;
 
 async function buscarCoordenadasPorCEP() {
     const cepInput = document.getElementById("cepBusca").value.replace(/\D/g, '');
@@ -715,9 +824,14 @@ function obterLocalizacaoAtual() {
     );
 }
 
-function salvarConfiguracoes() {
+async function salvarConfiguracoes() {
+    const btnSalvar = document.getElementById("btnSalvarConfigs");
+    btnSalvar.disabled = true;
+    btnSalvar.innerHTML = "⏳ Salvando na Nuvem...";
+
     const configs = {
-        nomeEmpresa: document.getElementById("nomeEmpresa").value,
+        empresaEmail: PREFIXO_EMPRESA,
+        nomeEmpresa: document.getElementById("nomeEmpresa").value || sessionStorage.getItem("nome_empresa_ativa"),
         cep: document.getElementById("cepBusca").value,
         numero: document.getElementById("numeroBusca").value,
         latitude: document.getElementById("latitude").value,
@@ -726,47 +840,66 @@ function salvarConfiguracoes() {
         endereco: document.getElementById("enderecoTexto").innerText
     };
     
-    localStorage.setItem(DB_CONFIGS, JSON.stringify(configs));
+    try {
+        if (idConfigNuvemAtual) {
+            await db.collection("configuracoes_empresa").doc(idConfigNuvemAtual).update(configs);
+        } else {
+            const docRef = await db.collection("configuracoes_empresa").add(configs);
+            idConfigNuvemAtual = docRef.id;
+        }
 
-    const elSidebar = document.getElementById("sidebarNomeEmpresa");
-    if(elSidebar) elSidebar.innerText = configs.nomeEmpresa;
+        const elSidebar = document.getElementById("sidebarNomeEmpresa");
+        if(elSidebar) elSidebar.innerText = configs.nomeEmpresa;
 
-    const btnSalvar = document.getElementById("btnSalvarConfigs");
-    controlarCamposConfiguracao(true);
-    btnSalvar.classList.remove("btn-primary");
-    btnSalvar.classList.add("btn-success");
-    btnSalvar.innerText = "✓ Configurações Salvas com Sucesso!";
-    exibirAlertaTop("Configurações Salvas", "Cerca virtual gravada com segurança no sistema!");
-    
-    setTimeout(() => {
-        btnSalvar.classList.remove("btn-success");
-        btnSalvar.classList.add("btn-primary");
+        controlarCamposConfiguracao(true);
+        btnSalvar.classList.remove("btn-primary");
+        btnSalvar.classList.add("btn-success");
+        btnSalvar.innerText = "✓ Configurações Salvas na Nuvem!";
+        
+        setTimeout(() => {
+            btnSalvar.classList.remove("btn-success");
+            btnSalvar.classList.add("btn-primary");
+            btnSalvar.innerText = "Salvar Configurações";
+        }, 3000);
+
+    } catch (error) {
+        exibirAlertaTop("⚠️ Erro", "Falha ao salvar configurações na nuvem.");
+        btnSalvar.disabled = false;
         btnSalvar.innerText = "Salvar Configurações";
-    }, 3000);
+    }
 }
 
-function carregarConfiguracoes() {
-    const configSalva = localStorage.getItem(DB_CONFIGS);
-    const nomeSessao = sessionStorage.getItem("nome_empresa_ativa"); 
+async function carregarConfigsNuvem() {
+    try {
+        const snapshot = await db.collection("configuracoes_empresa").where("empresaEmail", "==", PREFIXO_EMPRESA).get();
+        let configs = {};
+        
+        if (!snapshot.empty) {
+            const doc = snapshot.docs[0];
+            configs = doc.data();
+            idConfigNuvemAtual = doc.id;
+        }
+        
+        const nomeExibicao = configs.nomeEmpresa || sessionStorage.getItem("nome_empresa_ativa") || "Empresa Parceira";
 
-    let configs = configSalva ? JSON.parse(configSalva) : {};
-    
-    const nomeExibicao = nomeSessao || configs.nomeEmpresa || "Empresa Parceira";
+        document.getElementById("nomeEmpresa").value = nomeExibicao;
+        document.getElementById("cepBusca").value = configs.cep || "";
+        document.getElementById("numeroBusca").value = configs.numero || "";
+        document.getElementById("latitude").value = configs.latitude || "";
+        document.getElementById("longitude").value = configs.longitude || "";
+        document.getElementById("raioTolerancia").value = configs.raio || "50";
+        
+        if(configs.endereco) {
+            document.getElementById("boxEndereco").style.display = "block";
+            document.getElementById("enderecoTexto").innerText = configs.endereco;
+        }
 
-    document.getElementById("nomeEmpresa").value = nomeExibicao;
-    document.getElementById("cepBusca").value = configs.cep || "";
-    document.getElementById("numeroBusca").value = configs.numero || "";
-    document.getElementById("latitude").value = configs.latitude || "";
-    document.getElementById("longitude").value = configs.longitude || "";
-    document.getElementById("raioTolerancia").value = configs.raio || "50";
-    
-    if(configs.endereco) {
-        document.getElementById("boxEndereco").style.display = "block";
-        document.getElementById("enderecoTexto").innerText = configs.endereco;
+        const elSidebar = document.getElementById("sidebarNomeEmpresa");
+        if(elSidebar) elSidebar.innerText = nomeExibicao;
+
+    } catch (error) {
+        console.error("Erro ao carregar configs:", error);
     }
-
-    const elSidebar = document.getElementById("sidebarNomeEmpresa");
-    if(elSidebar) elSidebar.innerText = nomeExibicao;
 }
 
 function focarEdicaoConfigs() {
@@ -786,28 +919,3 @@ function controlarCamposConfiguracao(bloquear) {
     document.getElementById("btnGpsConfigs").disabled = bloquear;
     document.getElementById("btnBuscarCep").disabled = bloquear;
 }
-
-function inicializarDadosFicticios() {
-    const rawUsers = localStorage.getItem(DB_USUARIOS);
-    if(!rawUsers || JSON.parse(rawUsers).length === 0) {
-        bancoUsuarios = [];
-        // Gaveta vazia inicializada para a nova empresa
-        localStorage.setItem(DB_USUARIOS, JSON.stringify(bancoUsuarios));
-    } else {
-        bancoUsuarios = JSON.parse(rawUsers).map(u => ({
-            ...u,
-            cargaSegSex: u.cargaSegSex || "08:00",
-            cargaSab: u.cargaSab || "04:00",
-            cargaDom: u.cargaDom || "00:00"
-        }));
-    }
-
-    const rawLogs = localStorage.getItem(DB_LOGS);
-    if(!rawLogs) {
-        localStorage.setItem(DB_LOGS, JSON.stringify([]));
-    }
-}
-
-inicializarDadosFicticios();
-carregarConfiguracoes();
-renderTabelaComAtualizacao();

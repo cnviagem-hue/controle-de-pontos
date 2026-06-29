@@ -68,7 +68,7 @@
         
         .btn-entrada { background: #10b981; } .btn-entrada:hover { background: #059669; }
         .btn-alm-ida { background: #f59e0b; } .btn-alm-ida:hover { background: #d97706; }
-        .btn-alm-volta { background: #f97316; } .btn-alm-volta:hover { background: #ea580c; }
+        .btn-ponto.btn-alm-volta { background: #f97316; } .btn-ponto.btn-alm-volta:hover { background: #ea580c; }
         .btn-saida { background: #ef4444; } .btn-saida:hover { background: #dc2626; }
 
         .historico-container { flex: 1; background: #f8fafc; border-top: 1px solid #e2e8f0; padding: 20px 16px; border-bottom-left-radius: 16px; border-bottom-right-radius: 16px; }
@@ -86,7 +86,6 @@
 </head>
 <body>
 
-    <!-- 1. TELA DE LOGIN DO COLABORADOR -->
     <div id="secao-login" class="login-container active">
         <div class="login-card">
             <div class="logo-area">
@@ -94,7 +93,7 @@
                 <p class="text-muted small fw-medium">Portal do Colaborador</p>
             </div>
 
-            <form onsubmit="ejecutarLoginColaborador(event)">
+            <form onsubmit="executarLoginColaborador(event)">
                 <div class="mb-3">
                     <label class="form-label fw-bold small text-dark mb-1">E-mail de Acesso</label>
                     <input type="email" id="loginEmail" class="form-control" placeholder="seu.email@empresa.com" required>
@@ -115,7 +114,6 @@
         </div>
     </div>
 
-    <!-- 2. PAINEL DE MARCAÇÃO DE HORÁRIOS PRINCIPAL -->
     <div id="secao-horarios" class="secao-app">
         <div class="app-header">
             <button class="btn-logout" onclick="executarLogoutColaborador()">◀ Sair</button>
@@ -156,7 +154,6 @@
         </div>
     </div>
 
-    <!-- MODAL DINÂMICO DE FEEDBACK / ALERTAS -->
     <div class="modal fade" id="modalFeedbackColab" tabindex="-1" aria-hidden="true">
       <div class="modal-dialog modal-dialog-centered modal-sm">
         <div class="modal-content border-0 shadow-lg" style="border-radius:14px;">
@@ -174,7 +171,6 @@
       </div>
     </div>
 
-    <!-- MODAL DE CONFIRMAÇÃO DE MARCAÇÃO -->
     <div class="modal fade" id="modalConfirmarPonto" tabindex="-1" aria-hidden="true">
       <div class="modal-dialog modal-dialog-centered modal-sm">
         <div class="modal-content border-0 shadow-lg" style="border-radius:14px;">
@@ -195,11 +191,9 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     
-    <!-- CONEXÃO COM SCRIPTS DO FIREBASE -->
     <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore-compat.js"></script>
     
-    <!-- SCRIPT DE LÓGICA CORE -->
     <script src="colaborador.js"></script>
 
     <script>

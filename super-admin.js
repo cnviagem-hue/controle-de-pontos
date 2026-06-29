@@ -1,8 +1,24 @@
+// ==========================================
+// CONFIGURAÇÃO FIREBASE (NUVEM OFICIAL)
+// ==========================================
+const firebaseConfig = {
+  apiKey: "AIzaSyAY8VH8f3SKpDvKdm0fzG-9X7gAm-yUEF4",
+  authDomain: "ld-controle-de-ponto.firebaseapp.com",
+  projectId: "ld-controle-de-ponto",
+  storageBucket: "ld-controle-de-ponto.firebasestorage.app",
+  messagingSenderId: "825252476177",
+  appId: "1:825252476177:web:042610ab02abe5e964c8b0"
+};
+
+// Inicializa a Nuvem
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+
 let empresaSelecionadaId = null;
 let empresaParaExcluir = null;
-let bancoEmpresas = JSON.parse(localStorage.getItem("banco_empresas_web")) || [];
+let bancoEmpresas = []; // Agora nasce vazio, pois será preenchido pela Nuvem
 
-// Máscaras
+// Máscaras (Intactas)
 function mascaraCNPJ(input) {
     let v = input.value.replace(/\D/g, '');
     if (v.length > 14) v = v.slice(0, 14);
@@ -27,12 +43,12 @@ function mascaraTelefone(input) {
     input.value = v;
 }
 
-// Verificação de Segurança
-document.addEventListener("DOMContentLoaded", () => {
+// Verificação de Segurança e Carregamento
+document.addEventListener("DOMContentLoaded", async () => {
     if (!sessionStorage.getItem("super_admin_autenticado")) {
         window.location.href = "index.html"; 
     }
-    renderTabelaEmpresas();
+    await carregarEmpresasDaNuvem();
 });
 
 function sairSuperAdmin() {
@@ -48,17 +64,39 @@ function exibirAlertaTop(titulo, message) {
 }
 
 function copiarLinkEmpresa() {
-    // O link de acesso da empresa é o login-admin.html
     const linkEmpresa = window.location.origin + "/login-admin.html";
     navigator.clipboard.writeText(linkEmpresa).then(() => {
         exibirAlertaTop("🔗 Link Copiado", "O link do painel para o gestor da empresa foi copiado para a área de transferência.");
     });
 }
 
-// CRUD EMPRESAS
-function cadastrarEmpresa(event) {
+// ==========================================
+// CRUD EMPRESAS (AGORA NA NUVEM)
+// ==========================================
+async function carregarEmpresasDaNuvem() {
+    const tbody = document.getElementById("tabelaEmpresas");
+    tbody.innerHTML = `<tr><td colspan="7" class="text-center text-muted py-4">⏳ Carregando dados da Nuvem...</td></tr>`;
+    
+    try {
+        const snapshot = await db.collection("empresas_clientes").get();
+        bancoEmpresas = [];
+        snapshot.forEach(doc => {
+            bancoEmpresas.push(doc.data());
+        });
+        renderTabelaEmpresas();
+    } catch (error) {
+        console.error("Erro na nuvem:", error);
+        exibirAlertaTop("⚠️ Erro de Conexão", "Não foi possível carregar as empresas da nuvem.");
+    }
+}
+
+async function cadastrarEmpresa(event) {
     event.preventDefault();
     
+    const btnSalvar = document.getElementById("btnSalvarEmpresa");
+    btnSalvar.disabled = true;
+    btnSalvar.innerHTML = "⏳ Salvando na Nuvem...";
+
     const novaEmpresa = {
         id: "EMP_" + new Date().getTime(),
         nome: document.getElementById("cadNomeEmpresa").value.trim(),
@@ -71,14 +109,22 @@ function cadastrarEmpresa(event) {
         primeiroAcesso: true
     };
 
-    bancoEmpresas.push(novaEmpresa);
-    localStorage.setItem("banco_empresas_web", JSON.stringify(bancoEmpresas));
-    
-    document.getElementById("formEmpresa").reset();
-    renderTabelaEmpresas();
-    
-    // Substituindo o alert nativo feio pelo pop-up moderno
-    exibirAlertaTop("🏢 Cadastrado", `A empresa <strong>${novaEmpresa.nome}</strong> foi cadastrada com sucesso!<br>O acesso já está liberado.`);
+    try {
+        // Grava no Firebase Firestore
+        await db.collection("empresas_clientes").doc(novaEmpresa.id).set(novaEmpresa);
+        
+        bancoEmpresas.push(novaEmpresa);
+        document.getElementById("formEmpresa").reset();
+        renderTabelaEmpresas();
+        
+        exibirAlertaTop("☁️ Salvo na Nuvem", `A empresa <strong>${novaEmpresa.nome}</strong> foi cadastrada globalmente com sucesso!`);
+    } catch (error) {
+        console.error("Erro ao salvar:", error);
+        exibirAlertaTop("⚠️ Erro", "Falha ao gravar os dados na nuvem.");
+    } finally {
+        btnSalvar.disabled = false;
+        btnSalvar.innerHTML = "🏢 Cadastrar e Liberar Acesso";
+    }
 }
 
 function renderTabelaEmpresas() {
@@ -112,44 +158,53 @@ function renderTabelaEmpresas() {
     });
 }
 
-function bloquearEmpresa(index) {
+async function bloquearEmpresa(index) {
     const emp = bancoEmpresas[index];
-    emp.status = emp.status === "ATIVO" ? "BLOQUEADO" : "ATIVO";
-    localStorage.setItem("banco_empresas_web", JSON.stringify(bancoEmpresas));
-    renderTabelaEmpresas();
+    const novoStatus = emp.status === "ATIVO" ? "BLOQUEADO" : "ATIVO";
+    
+    try {
+        await db.collection("empresas_clientes").doc(emp.id).update({ status: novoStatus });
+        emp.status = novoStatus;
+        renderTabelaEmpresas();
+    } catch (error) {
+        exibirAlertaTop("⚠️ Erro", "Não foi possível atualizar o status na nuvem.");
+    }
 }
 
 function excluirEmpresa(index) {
-    // Agora chama o modal moderno em vez do confirm() nativo
     empresaParaExcluir = index;
     document.getElementById('nomeEmpresaExclusao').innerText = bancoEmpresas[index].nome;
     new bootstrap.Modal(document.getElementById('modalExclusao')).show();
 }
 
-function executarExclusaoDefinitiva() {
+async function executarExclusaoDefinitiva() {
     if (empresaParaExcluir === null) return;
     
-    bancoEmpresas.splice(empresaParaExcluir, 1);
-    localStorage.setItem("banco_empresas_web", JSON.stringify(bancoEmpresas));
+    const btnConfirmar = document.getElementById("btnConfirmarExclusao");
+    btnConfirmar.disabled = true;
+    btnConfirmar.innerHTML = "⏳ Excluindo...";
     
-    // Fecha o modal de exclusão
-    const elementoModal = document.getElementById('modalExclusao');
-    const modalInstance = bootstrap.Modal.getInstance(elementoModal);
-    if(modalInstance) {
-        modalInstance.hide();
-    } else {
-        elementoModal.classList.remove('show');
-        elementoModal.style.display = 'none';
-        document.body.classList.remove('modal-open');
-        const backdrop = document.querySelector('.modal-backdrop');
-        if (backdrop) backdrop.remove();
-    }
+    const empId = bancoEmpresas[empresaParaExcluir].id;
 
-    renderTabelaEmpresas();
-    
-    setTimeout(() => {
-        exibirAlertaTop("🗑️ Removido", "A empresa foi excluída da base de dados permanentemente.");
-    }, 300);
+    try {
+        await db.collection("empresas_clientes").doc(empId).delete();
+        bancoEmpresas.splice(empresaParaExcluir, 1);
+        
+        const elementoModal = document.getElementById('modalExclusao');
+        const modalInstance = bootstrap.Modal.getInstance(elementoModal);
+        if(modalInstance) modalInstance.hide();
+
+        renderTabelaEmpresas();
+        
+        setTimeout(() => {
+            exibirAlertaTop("🗑️ Removido da Nuvem", "A empresa foi excluída de todos os servidores globalmente.");
+        }, 300);
+    } catch (error) {
+        exibirAlertaTop("⚠️ Erro", "Falha ao tentar excluir da nuvem.");
+    } finally {
+        btnConfirmar.disabled = false;
+        btnConfirmar.innerHTML = "Sim, Excluir";
+    }
 }
 
 function abrirModalEditarEmpresa(index) {
@@ -165,28 +220,40 @@ function abrirModalEditarEmpresa(index) {
     new bootstrap.Modal(document.getElementById("modalEditarEmpresa")).show();
 }
 
-function confirmarEdicaoEmpresa() {
+async function confirmarEdicaoEmpresa() {
     const emp = bancoEmpresas[empresaSelecionadaId];
+    const btnEdit = document.getElementById("btnConfirmarEdicao");
+    btnEdit.disabled = true;
+    btnEdit.innerHTML = "⏳ Atualizando...";
     
-    emp.nome = document.getElementById("editNomeEmpresa").value.trim();
-    emp.cnpj = document.getElementById("editCnpj").value.trim();
-    emp.endereco = document.getElementById("editEndereco").value.trim();
-    emp.whatsapp = document.getElementById("editWhatsapp").value.trim();
-    emp.email = document.getElementById("editEmail").value.trim().toLowerCase();
+    const dadosAtualizados = {
+        nome: document.getElementById("editNomeEmpresa").value.trim(),
+        cnpj: document.getElementById("editCnpj").value.trim(),
+        endereco: document.getElementById("editEndereco").value.trim(),
+        whatsapp: document.getElementById("editWhatsapp").value.trim(),
+        email: document.getElementById("editEmail").value.trim().toLowerCase()
+    };
 
-    localStorage.setItem("banco_empresas_web", JSON.stringify(bancoEmpresas));
-    
-    bootstrap.Modal.getInstance(document.getElementById("modalEditarEmpresa")).hide();
-    renderTabelaEmpresas();
-    
-    // Alerta de sucesso moderno na edição
-    setTimeout(() => {
-        exibirAlertaTop("📝 Atualizado", "Os dados da empresa foram alterados com sucesso.");
-    }, 300);
+    try {
+        await db.collection("empresas_clientes").doc(emp.id).update(dadosAtualizados);
+        Object.assign(emp, dadosAtualizados);
+        
+        bootstrap.Modal.getInstance(document.getElementById("modalEditarEmpresa")).hide();
+        renderTabelaEmpresas();
+        
+        setTimeout(() => {
+            exibirAlertaTop("☁️ Atualizado na Nuvem", "Os dados da empresa foram alterados e sincronizados globalmente.");
+        }, 300);
+    } catch (error) {
+        exibirAlertaTop("⚠️ Erro", "Falha ao atualizar dados na nuvem.");
+    } finally {
+        btnEdit.disabled = false;
+        btnEdit.innerHTML = "Salvar Alterações";
+    }
 }
 
 // ==========================================
-// AUTOMAÇÃO DE CEP (MANTENDO A LÓGICA INTACTA)
+// AUTOMAÇÃO DE CEP 
 // ==========================================
 function mascaraCEPSuper(input) {
     let valor = input.value.replace(/\D/g, '');
@@ -207,9 +274,8 @@ async function buscarCepSuper() {
         const dados = await res.json();
         
         if (!dados.erro) {
-            // Preenche o endereço já formatado, deixando o "Nº" pronto para digitar
             inputEndereco.value = `${dados.logradouro}, Nº  - ${dados.bairro}, ${dados.localidade} - ${dados.uf}`;
-            inputEndereco.focus(); // Foca no campo automaticamente para você digitar o número
+            inputEndereco.focus(); 
         } else {
             inputEndereco.placeholder = placeholderOriginal;
             alert("⚠️ CEP não encontrado na base dos Correios.");

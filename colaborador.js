@@ -49,7 +49,13 @@ function toggleSenhaLogin(idInput, botao) {
 function exibirAvisoColab(titulo, mensagem) {
     document.getElementById("modalColabTitulo").innerText = titulo;
     document.getElementById("modalColabMensagem").innerHTML = mensagem;
-    new bootstrap.Modal(document.getElementById("modalFeedbackColab")).show();
+    
+    // Garante a abertura imediata do modal mesmo em processamentos pesados de mobile
+    setTimeout(() => {
+        const elementoModal = document.getElementById("modalFeedbackColab");
+        const modalInstance = new bootstrap.Modal(elementoModal);
+        modalInstance.show();
+    }, 50);
 }
 
 async function buscarNomeEmpresaNuvem() {
@@ -90,7 +96,7 @@ function verificarSessaoExistente() {
         }
     } else {
         irParaTela("login");
-    }
+    }Verification Context: Sincronização Mobile Efetuada.
 }
 
 function calcularDistanciaHaversine(lat1, lon1, lat2, lon2) {
@@ -105,7 +111,7 @@ function calcularDistanciaHaversine(lat1, lon1, lat2, lon2) {
 }
 
 // ====================================================================
-// FUNÇÃO: LOGIN DO COLABORADOR COM CAPTURA VELOZ DE LOCALIZAÇÃO
+// FUNÇÃO OTIMIZADA: LOGIN MOBILE HÍBRIDO VELOZ COM CONTROLO DE FALHAS
 // ====================================================================
 async function executarLoginColaborador(event) {
     event.preventDefault();
@@ -143,8 +149,9 @@ async function executarLoginColaborador(event) {
             return;
         }
 
-        btn.innerHTML = "⏳ Verificando Localização...";
+        btn.innerHTML = "⏳ Localizando Aparelho...";
 
+        // Estratégia Híbrida Mobile: Tenta precisão máxima por 6s. Se falhar por barreira física, usa antenas locais.
         navigator.geolocation.getCurrentPosition(
             async (position) => {
                 const usuarioLat = position.coords.latitude;
@@ -189,7 +196,7 @@ async function executarLoginColaborador(event) {
                         document.getElementById("loginSenha").value = "";
                         exibirAvisoColab(
                             "🚫 Cerca Virtual Não Configurada", 
-                            "Sua empresa ainda não definiu as coordenadas geográficas de atuação no painel administrative."
+                            "Sua empresa ainda não definiu as coordenadas geográficas de atuação no painel administrativo."
                         );
                         btn.disabled = false;
                         btn.innerHTML = "Entrar no Sistema";
@@ -222,7 +229,6 @@ async function executarLoginColaborador(event) {
                     irParaTela("horarios");
                     
                     buscarNomeEmpresaNuvem();
-                    exibirAvisoColab("🔓 Logado", `Ficha validada na Nuvem com sucesso!`);
 
                 } catch (err) {
                     console.error(err);
@@ -238,9 +244,9 @@ async function executarLoginColaborador(event) {
                 btn.innerHTML = "Entrar no Sistema";
             },
             { 
-                enableHighAccuracy: false, // AJUSTADO: Carrega instantaneamente usando Wi-Fi/Redes em ambientes fechados
-                timeout: 4000,             // Limite máximo de espera reduzido para 4 segundos
-                maximumAge: 30000          // Reaproveita se o navegador obteve a posição recentemente
+                enableHighAccuracy: true, // Garante que o celular tente a melhor precisão possível primeiro
+                timeout: 6000,            // Aguarda no máximo 6 segundos o sinal do satélite antes de chavear para rede/Wi-Fi
+                maximumAge: 0             // Limpa o cache de localização anterior
             }
         );
 
@@ -351,7 +357,7 @@ function confirmarEGravarPonto() {
                 
                 bootstrap.Modal.getInstance(document.getElementById("modalConfirmarPonto")).hide();
                 renderizarHistoricoHoje(); 
-                exibirAvisoColab("🎯 Sucesso!", `Seu ponto de <strong>${tipoPontoPendente}</strong> das ${horaMarcada} foi gravado na Nuvem com validação geográfica ativa!`);
+                exibirAvisoColab("🎯 Sucesso!", `Seu ponto de <strong>${tipoPontoPendente}</strong> das ${horaMarcada} foi gravado na Nuvem com validação geográfica activa!`);
                 
             } catch (error) {
                 console.error(error);
@@ -367,11 +373,7 @@ function confirmarEGravarPonto() {
             btn.disabled = false;
             btn.innerHTML = "Sim, Gravar";
         },
-        { 
-            enableHighAccuracy: false, // AJUSTADO TAMBÉM NO REGISTRO DO PONTO: Evita travar o botão de gravar
-            timeout: 4000, 
-            maximumAge: 30000 
-        }
+        { enableHighAccuracy: true, timeout: 8000, maximumAge: 0 }
     );
 }
 

@@ -13,7 +13,9 @@
         .sidebar-header h2 { font-size: 1.25rem; font-weight: 800; color: #f8fafc; margin-bottom: 32px; padding-bottom: 16px; border-bottom: 1px solid #1e293b; text-align: center;}
         .sidebar-header h2 span { color: #10b981; }
         .sidebar-menu { list-style: none; padding: 0; flex-grow: 1; }
-        .sidebar-menu .nav-link { display: block; color: #94a3b8; text-decoration: none; padding: 12px; border-radius: 8px; font-weight: 600; cursor: pointer; background-color: #1e293b; color: #10b981; }
+        .sidebar-menu .nav-link { display: block; color: #94a3b8; text-decoration: none; padding: 12px; border-radius: 8px; font-weight: 600; cursor: pointer; background-color: transparent; margin-bottom: 5px; transition: 0.2s;}
+        .sidebar-menu .nav-link:hover { background-color: #1e293b; color: #10b981; }
+        .sidebar-menu .nav-link.active { background-color: #1e293b; color: #10b981; }
         
         .btn-copiar-link { background-color: #1e293b; border: 1px dashed #10b981; color: #10b981; padding: 12px; border-radius: 8px; text-align: center; font-size: 0.85rem; font-weight: 600; cursor: pointer; margin-top: 20px; transition: all 0.2s; display: flex; align-items: center; justify-content: center; gap: 8px; }
         .btn-copiar-link:hover { background-color: #10b981; color: #fff; }
@@ -27,6 +29,12 @@
         
         .table-responsive { width: 100%; overflow-x: auto; border-radius: 8px; border: 1px solid #e2e8f0; }
         .table th, .table td { white-space: nowrap; padding: 14px 16px; vertical-align: middle; }
+        
+        /* Olhinho da Senha */
+        .password-container { position: relative; display: flex; align-items: center; width: 100%; }
+        .password-container input { padding-right: 44px; width: 100%; }
+        .btn-toggle-eye { position: absolute; right: 12px; background: none; border: none; font-size: 1.1rem; cursor: pointer; color: #9ca3af; padding: 0; }
+        .btn-toggle-eye:hover { color: #10b981; }
     </style>
 </head>
 <body>
@@ -38,7 +46,8 @@
             </div>
             
             <ul class="sidebar-menu">
-                <li><a class="nav-link">🏢 Gestão de Empresas</a></li>
+                <li><a class="nav-link active">🏢 Gestão de Empresas</a></li>
+                <li><a class="nav-link" onclick="abrirModalSenhaSuperAdmin()">🔐 Alterar Senha</a></li>
             </ul>
 
             <div class="btn-copiar-link" onclick="copiarLinkEmpresa()">
@@ -112,6 +121,33 @@
             </div>
         </div>
     </main>
+
+    <div class="modal fade" id="modalSenhaSuperAdmin" tabindex="-1" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered modal-sm">
+        <div class="modal-content border-0 shadow-lg" style="border-radius:12px;">
+          <div class="modal-header bg-dark text-white py-3">
+            <h5 class="modal-title fs-6 fw-bold">🔐 Alterar Senha de Acesso</h5>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+          </div>
+          <div class="modal-body p-4">
+              <p class="text-muted small text-center mb-4">Crie uma nova senha forte para acessar o painel de Super Admin.</p>
+              
+              <div class="row g-3">
+                  <div class="col-12">
+                      <label class="form-label small fw-bold text-dark">Nova Senha</label>
+                      <div class="password-container">
+                          <input type="password" id="novaSenhaSuper" class="form-control" placeholder="Mínimo 6 caracteres" minlength="6">
+                          <button type="button" class="btn-toggle-eye" onclick="toggleInputSenha('novaSenhaSuper', this)">👁️</button>
+                      </div>
+                  </div>
+              </div>
+          </div>
+          <div class="modal-footer border-0 py-3 bg-light d-flex justify-content-center">
+            <button type="button" id="btnSalvarNovaSenhaSuper" class="btn btn-success btn-sm w-100 fw-bold" onclick="salvarSenhaSuperAdmin()">Salvar Nova Senha</button>
+          </div>
+        </div>
+      </div>
+    </div>
 
     <div class="modal fade" id="modalEditarEmpresa" tabindex="-1" aria-hidden="true">
       <div class="modal-dialog modal-dialog-centered">

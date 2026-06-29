@@ -64,6 +64,10 @@
             50% { transform: translateX(5px); }
             75% { transform: translateX(-5px); }
         }
+        
+        /* NOVO: Link de Recuperação */
+        .link-recuperar { display: block; text-align: right; font-size: 0.8rem; color: #f97316; margin-top: 8px; text-decoration: none; font-weight: 600; cursor: pointer; }
+        .link-recuperar:hover { text-decoration: underline; color: #ea580c; }
     </style>
 </head>
 <body>
@@ -90,6 +94,7 @@
                         <input type="password" id="senhaAdmin" class="form-control" placeholder="••••••••" required>
                         <button type="button" class="btn-toggle-eye" onclick="alternarVisibilidadeSenha('senhaAdmin', this)">👁️</button>
                     </div>
+                    <a class="link-recuperar" onclick="abrirModalRecuperar()">Esqueceu a senha?</a>
                 </div>
 
                 <button type="submit" id="btnAcessar" class="btn-login">Acessar Painel</button>
@@ -106,7 +111,7 @@
             <h5 class="modal-title fs-6 fw-bold">🔒 Troca de Senha Obrigatória</h5>
           </div>
           <div class="modal-body p-4 text-center">
-            <p class="mb-3 text-secondary small fw-medium">Este é o seu primeiro acesso. Para garantir a segurança da sua empresa, por favor, cadastre uma nova senha.</p>
+            <p class="mb-3 text-secondary small fw-medium">Este é o seu primeiro acesso (ou sua senha foi redefinida). Para garantir a segurança, cadastre uma nova senha.</p>
             
             <div class="mb-2 text-start">
                 <label class="form-label fw-bold small text-dark mb-1">Nova Senha</label>
@@ -118,6 +123,32 @@
           </div>
           <div class="modal-footer border-0 pt-0 d-flex justify-content-center">
             <button type="button" id="btnSalvarNovaSenha" class="btn btn-primary w-100 fw-bold" onclick="salvarNovaSenha()">Salvar e Acessar</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal fade" id="modalRecuperarSenha" tabindex="-1" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered modal-sm">
+        <div class="modal-content border-0 shadow-lg" style="border-radius:12px;">
+          <div class="modal-header bg-dark text-white py-3">
+            <h5 class="modal-title fs-6 fw-bold">🔑 Recuperar Acesso</h5>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+          </div>
+          <div class="modal-body p-4">
+            <p class="mb-3 text-secondary small text-center fw-medium">Confirme os dados da sua empresa para restaurar a senha de acesso padrão.</p>
+            
+            <form id="formRecuperar" onsubmit="recuperarSenha(event)">
+                <div class="mb-3">
+                    <label class="form-label fw-bold small text-dark mb-1">E-mail Administrativo</label>
+                    <input type="email" id="recEmail" class="form-control" placeholder="gestor@empresa.com" required>
+                </div>
+                <div class="mb-4">
+                    <label class="form-label fw-bold small text-dark mb-1">CNPJ da Empresa</label>
+                    <input type="text" id="recCnpj" class="form-control" placeholder="Apenas números ou com máscara" required>
+                </div>
+                <button type="submit" id="btnRecuperar" class="btn btn-success w-100 fw-bold">Validar e Redefinir Senha</button>
+            </form>
           </div>
         </div>
       </div>
@@ -167,7 +198,6 @@
             erro.style.display = "none";
 
             try {
-                // Busca a empresa na nuvem pelo email
                 const snapshot = await db.collection("empresas_clientes").where("email", "==", email).get();
                 
                 if (!snapshot.empty) {
@@ -234,6 +264,60 @@
                 alert("Erro ao salvar senha na nuvem.");
                 btn.disabled = false;
                 btn.innerHTML = "Salvar e Acessar";
+            }
+        }
+
+        // ==========================================
+        // NOVA LÓGICA: RECUPERAÇÃO DE SENHA
+        // ==========================================
+        function abrirModalRecuperar() {
+            new bootstrap.Modal(document.getElementById('modalRecuperarSenha')).show();
+        }
+
+        async function recuperarSenha(event) {
+            event.preventDefault();
+            const email = document.getElementById("recEmail").value.trim().toLowerCase();
+            const cnpj = document.getElementById("recCnpj").value.trim();
+            const btn = document.getElementById("btnRecuperar");
+
+            btn.disabled = true;
+            btn.innerHTML = "⏳ Validando na Nuvem...";
+
+            try {
+                // Busca a empresa pelo E-mail e verifica se o CNPJ fornecido bate com o do banco
+                const snapshot = await db.collection("empresas_clientes").where("email", "==", email).get();
+
+                if (!snapshot.empty) {
+                    const doc = snapshot.docs[0];
+                    const dadosEmpresa = doc.data();
+
+                    // Limpa formatação para comparar apenas os números do CNPJ
+                    const cnpjDigitado = cnpj.replace(/\D/g, '');
+                    const cnpjBanco = dadosEmpresa.cnpj.replace(/\D/g, '');
+
+                    if (cnpjDigitado === cnpjBanco) {
+                        // Confirmação de segurança dupla passou! Reseta a senha para o padrão.
+                        await db.collection("empresas_clientes").doc(doc.id).update({
+                            senhaAtual: "mudar123",
+                            primeiroAcesso: true
+                        });
+
+                        alert("✅ SUCESSO!\n\nSua identidade foi confirmada. A senha da sua empresa foi redefinida para a senha padrão provisória:\n\nmudar123\n\nFaça login agora e o sistema exigirá que você crie uma nova senha secreta.");
+                        
+                        bootstrap.Modal.getInstance(document.getElementById('modalRecuperarSenha')).hide();
+                        document.getElementById("formRecuperar").reset();
+                    } else {
+                        alert("❌ ALERTA DE SEGURANÇA:\n\nO CNPJ informado não corresponde à empresa vinculada a este e-mail.");
+                    }
+                } else {
+                    alert("❌ ERRO:\n\nEste e-mail não está cadastrado em nossa base de empresas.");
+                }
+            } catch (error) {
+                console.error(error);
+                alert("⚠️ Erro de conexão com a Nuvem. Tente novamente.");
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = "Validar e Redefinir Senha";
             }
         }
     </script>

@@ -93,6 +93,21 @@ function verificarSessaoExistente() {
     }
 }
 
+// Auxiliar matemático para a Cerca Virtual
+function calcularDistanciaHaversine(lat1, lon1, lat2, lon2) {
+    const R = 6371000; // Raio da Terra em metros
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLon = (lon2 - lon1) * Math.PI / 180;
+    const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+              Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+              Math.sin(dLon / 2) * Math.sin(dLon / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    return R * c; 
+}
+
+// ========================================================
+// FUNÇÃO ATUALIZADA: LOGIN COM VALIDAÇÃO GEOGRÁFICA PRÉVIA
+// ========================================================
 async function ejecutarLoginColaborador(event) {
     event.preventDefault();
     const email = document.getElementById("loginEmail").value.trim().toLowerCase();
@@ -100,49 +115,122 @@ async function ejecutarLoginColaborador(event) {
     
     const btn = document.getElementById("btnLogarColab");
     btn.disabled = true;
-    btn.innerHTML = "⏳ Conectando à Nuvem...";
+    btn.innerHTML = "⏳ Validando Credenciais...";
 
     try {
         const snapshot = await db.collection("usuarios_ponto").where("email", "==", email).where("senha", "==", senha).get();
 
-        if (!snapshot.empty) {
-            const encontrarUser = snapshot.docs[0].data();
-            PREFIXO_DB_EMPRESA = encontrarUser.empresaEmail;
-
-            if(encontrarUser.status === "BLOQUEADO") {
-                exibirAvisoColab("🔒 Acesso Suspenso", "Sua conta foi temporariamente desativada pelo gestor.");
-                return;
-            }
-            
-            const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-            
-            if (encontrarUser.permissao === "Celular" && !isMobile) {
-                exibirAvisoColab("🚫 Acesso Bloqueado", "Sua conta está autorizada para bater ponto <strong>APENAS PELO CELULAR</strong>.<br><br>Acesso via Computador/PC foi negado.");
-                return;
-            }
-            
-            if (encontrarUser.permissao === "PC" && isMobile) {
-                exibirAvisoColab("🚫 Acesso Bloqueado", "Sua conta está autorizada para bater ponto <strong>APENAS PELO COMPUTADOR</strong>.<br><br>Acesso via Celular foi negado.");
-                return;
-            }
-
-            usuarioLogado = encontrarUser;
-            localStorage.setItem("ponto_web_sessao_colab", JSON.stringify(usuarioLogado));
-            localStorage.setItem("ponto_web_email_empresa_colab", PREFIXO_DB_EMPRESA); 
-            
-            renderizarFichaFuncionario();
-            renderizarHistoricoHoje();
-            irParaTela("horarios");
-            
-            buscarNomeEmpresaNuvem();
-            exibirAvisoColab("🔓 Logado", `Ficha validada na Nuvem com sucesso!`);
-        } else {
+        if (snapshot.empty) {
             exibirAvisoColab("❌ Erro de Entrada", "E-mail ou senha incorretos.");
+            btn.disabled = false;
+            btn.innerHTML = "Entrar no Sistema";
+            return;
         }
+
+        const encontrarUser = snapshot.docs[0].data();
+        const empresaEmailVinculo = encontrarUser.empresaEmail;
+
+        if(encontrarUser.status === "BLOQUEADO") {
+            exibirAvisoColab("🔒 Acesso Suspenso", "Sua conta foi temporariamente desativada pelo gestor.");
+            btn.disabled = false;
+            btn.innerHTML = "Entrar no Sistema";
+            return;
+        }
+
+        // --- NOVA TRAVA: VALIDAÇÃO DE LOCALIZAÇÃO ANTES DE LIBERAR O APP ---
+        if (!navigator.geolocation) {
+            exibirAvisoColab("⚠️ GPS Necessário", "Este sistema exige o uso de GPS ativo para validar o acesso ao trabalho.");
+            btn.disabled = false;
+            btn.innerHTML = "Entrar no Sistema";
+            return;
+        }
+
+        btn.innerHTML = "⏳ Verificando Localização...";
+
+        navigator.geolocation.getCurrentPosition(
+            async (position) => {
+                const usuarioLat = position.coords.latitude;
+                const usuarioLng = position.coords.longitude;
+
+                try {
+                    // Busca os parâmetros de raio e endereço configurados pelo RH na Nuvem
+                    const configSnapshot = await db.collection("configuracoes_empresa")
+                                                 .where("empresaEmail", "==", empresaEmailVinculo)
+                                                 .get();
+
+                    if (!configSnapshot.empty) {
+                        const configEmpresa = configSnapshot.docs[0].data();
+                        
+                        if (configEmpresa.latitude && configEmpresa.longitude) {
+                            const empresaLat = parseFloat(configEmpresa.latitude);
+                            const empresaLng = parseFloat(configEmpresa.longitude);
+                            const raioMaximo = parseInt(configEmpresa.raio, 10) || 50;
+
+                            const distanciaRealMetros = calcularDistanciaHaversine(usuarioLat, usuarioLng, empresaLat, empresaLng);
+
+                            // SE ESTIVER FORA DO ALCANCE: Barra na hora, exibe o alerta e limpa os campos
+                            if (distanciaRealMetros > raioMaximo) {
+                                document.getElementById("loginSenha").value = "";
+                                exibirAvisoColab(
+                                    "🚫 Acesso Bloqueado (Fora do Alcance)", 
+                                    "Desculpe, você não tem permissão para acessar o sistema fora do seu local de trabalho.<br><br>Por favor, certifique-se de que está no estabelecimento da empresa e com o GPS ativo."
+                                );
+                                btn.disabled = false;
+                                btn.innerHTML = "Entrar no Sistema";
+                                return; // Interrompe o login imediatamente!
+                            }
+                        }
+                    }
+
+                    // Se passou por todas as regras de segurança, valida o restante dos parâmetros
+                    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+                    
+                    if (encontrarUser.permissao === "Celular" && !isMobile) {
+                        exibirAvisoColab("🚫 Acesso Bloqueado", "Sua conta está autorizada para bater ponto <strong>APENAS PELO CELULAR</strong>.");
+                        btn.disabled = false;
+                        btn.innerHTML = "Entrar no Sistema";
+                        return;
+                    }
+                    
+                    if (encontrarUser.permissao === "PC" && isMobile) {
+                        exibirAvisoColab("🚫 Acesso Bloqueado", "Sua conta está autorizada para bater ponto <strong>APENAS PELO COMPUTADOR</strong>.");
+                        btn.disabled = false;
+                        btn.innerHTML = "Entrar no Sistema";
+                        return;
+                    }
+
+                    // Login Autorizado com Sucesso
+                    usuarioLogado = encontrarUser;
+                    PREFIXO_DB_EMPRESA = empresaEmailVinculo;
+                    localStorage.setItem("ponto_web_sessao_colab", JSON.stringify(usuarioLogado));
+                    localStorage.setItem("ponto_web_email_empresa_colab", PREFIXO_DB_EMPRESA); 
+                    
+                    renderizarFichaFuncionario();
+                    renderizarHistoricoHoje();
+                    irParaTela("horarios");
+                    
+                    buscarNomeEmpresaNuvem();
+                    exibirAvisoColab("🔓 Logado", `Ficha validada na Nuvem com sucesso!`);
+
+                } catch (err) {
+                    console.error(err);
+                    exibirAvisoColab("⚠️ Erro Interno", "Falha ao processar regras de segurança.");
+                } finally {
+                    btn.disabled = false;
+                    btn.innerHTML = "Entrar no Sistema";
+                }
+            },
+            (error) => {
+                exibirAvisoColab("⚠️ GPS Desativado", "Para entrar na plataforma, você precisa ativar a permissão de localização do seu navegador/aparelho.");
+                btn.disabled = false;
+                btn.innerHTML = "Entrar no Sistema";
+            },
+            { enableHighAccuracy: true, timeout: 8000, maximumAge: 0 }
+        );
+
     } catch (error) {
         console.error(error);
         exibirAvisoColab("⚠️ Erro de Conexão", "Falha ao comunicar com a Nuvem. Verifique sua internet.");
-    } finally {
         btn.disabled = false;
         btn.innerHTML = "Entrar no Sistema";
     }
@@ -177,27 +265,10 @@ async function solicitarMarcacaoPonto(tipo) {
         new bootstrap.Modal(document.getElementById("modalConfirmarPonto")).show();
 
     } catch (error) {
-        exibirAlertaTop("⚠️ Erro", "Não foi possível consultar seu histórico na Nuvem.");
+        exibirAvisoColab("⚠️ Erro", "Não foi possível consultar seu histórico na Nuvem.");
     }
 }
 
-// ==========================================
-// INTEGRAÇÃO: CÁLCULO CIENTÍFICO DA DISTÂNCIA
-// ==========================================
-function calcularDistanciaHaversine(lat1, lon1, lat2, lon2) {
-    const R = 6371000; // Raio da Terra em metros
-    const dLat = (lat2 - lat1) * Math.PI / 180;
-    const dLon = (lon2 - lon1) * Math.PI / 180;
-    const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-              Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
-              Math.sin(dLon / 2) * Math.sin(dLon / 2);
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-    return R * c; 
-}
-
-// ==========================================
-// FUNÇÃO ATUALIZADA: VALIDAÇÃO E TRAVA ABSOLUTA
-// ==========================================
 function confirmarEGravarPonto() {
     if (!navigator.geolocation) {
         exibirAvisoColab("Erro", "GPS não suportado pelo navegador.");
@@ -208,7 +279,6 @@ function confirmarEGravarPonto() {
     btn.disabled = true;
     btn.innerHTML = "⏳ Validando GPS Inteligente...";
 
-    // Forçamos alta precisão e limpamos o cache de localização
     navigator.geolocation.getCurrentPosition(
         async (position) => {
             const usuarioLat = position.coords.latitude;
@@ -217,7 +287,6 @@ function confirmarEGravarPonto() {
             try {
                 btn.innerHTML = "⏳ Validando Cerca Virtual...";
                 
-                // 1. Busca os parâmetros configurados em tempo real na nuvem para essa empresa
                 const configSnapshot = await db.collection("configuracoes_empresa")
                                              .where("empresaEmail", "==", PREFIXO_DB_EMPRESA)
                                              .get();
@@ -225,16 +294,13 @@ function confirmarEGravarPonto() {
                 if (!configSnapshot.empty) {
                     const configEmpresa = configSnapshot.docs[0].data();
                     
-                    // Se o RH configurou coordenadas válidas no painel
                     if (configEmpresa.latitude && configEmpresa.longitude) {
                         const empresaLat = parseFloat(configEmpresa.latitude);
                         const empresaLng = parseFloat(configEmpresa.longitude);
                         const raioMaximo = parseInt(configEmpresa.raio, 10) || 50;
 
-                        // 2. Calcula a distância matemática exata
                         const distanciaRealMetros = calcularDistanciaHaversine(usuarioLat, usuarioLng, empresaLat, empresaLng);
 
-                        // 3. TRAVA ANTIFRAUDE ABSOLUTA: Se estiver fora, bloqueia antes de gravar!
                         if (distanciaRealMetros > raioMaximo) {
                             bootstrap.Modal.getInstance(document.getElementById("modalConfirmarPonto")).hide();
                             
@@ -243,12 +309,11 @@ function confirmarEGravarPonto() {
                                 "🚫 Ponto Bloqueado (Fora do Raio)", 
                                 `A cerca virtual barrou o seu registro.<br><br>Você está a <strong>${metrosFora} metros</strong> do local de trabalho.<br>O limite máximo autorizado é de <strong>${raioMaximo} metros</strong>.`
                             );
-                            return; // Encerra a execução IMEDIATAMENTE. Nada viaja para o banco de dados!
+                            return; 
                         }
                     }
                 }
 
-                // 4. Sucesso: Se passou pela trava ou não tem cerca configurada, grava na nuvem
                 const agora = new Date();
                 const dataInjetada = agora.toLocaleDateString("pt-BR"); 
                 const horaMarcada = agora.toLocaleTimeString("pt-BR", { hour: '2-digit', minute: '2-digit' });
@@ -270,7 +335,7 @@ function confirmarEGravarPonto() {
                 
                 bootstrap.Modal.getInstance(document.getElementById("modalConfirmarPonto")).hide();
                 renderizarHistoricoHoje(); 
-                exibirAvisoColab("🎯 Sucesso!", `Seu ponto de <strong>${tipoPontoPendente}</strong> das ${horaMarcada} foi gravado na Nuvem com validação geográfica ativa!`);
+                exibirAvisoColab("🎯 Sucesso!", `Seu ponto de <strong>${tipoPontoPendente}</strong> das ${horaMarcada} foi gravado na Nuvem com validação geográfica activa!`);
                 
             } catch (error) {
                 console.error(error);
@@ -331,7 +396,7 @@ async function renderizarHistoricoHoje() {
     }
 }
 
-function executarLogoutColaborador() {
+function ejecutarLogoutColaborador() {
     localStorage.removeItem("ponto_web_sessao_colab");
     localStorage.removeItem("ponto_web_email_empresa_colab");
     localStorage.removeItem("ponto_web_nome_empresa_colab");

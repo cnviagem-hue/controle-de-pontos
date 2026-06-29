@@ -723,15 +723,14 @@ function salvarConfiguracoes() {
     }, 3000);
 }
 
-// ESTA É A FUNÇÃO QUE FOI AJUSTADA PARA OUVIR O LOGIN
 function carregarConfiguracoes() {
     const configSalva = localStorage.getItem("configuracoes_empresa");
     const nomeSessao = sessionStorage.getItem("nome_empresa_ativa"); 
 
     let configs = configSalva ? JSON.parse(configSalva) : {};
     
-    // A mágica acontece aqui: A prioridade 1 é sempre o nome que veio do Login. Se não tiver login, puxa o salvo.
-    const nomeExibicao = nomeSessao || configs.nomeEmpresa || "UniCesumar";
+    // A mágica: Pega o nome do login ou da configuração salva.
+    const nomeExibicao = nomeSessao || configs.nomeEmpresa || "Empresa Ativa";
 
     document.getElementById("nomeEmpresa").value = nomeExibicao;
     document.getElementById("cepBusca").value = configs.cep || "";
@@ -745,7 +744,6 @@ function carregarConfiguracoes() {
         document.getElementById("enderecoTexto").innerText = configs.endereco;
     }
 
-    // CARREGA O NOME EXATO NO MENU LATERAL
     const elSidebar = document.getElementById("sidebarNomeEmpresa");
     if(elSidebar) elSidebar.innerText = nomeExibicao;
 }

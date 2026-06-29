@@ -93,7 +93,7 @@ function verificarSessaoExistente() {
     }
 }
 
-// Auxiliar matemático para a Cerca Virtual
+// Cálculo matemático Haversine
 function calcularDistanciaHaversine(lat1, lon1, lat2, lon2) {
     const R = 6371000; // Raio da Terra em metros
     const dLat = (lat2 - lat1) * Math.PI / 180;
@@ -105,9 +105,9 @@ function calcularDistanciaHaversine(lat1, lon1, lat2, lon2) {
     return R * c; 
 }
 
-// ========================================================
-// FUNÇÃO ATUALIZADA: LOGIN COM VALIDAÇÃO GEOGRÁFICA PRÉVIA
-// ========================================================
+// ====================================================================
+// FUNÇÃO ATUALIZADA: TRAVA DE ENTRADA GEOGRÁFICA BLINDADA ANTI-FALHAS
+// ====================================================================
 async function ejecutarLoginColaborador(event) {
     event.preventDefault();
     const email = document.getElementById("loginEmail").value.trim().toLowerCase();
@@ -137,7 +137,6 @@ async function ejecutarLoginColaborador(event) {
             return;
         }
 
-        // --- NOVA TRAVA: VALIDAÇÃO DE LOCALIZAÇÃO ANTES DE LIBERAR O APP ---
         if (!navigator.geolocation) {
             exibirAvisoColab("⚠️ GPS Necessário", "Este sistema exige o uso de GPS ativo para validar o acesso ao trabalho.");
             btn.disabled = false;
@@ -153,36 +152,56 @@ async function ejecutarLoginColaborador(event) {
                 const usuarioLng = position.coords.longitude;
 
                 try {
-                    // Busca os parâmetros de raio e endereço configurados pelo RH na Nuvem
+                    // Busca as configurações da Cerca Virtual na Nuvem
                     const configSnapshot = await db.collection("configuracoes_empresa")
                                                  .where("empresaEmail", "==", empresaEmailVinculo)
                                                  .get();
 
-                    if (!configSnapshot.empty) {
-                        const configEmpresa = configSnapshot.docs[0].data();
-                        
-                        if (configEmpresa.latitude && configEmpresa.longitude) {
-                            const empresaLat = parseFloat(configEmpresa.latitude);
-                            const empresaLng = parseFloat(configEmpresa.longitude);
-                            const raioMaximo = parseInt(configEmpresa.raio, 10) || 50;
-
-                            const distanciaRealMetros = calcularDistanciaHaversine(usuarioLat, usuarioLng, empresaLat, empresaLng);
-
-                            // SE ESTIVER FORA DO ALCANCE: Barra na hora, exibe o alerta e limpa os campos
-                            if (distanciaRealMetros > raioMaximo) {
-                                document.getElementById("loginSenha").value = "";
-                                exibirAvisoColab(
-                                    "🚫 Acesso Bloqueado (Fora do Alcance)", 
-                                    "Desculpe, você não tem permissão para acessar o sistema fora do seu local de trabalho.<br><br>Por favor, certifique-se de que está no estabelecimento da empresa e com o GPS ativo."
-                                );
-                                btn.disabled = false;
-                                btn.innerHTML = "Entrar no Sistema";
-                                return; // Interrompe o login imediatamente!
-                            }
-                        }
+                    // CORREÇÃO CRÍTICA: Se não houver configuração ativa ou dados de latitude, assume bloqueio preventivo!
+                    if (configSnapshot.empty) {
+                        document.getElementById("loginSenha").value = "";
+                        exibirAvisoColab(
+                            "🚫 Acesso Bloqueado", 
+                            "Parâmetros de segurança da empresa não localizados. Entre em contato com o administrador."
+                        );
+                        btn.disabled = false;
+                        btn.innerHTML = "Entrar no Sistema";
+                        return;
                     }
 
-                    // Se passou por todas as regras de segurança, valida o restante dos parâmetros
+                    const configEmpresa = configSnapshot.docs[0].data();
+                    
+                    if (configEmpresa.latitude && configEmpresa.longitude) {
+                        const empresaLat = parseFloat(configEmpresa.latitude);
+                        const empresaLng = parseFloat(configEmpresa.longitude);
+                        const raioMaximo = parseInt(configEmpresa.raio, 10) || 50;
+
+                        const distanciaRealMetros = calcularDistanciaHaversine(usuarioLat, usuarioLng, empresaLat, empresaLng);
+
+                        // TRAVA REAL: Se a distância for maior do que o raio permitido, impede a passagem
+                        if (distanciaRealMetros > raioMaximo) {
+                            document.getElementById("loginSenha").value = ""; // Limpa a senha por segurança
+                            exibirAvisoColab(
+                                "🚫 Acesso Negado (Fora do Alcance)", 
+                                "Você não tem permissão para logar no sistema fora do seu ambiente de trabalho.<br><br>Por favor, certifique-se de que está nas dependências da empresa e tente novamente."
+                            );
+                            btn.disabled = false;
+                            btn.innerHTML = "Entrar no Sistema";
+                            return; // CORREÇÃO CRÍTICA: Bloqueia a execução imediatamente aqui!
+                        }
+                    } else {
+                        // Se houver o documento mas faltarem as coordenadas nele
+                        document.getElementById("loginSenha").value = "";
+                        exibirAvisoColab(
+                            "🚫 Cerca Virtual Não Configurada", 
+                            "Sua empresa ainda não definiu as coordenadas geográficas de atuação no painel administrativo."
+                        );
+                        btn.disabled = false;
+                        btn.innerHTML = "Entrar no Sistema";
+                        return;
+                    }
+
+                    // Valida restrições de tipo de dispositivo se passou na conferência geográfica
                     const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
                     
                     if (encontrarUser.permissao === "Celular" && !isMobile) {
@@ -199,7 +218,7 @@ async function ejecutarLoginColaborador(event) {
                         return;
                     }
 
-                    // Login Autorizado com Sucesso
+                    // Se passou por todas as barreiras geográficas e físicas, realiza o login
                     usuarioLogado = encontrarUser;
                     PREFIXO_DB_EMPRESA = empresaEmailVinculo;
                     localStorage.setItem("ponto_web_sessao_colab", JSON.stringify(usuarioLogado));
@@ -214,14 +233,14 @@ async function ejecutarLoginColaborador(event) {
 
                 } catch (err) {
                     console.error(err);
-                    exibirAvisoColab("⚠️ Erro Interno", "Falha ao processar regras de segurança.");
-                } finally {
+                    exibirAvisoColab("⚠️ Erro Interno", "Falha ao processar regras de segurança da cerca virtual.");
+                } pays {
                     btn.disabled = false;
                     btn.innerHTML = "Entrar no Sistema";
                 }
             },
             (error) => {
-                exibirAvisoColab("⚠️ GPS Desativado", "Para entrar na plataforma, você precisa ativar a permissão de localização do seu navegador/aparelho.");
+                exibirAvisoColab("⚠️ GPS Requerido", "Para entrar na plataforma, você precisa ativar a permissão de localização do seu navegador.");
                 btn.disabled = false;
                 btn.innerHTML = "Entrar no Sistema";
             },
@@ -331,11 +350,11 @@ function confirmarEGravarPonto() {
                 };
                 
                 btn.innerHTML = "⏳ Gravando na Nuvem...";
-                await db.collection("historico_pontos").add(novoPonto);
+                await db.collection("historico_ponthe").add(novoPonto);
                 
                 bootstrap.Modal.getInstance(document.getElementById("modalConfirmarPonto")).hide();
                 renderizarHistoricoHoje(); 
-                exibirAvisoColab("🎯 Sucesso!", `Seu ponto de <strong>${tipoPontoPendente}</strong> das ${horaMarcada} foi gravado na Nuvem com validação geográfica activa!`);
+                exibirAvisoColab("🎯 Sucesso!", `Seu ponto de <strong>${tipoPontoPendente}</strong> das ${horaMarcada} foi gravado na Nuvem com validação geográfica ativa!`);
                 
             } catch (error) {
                 console.error(error);
@@ -396,7 +415,7 @@ async function renderizarHistoricoHoje() {
     }
 }
 
-function ejecutarLogoutColaborador() {
+function executarLogoutColaborador() {
     localStorage.removeItem("ponto_web_sessao_colab");
     localStorage.removeItem("ponto_web_email_empresa_colab");
     localStorage.removeItem("ponto_web_nome_empresa_colab");

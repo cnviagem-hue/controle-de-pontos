@@ -72,28 +72,51 @@
         }
         .btn-login:hover { background-color: #ea580c; color: white; }
 
-        /* BOTÕES DE PONTO ORIGINAIS */
+        /* DESIGN: GRID COM 4 QUADROS MODERNOS */
+        .grid-botoes {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 10px;
+        }
+
         .btn-ponto {
             width: 100%;
-            padding: 14px;
-            border-radius: 8px;
+            padding: 20px 10px;
+            border-radius: 16px;
             font-weight: 700;
-            font-size: 1.05rem;
-            margin-bottom: 12px;
+            font-size: 0.95rem;
             border: none;
             color: white;
-            transition: opacity 0.2s;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            transition: all 0.2s ease-in-out;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
         }
-        .btn-ponto:hover { opacity: 0.9; color: white; }
         
-        .btn-entrada { background-color: #22c55e; } /* Verde Original */
-        .btn-pausa-ida { background-color: #f59e0b; } /* Amarelo Original */
-        .btn-pausa-volta { background-color: #f97316; } /* Laranja Original */
-        .btn-saida { background-color: #ef4444; } /* Vermelho Original */
+        .btn-ponto span.icone {
+            font-size: 1.8rem;
+            margin-bottom: 8px;
+            display: block;
+        }
+
+        .btn-ponto:hover { 
+            opacity: 0.95; 
+            color: white; 
+            transform: translateY(-3px); 
+            box-shadow: 0 6px 15px rgba(0,0,0,0.15); 
+        }
+        
+        .btn-entrada { background-color: #22c55e; } /* Verde */
+        .btn-pausa-ida { background-color: #f59e0b; } /* Amarelo */
+        .btn-pausa-volta { background-color: #f97316; } /* Laranja */
+        .btn-saida { background-color: #ef4444; } /* Vermelho */
 
         /* CAIXA DE HISTÓRICO ORIGINAL */
-        .historico-box { background-color: #f8fafc; border-radius: 8px; padding: 20px 16px; margin-top: 30px; border: 1px solid #e2e8f0; }
+        .historico-box { background-color: #f8fafc; border-radius: 8px; padding: 20px 16px; margin-top: 24px; border: 1px solid #e2e8f0; }
         .historico-titulo { font-size: 0.8rem; font-weight: 700; color: #64748b; margin-bottom: 15px; text-transform: uppercase; }
         
         .log-registro { display: flex; justify-content: space-between; align-items: center; background: white; padding: 12px; border-radius: 6px; margin-bottom: 8px; border: 1px solid #e2e8f0; font-size: 0.9rem; }
@@ -160,18 +183,22 @@
                 <div id="dataAtualStr">Carregando data...</div>
             </div>
 
-            <div class="d-flex flex-column">
+            <div class="grid-botoes">
                 <button type="button" class="btn-ponto btn-entrada" onclick="solicitarMarcacaoPonto('Entrada')">
-                    🟢 Bater Ponto - Entrada
+                    <span class="icone">🟢</span>
+                    Entrada
                 </button>
                 <button type="button" class="btn-ponto btn-pausa-ida" onclick="solicitarMarcacaoPonto('Almoço Ida')">
-                    ⏸️ Início do Almoço
+                    <span class="icone">⏸️</span>
+                    Início Almoço
                 </button>
                 <button type="button" class="btn-ponto btn-pausa-volta" onclick="solicitarMarcacaoPonto('Almoço Volta')">
-                    ▶️ Volta do Almoço
+                    <span class="icone">▶️</span>
+                    Volta Almoço
                 </button>
                 <button type="button" class="btn-ponto btn-saida" onclick="solicitarMarcacaoPonto('Saída')">
-                    🔴 Bater Ponto - Saída
+                    <span class="icone">🔴</span>
+                    Saída
                 </button>
             </div>
 

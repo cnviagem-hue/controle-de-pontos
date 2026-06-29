@@ -105,7 +105,7 @@ function calcularDistanciaHaversine(lat1, lon1, lat2, lon2) {
 }
 
 // ====================================================================
-// FUNÇÃO ATUALIZADA: TRAVA DE ENTRADA GEOGRÁFICA CORRIGIDA COM ALERTA
+// FUNÇÃO: LOGIN DO COLABORADOR COM CAPTURA VELOZ DE LOCALIZAÇÃO
 // ====================================================================
 async function executarLoginColaborador(event) {
     event.preventDefault();
@@ -175,7 +175,6 @@ async function executarLoginColaborador(event) {
 
                         const distanciaRealMetros = calcularDistanciaHaversine(usuarioLat, usuarioLng, empresaLat, empresaLng);
 
-                        // SE ESTIVER FORA DO RAIO PERMITIDO: Exibe o alerta textual exato e limpa os campos de senha
                         if (distanciaRealMetros > raioMaximo) {
                             document.getElementById("loginSenha").value = ""; 
                             exibirAvisoColab(
@@ -190,7 +189,7 @@ async function executarLoginColaborador(event) {
                         document.getElementById("loginSenha").value = "";
                         exibirAvisoColab(
                             "🚫 Cerca Virtual Não Configurada", 
-                            "Sua empresa ainda não definiu as coordenadas geográficas de atuação no painel administrativo."
+                            "Sua empresa ainda não definiu as coordenadas geográficas de atuação no painel administrative."
                         );
                         btn.disabled = false;
                         btn.innerHTML = "Entrar no Sistema";
@@ -238,7 +237,11 @@ async function executarLoginColaborador(event) {
                 btn.disabled = false;
                 btn.innerHTML = "Entrar no Sistema";
             },
-            { enableHighAccuracy: true, timeout: 8000, maximumAge: 0 }
+            { 
+                enableHighAccuracy: false, // AJUSTADO: Carrega instantaneamente usando Wi-Fi/Redes em ambientes fechados
+                timeout: 4000,             // Limite máximo de espera reduzido para 4 segundos
+                maximumAge: 30000          // Reaproveita se o navegador obteve a posição recentemente
+            }
         );
 
     } catch (error) {
@@ -364,7 +367,11 @@ function confirmarEGravarPonto() {
             btn.disabled = false;
             btn.innerHTML = "Sim, Gravar";
         },
-        { enableHighAccuracy: true, timeout: 8000, maximumAge: 0 }
+        { 
+            enableHighAccuracy: false, // AJUSTADO TAMBÉM NO REGISTRO DO PONTO: Evita travar o botão de gravar
+            timeout: 4000, 
+            maximumAge: 30000 
+        }
     );
 }
 

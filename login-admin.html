@@ -41,7 +41,7 @@
             background-color: #ffffff; border-color: #f97316; box-shadow: 0 0 0 4px rgba(249, 115, 22, 0.1);
         }
         .password-container { position: relative; display: flex; align-items: center; }
-        .password-container input { padding-right: 45px; }
+        .password-container input { padding-right: 45px; width: 100%; }
         .btn-toggle-eye {
             position: absolute; right: 12px; background: none; border: none; font-size: 1.1rem; cursor: pointer; color: #94a3b8; transition: color 0.2s; padding: 0; z-index: 5;
         }
@@ -65,7 +65,6 @@
             75% { transform: translateX(-5px); }
         }
         
-        /* Link de Recuperação */
         .link-recuperar { display: block; text-align: right; font-size: 0.8rem; color: #f97316; margin-top: 8px; text-decoration: none; font-weight: 600; cursor: pointer; }
         .link-recuperar:hover { text-decoration: underline; color: #ea580c; }
     </style>
@@ -141,14 +140,13 @@
             <form id="formRecuperar" onsubmit="recuperarSenha(event)">
                 <div class="mb-3">
                     <label class="form-label fw-bold small text-dark mb-1">E-mail Administrativo</label>
-                    <input type="email" id="recEmail" class="form-control" placeholder="gestor@empresa.com" required>
+                    <input type="email" id="emailSuper" class="form-control" placeholder="gestor@empresa.com" required>
                 </div>
-                <div class="mb-4">
-                    <label class="form-label fw-bold small text-dark mb-1">CNPJ da Empresa</label>
-                    <input type="text" id="recCnpj" class="form-control" placeholder="Apenas números ou com máscara" required>
-                </div>
-                <button type="submit" id="btnRecuperar" class="btn btn-success w-100 fw-bold">Validar e Redefinir Senha</button>
+                <a class="link-recuperar" onclick="abrirModalRecuperar()">Esqueceu a senha?</a>
             </form>
+            <div class="modal-footer border-0 pt-0 d-flex justify-content-center">
+                <button type="button" id="btnSalvarNovaSenha" class="btn btn-primary w-100 fw-bold" onclick="salvarNovaSenha()">Salvar e Acessar</button>
+            </div>
           </div>
         </div>
       </div>
@@ -267,9 +265,6 @@
             }
         }
 
-        // ==========================================
-        // LÓGICA: RECUPERAÇÃO DE SENHA
-        // ==========================================
         function abrirModalRecuperar() {
             new bootstrap.Modal(document.getElementById('modalRecuperarSenha')).show();
         }

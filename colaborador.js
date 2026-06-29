@@ -1,5 +1,7 @@
 let usuarioLogado = null;
 let tipoPontoPendente = ""; 
+// Variáveis para armazenar o banco dinâmico (gaveta correta)
+let PREFIXO_DB_EMPRESA = "default";
 
 document.addEventListener("DOMContentLoaded", () => {
     inicializarRelogio();
@@ -40,6 +42,10 @@ function verificarSessaoExistente() {
     const sessaoSalva = localStorage.getItem("ponto_web_sessao_colab");
     if (sessaoSalva) {
         usuarioLogado = JSON.parse(sessaoSalva);
+        
+        // Recupera o prefixo da empresa da sessão, ou infere se for antigo
+        PREFIXO_DB_EMPRESA = localStorage.getItem("ponto_web_email_empresa_colab") || "default";
+
         renderizarFichaFuncionario();
         renderizarHistoricoHoje(); 
         irParaTela("horarios");
@@ -53,12 +59,31 @@ function executarLoginColaborador(event) {
     const email = document.getElementById("loginEmail").value.trim().toLowerCase();
     const senha = document.getElementById("loginSenha").value.trim();
 
-    const rawUsers = localStorage.getItem("banco_usuarios_ponto");
-    const listaUsuarios = rawUsers ? JSON.parse(rawUsers) : [];
+    // INTELIGÊNCIA DE GAVETA: O sistema procura em TODAS as gavetas do localStorage para achar onde este email existe
+    let encontrarUser = null;
+    let gavetaEncontrada = "default";
 
-    const encontrarUser = listaUsuarios.find(u => u.email.trim().toLowerCase() === email && u.senha.toString().trim() === senha);
+    // Pega todas as chaves do localStorage para vasculhar os bancos de usuários
+    for (let i = 0; i < localStorage.length; i++) {
+        let key = localStorage.key(i);
+        if (key.startsWith("banco_usuarios_ponto_") || key === "banco_usuarios_ponto") {
+            let rawUsers = localStorage.getItem(key);
+            let listaUsuarios = rawUsers ? JSON.parse(rawUsers) : [];
+            let found = listaUsuarios.find(u => u.email.trim().toLowerCase() === email && u.senha.toString().trim() === senha);
+            
+            if (found) {
+                encontrarUser = found;
+                gavetaEncontrada = key.replace("banco_usuarios_ponto_", "");
+                if(gavetaEncontrada === "banco_usuarios_ponto") gavetaEncontrada = "default";
+                break; // Achou o usuário, para de procurar
+            }
+        }
+    }
 
     if (encontrarUser) {
+        // Define as variáveis da gaveta que encontramos
+        PREFIXO_DB_EMPRESA = gavetaEncontrada;
+
         // Trava 1: Usuário Bloqueado
         if(encontrarUser.status === "BLOQUEADO") {
             exibirAvisoColab("🔒 Acesso Suspenso", "Sua conta foi temporariamente desativada pelo gestor.");
@@ -66,7 +91,6 @@ function executarLoginColaborador(event) {
         }
         
         // Trava 2: VALIDAÇÃO DE DISPOSITIVO AUTORIZADO
-        // O código abaixo detecta via navegador se o aparelho é um celular/tablet
         const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
         
         if (encontrarUser.permissao === "Celular" && !isMobile) {
@@ -78,11 +102,11 @@ function executarLoginColaborador(event) {
             exibirAvisoColab("🚫 Acesso Bloqueado", "Sua conta está autorizada para bater ponto <strong>APENAS PELO COMPUTADOR</strong>.<br><br>Acesso via Celular foi negado.");
             return;
         }
-        // Se for "Ambos", ele ignora as travas acima e passa direto.
 
         // Sucesso: Libera o login
         usuarioLogado = encontrarUser;
         localStorage.setItem("ponto_web_sessao_colab", JSON.stringify(usuarioLogado));
+        localStorage.setItem("ponto_web_email_empresa_colab", PREFIXO_DB_EMPRESA); // Salva de qual empresa ele é
         
         renderizarFichaFuncionario();
         renderizarHistoricoHoje();
@@ -105,7 +129,9 @@ function renderizarFichaFuncionario() {
 
 function solicitarMarcacaoPonto(tipo) {
     const hojeStr = new Date().toLocaleDateString("pt-BR");
-    const todosOsLogs = JSON.parse(localStorage.getItem("historico_pontos_global") || "[]");
+    // Lê a gaveta correta de logs baseada na empresa
+    const nomeDBLogs = PREFIXO_DB_EMPRESA === "default" ? "historico_pontos_global" : "historico_pontos_global_" + PREFIXO_DB_EMPRESA;
+    const todosOsLogs = JSON.parse(localStorage.getItem(nomeDBLogs) || "[]");
     
     const jaRegistrouHoje = todosOsLogs.some(log => 
         log.colaboradorId === usuarioLogado.id && 
@@ -137,7 +163,10 @@ function confirmarEGravarPonto() {
             const dataInjetada = agora.toLocaleDateString("pt-BR"); 
             const horaMarcada = agora.toLocaleTimeString("pt-BR", { hour: '2-digit', minute: '2-digit' });
             
-            const todosOsLogs = JSON.parse(localStorage.getItem("historico_pontos_global") || "[]");
+            // Grava na gaveta de LOGS correta da empresa
+            const nomeDBLogs = PREFIXO_DB_EMPRESA === "default" ? "historico_pontos_global" : "historico_pontos_global_" + PREFIXO_DB_EMPRESA;
+            const todosOsLogs = JSON.parse(localStorage.getItem(nomeDBLogs) || "[]");
+            
             todosOsLogs.push({
                 colaboradorId: usuarioLogado.id,
                 nome: usuarioLogado.nome,
@@ -145,7 +174,7 @@ function confirmarEGravarPonto() {
                 tipo: tipoPontoPendente,
                 hora: horaMarcada
             });
-            localStorage.setItem("historico_pontos_global", JSON.stringify(todosOsLogs));
+            localStorage.setItem(nomeDBLogs, JSON.stringify(todosOsLogs));
 
             renderizarHistoricoHoje(); 
 
@@ -163,7 +192,9 @@ function renderizarHistoricoHoje() {
     const containerRegistros = document.getElementById("listaRegistrosHoje");
     containerRegistros.innerHTML = "";
 
-    const todosOsLogs = JSON.parse(localStorage.getItem("historico_pontos_global") || "[]");
+    // Puxa o histórico da gaveta correta para exibição
+    const nomeDBLogs = PREFIXO_DB_EMPRESA === "default" ? "historico_pontos_global" : "historico_pontos_global_" + PREFIXO_DB_EMPRESA;
+    const todosOsLogs = JSON.parse(localStorage.getItem(nomeDBLogs) || "[]");
     
     const logsDeHoje = todosOsLogs.filter(log => log.colaboradorId === usuarioLogado.id && log.data === hojeStr);
 
@@ -186,7 +217,9 @@ function renderizarHistoricoHoje() {
 
 function executarLogoutColaborador() {
     localStorage.removeItem("ponto_web_sessao_colab");
+    localStorage.removeItem("ponto_web_email_empresa_colab");
     usuarioLogado = null;
+    PREFIXO_DB_EMPRESA = "default";
     document.getElementById("loginEmail").value = "";
     document.getElementById("loginSenha").value = "";
     irParaTela("login");

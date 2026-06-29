@@ -1,3 +1,25 @@
+// SISTEMA DE GAVETAS (ISOLAMENTO DE DADOS MULTI-EMPRESA)
+const PREFIXO_EMPRESA = sessionStorage.getItem("email_empresa_ativa") || "default";
+const DB_USUARIOS = "banco_usuarios_ponto_" + PREFIXO_EMPRESA;
+const DB_CONFIGS = "configuracoes_empresa_" + PREFIXO_EMPRESA;
+const DB_LOGS = "historico_pontos_global_" + PREFIXO_EMPRESA;
+
+// Migração segura: Se for a Caldas Novas logando, puxa os dados velhos para a nova gaveta e não perde nada
+function migrarDadosSaaS() {
+    if(PREFIXO_EMPRESA !== "default") {
+        if(!localStorage.getItem(DB_USUARIOS) && localStorage.getItem("banco_usuarios_ponto")) {
+            localStorage.setItem(DB_USUARIOS, localStorage.getItem("banco_usuarios_ponto"));
+        }
+        if(!localStorage.getItem(DB_CONFIGS) && localStorage.getItem("configuracoes_empresa")) {
+            localStorage.setItem(DB_CONFIGS, localStorage.getItem("configuracoes_empresa"));
+        }
+        if(!localStorage.getItem(DB_LOGS) && localStorage.getItem("historico_pontos_global")) {
+            localStorage.setItem(DB_LOGS, localStorage.getItem("historico_pontos_global"));
+        }
+    }
+}
+migrarDadosSaaS();
+
 let usuarioSelecionadoId = null;
 let bancoUsuarios = [];
 
@@ -74,7 +96,7 @@ function fazerLogout() {
 }
 
 function resetarBancoGeral() {
-    localStorage.removeItem("banco_usuarios_ponto");
+    localStorage.removeItem(DB_USUARIOS);
     inicializarDadosFicticios();
     renderTabelaComAtualizacao();
     sincronizarFiltrosColaboradores();
@@ -145,7 +167,7 @@ function cadastrarUsuario(event) {
         };
 
         bancoUsuarios.push(novoUser);
-        localStorage.setItem("banco_usuarios_ponto", JSON.stringify(bancoUsuarios));
+        localStorage.setItem(DB_USUARIOS, JSON.stringify(bancoUsuarios));
         
         renderTabelaComAtualizacao();
         sincronizarFiltrosColaboradores();
@@ -234,7 +256,7 @@ function confirmarEdicaoFicha() {
         if(novaFotoBase64) u.foto = novaFotoBase64;
 
         bancoUsuarios[usuarioSelecionadoId] = u;
-        localStorage.setItem("banco_usuarios_ponto", JSON.stringify(bancoUsuarios));
+        localStorage.setItem(DB_USUARIOS, JSON.stringify(bancoUsuarios));
         
         const elementoModal = document.getElementById('modalEditarFicha');
         const modalInstance = bootstrap.Modal.getInstance(elementoModal);
@@ -270,7 +292,7 @@ function solicitarExclusaoUsuario(index) {
 function executarExclusaoDefinitiva() {
     if (usuarioSelecionadoId === null) return;
     bancoUsuarios.splice(usuarioSelecionadoId, 1);
-    localStorage.setItem("banco_usuarios_ponto", JSON.stringify(bancoUsuarios));
+    localStorage.setItem(DB_USUARIOS, JSON.stringify(bancoUsuarios));
     
     const elementoModal = document.getElementById('modalExclusao');
     const modalInstance = bootstrap.Modal.getInstance(elementoModal);
@@ -310,7 +332,7 @@ function bloquearUsuario(index) {
     const u = bancoUsuarios[idx];
     if(!u) return;
     u.status = u.status === "ATIVO" ? "BLOQUEADO" : "ATIVO";
-    localStorage.setItem("banco_usuarios_ponto", JSON.stringify(bancoUsuarios));
+    localStorage.setItem(DB_USUARIOS, JSON.stringify(bancoUsuarios));
     renderTabelaComAtualizacao();
 }
 
@@ -374,7 +396,7 @@ function aplicarFiltroRapido(tipo) {
 }
 
 function processarLogsLocalStorage() {
-    const logsBrutos = JSON.parse(localStorage.getItem("historico_pontos_global") || "[]");
+    const logsBrutos = JSON.parse(localStorage.getItem(DB_LOGS) || "[]");
     const espelhosAgrupados = {};
 
     logsBrutos.forEach(log => {
@@ -704,7 +726,7 @@ function salvarConfiguracoes() {
         endereco: document.getElementById("enderecoTexto").innerText
     };
     
-    localStorage.setItem("configuracoes_empresa", JSON.stringify(configs));
+    localStorage.setItem(DB_CONFIGS, JSON.stringify(configs));
 
     const elSidebar = document.getElementById("sidebarNomeEmpresa");
     if(elSidebar) elSidebar.innerText = configs.nomeEmpresa;
@@ -724,13 +746,12 @@ function salvarConfiguracoes() {
 }
 
 function carregarConfiguracoes() {
-    const configSalva = localStorage.getItem("configuracoes_empresa");
+    const configSalva = localStorage.getItem(DB_CONFIGS);
     const nomeSessao = sessionStorage.getItem("nome_empresa_ativa"); 
 
     let configs = configSalva ? JSON.parse(configSalva) : {};
     
-    // A mágica: Pega o nome do login ou da configuração salva.
-    const nomeExibicao = nomeSessao || configs.nomeEmpresa || "Empresa Ativa";
+    const nomeExibicao = nomeSessao || configs.nomeEmpresa || "Empresa Parceira";
 
     document.getElementById("nomeEmpresa").value = nomeExibicao;
     document.getElementById("cepBusca").value = configs.cep || "";
@@ -767,12 +788,11 @@ function controlarCamposConfiguracao(bloquear) {
 }
 
 function inicializarDadosFicticios() {
-    const rawUsers = localStorage.getItem("banco_usuarios_ponto");
+    const rawUsers = localStorage.getItem(DB_USUARIOS);
     if(!rawUsers || JSON.parse(rawUsers).length === 0) {
-        bancoUsuarios = [
-            { id: "1", nome: "ADRIANA SANTARINE DE MENDONÇA DINIZ", cpf: "809.017.781-68", telefone: "(64) 98141-0002", email: "adrianasantarinediniz@gmail.com", senha: "Entrada123", foto: "https://ui-avatars.com/api/?name=Adriana+Diniz&background=f97316&color=fff", permissao: "Celular", status: "ATIVO", cargaSegSex: "08:00", cargaSab: "04:00", cargaDom: "00:00" }
-        ];
-        localStorage.setItem("banco_usuarios_ponto", JSON.stringify(bancoUsuarios));
+        bancoUsuarios = [];
+        // Gaveta vazia inicializada para a nova empresa
+        localStorage.setItem(DB_USUARIOS, JSON.stringify(bancoUsuarios));
     } else {
         bancoUsuarios = JSON.parse(rawUsers).map(u => ({
             ...u,
@@ -782,14 +802,9 @@ function inicializarDadosFicticios() {
         }));
     }
 
-    const rawLogs = localStorage.getItem("historico_pontos_global");
+    const rawLogs = localStorage.getItem(DB_LOGS);
     if(!rawLogs) {
-        localStorage.setItem("historico_pontos_global", JSON.stringify([
-            { colaboradorId: "1", nome: "ADRIANA SANTARINE DE MENDONÇA DINIZ", data: "24/06/2026", tipo: "Entrada", hora: "08:00" },
-            { colaboradorId: "1", nome: "ADRIANA SANTARINE DE MENDONÇA DINIZ", data: "24/06/2026", tipo: "Almoço Ida", hora: "12:00" },
-            { colaboradorId: "1", nome: "ADRIANA SANTARINE DE MENDONÇA DINIZ", data: "24/06/2026", tipo: "Almoço Volta", hora: "13:00" },
-            { colaboradorId: "1", nome: "ADRIANA SANTARINE DE MENDONÇA DINIZ", data: "24/06/2026", tipo: "Saída", hora: "18:00" }
-        ]));
+        localStorage.setItem(DB_LOGS, JSON.stringify([]));
     }
 }
 

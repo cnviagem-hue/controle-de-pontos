@@ -65,7 +65,7 @@
             75% { transform: translateX(-5px); }
         }
         
-        /* NOVO: Link de Recuperação */
+        /* Link de Recuperação */
         .link-recuperar { display: block; text-align: right; font-size: 0.8rem; color: #f97316; margin-top: 8px; text-decoration: none; font-weight: 600; cursor: pointer; }
         .link-recuperar:hover { text-decoration: underline; color: #ea580c; }
     </style>
@@ -75,7 +75,7 @@
         <div class="login-card">
             <div class="logo-area">
                 <h2>Ponto<span>Web</span></h2>
-                <p class="text-muted small fw-medium">Acesso Restrito à Gestão <span class="badge bg-primary ms-1" style="font-size: 0.65rem;">☁️ Nuvem</span></p>
+                <p class="text-muted small fw-medium">Acesso Restrito à Gestão</p>
             </div>
 
             <div id="msgErro" class="alert-error">
@@ -100,7 +100,7 @@
                 <button type="submit" id="btnAcessar" class="btn-login">Acessar Painel</button>
             </form>
 
-            <div class="footer-text">Sistema protegido e encriptado na Nuvem.</div>
+            <div class="footer-text">Sistema protegido e encriptado.</div>
         </div>
     </div>
 
@@ -268,7 +268,7 @@
         }
 
         // ==========================================
-        // NOVA LÓGICA: RECUPERAÇÃO DE SENHA
+        // LÓGICA: RECUPERAÇÃO DE SENHA
         // ==========================================
         function abrirModalRecuperar() {
             new bootstrap.Modal(document.getElementById('modalRecuperarSenha')).show();
@@ -284,19 +284,16 @@
             btn.innerHTML = "⏳ Validando na Nuvem...";
 
             try {
-                // Busca a empresa pelo E-mail e verifica se o CNPJ fornecido bate com o do banco
                 const snapshot = await db.collection("empresas_clientes").where("email", "==", email).get();
 
                 if (!snapshot.empty) {
                     const doc = snapshot.docs[0];
                     const dadosEmpresa = doc.data();
 
-                    // Limpa formatação para comparar apenas os números do CNPJ
                     const cnpjDigitado = cnpj.replace(/\D/g, '');
                     const cnpjBanco = dadosEmpresa.cnpj.replace(/\D/g, '');
 
                     if (cnpjDigitado === cnpjBanco) {
-                        // Confirmação de segurança dupla passou! Reseta a senha para o padrão.
                         await db.collection("empresas_clientes").doc(doc.id).update({
                             senhaAtual: "mudar123",
                             primeiroAcesso: true

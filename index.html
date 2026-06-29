@@ -47,7 +47,7 @@
         }
 
         .password-container { position: relative; display: flex; align-items: center; }
-        .password-container input { padding-right: 45px; }
+        .password-container input { padding-right: 45px; width: 100%; }
         .btn-toggle-eye {
             position: absolute; right: 12px; background: none; border: none; font-size: 1.1rem; cursor: pointer; color: #94a3b8; transition: color 0.2s; padding: 0;
         }
@@ -80,7 +80,7 @@
             <form onsubmit="entrarSuperAdmin(event)">
                 <div class="mb-3">
                     <label class="form-label fw-bold small text-dark mb-1">E-mail do Proprietário</label>
-                    <input type="email" id="emailSuper" class="form-control" placeholder="dono@pontoweb.com" required>
+                    <input type="email" id="emailSuper" class="form-control" placeholder="super@admin.com" required>
                 </div>
                 
                 <div class="mb-2">
@@ -104,7 +104,6 @@
     <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore-compat.js"></script>
 
     <script>
-        // Configuração Oficial Vinculada ao Seu Painel do Google
         const firebaseConfig = {
           apiKey: "AIzaSyAY8VH8f3SKpDvKdm0fzG-9X7gAm-yUEF4",
           authDomain: "ld-controle-de-ponto.firebaseapp.com",
@@ -133,7 +132,6 @@
             const erro = document.getElementById("msgErro");
             const btnSubmit = document.getElementById("btnAcessarSuper");
 
-            // Trava de segurança básica de e-mail do proprietário
             if (email !== "super@admin.com") {
                 erro.style.display = "block";
                 return;
@@ -144,9 +142,8 @@
             erro.style.display = "none";
 
             try {
-                // Tenta puxar a senha configurada na nuvem
                 const doc = await db.collection("configuracoes_plataforma").doc("super_admin").get();
-                let senhaCorreta = "super123"; // Backup padrão inicial caso o documento ainda não exista
+                let senhaCorreta = "super123";
 
                 if (doc.exists && doc.data().senha_acesso) {
                     senhaCorreta = doc.data().senha_acesso;

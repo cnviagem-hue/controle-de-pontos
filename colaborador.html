@@ -320,24 +320,23 @@
 
     <script>
         document.addEventListener("DOMContentLoaded", () => {
-            // Busca o banco de empresas oficial criado pelo Super Admin
-            const bancoEmpresas = JSON.parse(localStorage.getItem("banco_empresas_web")) || [];
+            // Qual gaveta (empresa) este colaborador pertence?
+            const emailGaveta = localStorage.getItem("ponto_web_email_empresa_colab");
             let nomeExibicao = "Empresa Parceira";
 
-            if (bancoEmpresas.length > 0) {
-                // Pega a empresa ativa criada por você (Caldas Novas Viagens)
-                const empresaAtiva = bancoEmpresas.find(e => e.status === "ATIVO");
-                if (empresaAtiva) {
-                    nomeExibicao = empresaAtiva.nome;
-                }
-            } else {
-                // Fallback de segurança ignorando a palavra UniCesumar
-                const configs = JSON.parse(localStorage.getItem("configuracoes_empresa")) || {};
-                const nomeSessao = sessionStorage.getItem("nome_empresa_ativa");
-                const nomeRecuperado = nomeSessao || configs.nomeEmpresa;
+            if (emailGaveta && emailGaveta !== "default") {
+                // Procura o nome da empresa correspondente a este e-mail lá no Super Admin
+                const bancoEmpresas = JSON.parse(localStorage.getItem("banco_empresas_web")) || [];
+                const empresaEncontrada = bancoEmpresas.find(e => e.email === emailGaveta);
                 
-                if (nomeRecuperado && nomeRecuperado !== "UniCesumar") {
-                    nomeExibicao = nomeRecuperado;
+                if (empresaEncontrada) {
+                    nomeExibicao = empresaEncontrada.nome;
+                } else {
+                    // Fallback para as configurações da empresa, caso o Super Admin delete o cadastro principal
+                    const configs = JSON.parse(localStorage.getItem("configuracoes_empresa_" + emailGaveta)) || {};
+                    if (configs.nomeEmpresa) {
+                        nomeExibicao = configs.nomeEmpresa;
+                    }
                 }
             }
 

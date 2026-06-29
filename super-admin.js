@@ -184,3 +184,38 @@ function confirmarEdicaoEmpresa() {
         exibirAlertaTop("📝 Atualizado", "Os dados da empresa foram alterados com sucesso.");
     }, 300);
 }
+
+// ==========================================
+// AUTOMAÇÃO DE CEP (MANTENDO A LÓGICA INTACTA)
+// ==========================================
+function mascaraCEPSuper(input) {
+    let valor = input.value.replace(/\D/g, '');
+    if (valor.length > 5) valor = valor.replace(/^(\d{5})(\d)/, '$1-$2');
+    input.value = valor;
+}
+
+async function buscarCepSuper() {
+    const cepInput = document.getElementById("cadCep").value.replace(/\D/g, '');
+    if (cepInput.length !== 8) return;
+
+    const inputEndereco = document.getElementById("cadEndereco");
+    const placeholderOriginal = inputEndereco.placeholder;
+    inputEndereco.placeholder = "Buscando endereço...";
+    
+    try {
+        const res = await fetch(`https://viacep.com.br/ws/${cepInput}/json/`);
+        const dados = await res.json();
+        
+        if (!dados.erro) {
+            // Preenche o endereço já formatado, deixando o "Nº" pronto para digitar
+            inputEndereco.value = `${dados.logradouro}, Nº  - ${dados.bairro}, ${dados.localidade} - ${dados.uf}`;
+            inputEndereco.focus(); // Foca no campo automaticamente para você digitar o número
+        } else {
+            inputEndereco.placeholder = placeholderOriginal;
+            alert("⚠️ CEP não encontrado na base dos Correios.");
+        }
+    } catch (error) {
+        inputEndereco.placeholder = placeholderOriginal;
+        console.error("Erro ao buscar CEP", error);
+    }
+}

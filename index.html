@@ -91,14 +91,31 @@
                     </div>
                 </div>
 
-                <button type="submit" class="btn-login">Acessar Plataforma</button>
+                <button type="submit" id="btnAcessarSuper" class="btn-login">Acessar Plataforma</button>
             </form>
 
             <div class="footer-text">Controle central de empresas clientes.</div>
         </div>
     </div>
 
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore-compat.js"></script>
+
     <script>
+        // Configuração Oficial Vinculada ao Seu Painel do Google
+        const firebaseConfig = {
+          apiKey: "AIzaSyAY8VH8f3SKpDvKdm0fzG-9X7gAm-yUEF4",
+          authDomain: "ld-controle-de-ponto.firebaseapp.com",
+          projectId: "ld-controle-de-ponto",
+          storageBucket: "ld-controle-de-ponto.firebasestorage.app",
+          messagingSenderId: "825252476177",
+          appId: "1:825252476177:web:042610ab02abe5e964c8b0"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+
         function toggleSenha() {
             const input = document.getElementById('senhaSuper');
             const btn = document.querySelector('.btn-toggle-eye');
@@ -109,20 +126,47 @@
             }
         }
 
-        function entrarSuperAdmin(event) {
+        async function entrarSuperAdmin(event) {
             event.preventDefault();
             const email = document.getElementById("emailSuper").value.trim().toLowerCase();
             const senha = document.getElementById("senhaSuper").value.trim();
             const erro = document.getElementById("msgErro");
+            const btnSubmit = document.getElementById("btnAcessarSuper");
 
-            // Credenciais fixas do dono da plataforma
-            if (email === "super@admin.com" && senha === "super123") {
-                erro.style.display = "none";
-                sessionStorage.setItem("super_admin_autenticado", "true");
-                window.location.href = "super-admin.html";
-            } else {
+            // Trava de segurança básica de e-mail do proprietário
+            if (email !== "super@admin.com") {
+                erro.style.display = "block";
+                return;
+            }
+
+            btnSubmit.disabled = true;
+            btnSubmit.innerHTML = "⏳ Autenticando...";
+            erro.style.display = "none";
+
+            try {
+                // Tenta puxar a senha configurada na nuvem
+                const doc = await db.collection("configuracoes_plataforma").doc("super_admin").get();
+                let senhaCorreta = "super123"; // Backup padrão inicial caso o documento ainda não exista
+
+                if (doc.exists && doc.data().senha_acesso) {
+                    senhaCorreta = doc.data().senha_acesso;
+                }
+
+                if (senha === senhaCorreta) {
+                    erro.style.display = "none";
+                    sessionStorage.setItem("super_admin_autenticado", "true");
+                    window.location.href = "super-admin.html";
+                } else {
+                    throw new Error("Senha inválida");
+                }
+            } catch (error) {
+                console.error(error);
                 erro.style.display = "block";
                 document.getElementById("senhaSuper").value = "";
+                document.getElementById("senhaSuper").focus();
+            } finally {
+                btnSubmit.disabled = false;
+                btnSubmit.innerHTML = "Acessar Plataforma";
             }
         }
     </script>

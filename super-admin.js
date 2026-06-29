@@ -16,7 +16,7 @@ const db = firebase.firestore();
 
 let empresaSelecionadaId = null;
 let empresaParaExcluir = null;
-let bancoEmpresas = []; // Agora nasce vazio, pois será preenchido pela Nuvem
+let bancoEmpresas = []; 
 
 // Máscaras (Intactas)
 function mascaraCNPJ(input) {
@@ -56,7 +56,7 @@ function sairSuperAdmin() {
     window.location.href = "index.html";
 }
 
-// FUNÇÕES DE POP-UP E CÓPIA
+// FUNÇÕES DE POP-UP E CÓPIA E OLHINHO
 function exibirAlertaTop(titulo, message) {
     document.getElementById('modalTitulo').innerText = titulo;
     document.getElementById('modalMensagem').innerHTML = `<p class="fs-6 text-secondary mb-0">${message}</p>`;
@@ -70,8 +70,59 @@ function copiarLinkEmpresa() {
     });
 }
 
+function toggleInputSenha(idInput, botao) {
+    const input = document.getElementById(idInput);
+    if(input.type === "password") {
+        input.type = "text";
+        botao.innerText = "🙈";
+    } else {
+        input.type = "password";
+        botao.innerText = "👁️";
+    }
+}
+
 // ==========================================
-// CRUD EMPRESAS (AGORA NA NUVEM)
+// FUNÇÃO CORRIGIDA: ALTERAR SENHA DO SUPER ADMIN
+// ==========================================
+function abrirModalSenhaSuperAdmin() {
+    document.getElementById("novaSenhaSuper").value = "";
+    new bootstrap.Modal(document.getElementById("modalSenhaSuperAdmin")).show();
+}
+
+async function salvarSenhaSuperAdmin() {
+    const novaSenha = document.getElementById("novaSenhaSuper").value.trim();
+    if (novaSenha.length < 6) {
+        alert("A senha precisa ter no mínimo 6 caracteres.");
+        return;
+    }
+
+    const btn = document.getElementById("btnSalvarNovaSenhaSuper");
+    btn.disabled = true;
+    btn.innerHTML = "⏳ Salvando na Nuvem...";
+
+    try {
+        // Salva de forma centralizada e fixa para a tela de login ler
+        await db.collection("configuracoes_plataforma").doc("super_admin").set({
+            senha_acesso: novaSenha
+        }, { merge: true });
+
+        const modalEl = document.getElementById("modalSenhaSuperAdmin");
+        const modalInstance = bootstrap.Modal.getInstance(modalEl);
+        if (modalInstance) modalInstance.hide();
+        
+        exibirAlertaTop("🔐 Senha Alterada", "Sua nova senha de Super Admin foi salva com sucesso e já está valendo!");
+
+    } catch (error) {
+        console.error("Erro ao salvar senha:", error);
+        alert("Erro ao conectar com a nuvem.");
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = "Salvar Nova Senha";
+    }
+}
+
+// ==========================================
+// CRUD EMPRESAS (NA NUVEM)
 // ==========================================
 async function carregarEmpresasDaNuvem() {
     const tbody = document.getElementById("tabelaEmpresas");
@@ -110,7 +161,6 @@ async function cadastrarEmpresa(event) {
     };
 
     try {
-        // Grava no Firebase Firestore
         await db.collection("empresas_clientes").doc(novaEmpresa.id).set(novaEmpresa);
         
         bancoEmpresas.push(novaEmpresa);
@@ -177,7 +227,7 @@ function excluirEmpresa(index) {
     new bootstrap.Modal(document.getElementById('modalExclusao')).show();
 }
 
-async function executarExclusaoDefinitiva() {
+async function ejecutarExclusaoDefinitiva() {
     if (empresaParaExcluir === null) return;
     
     const btnConfirmar = document.getElementById("btnConfirmarExclusao");

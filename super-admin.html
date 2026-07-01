@@ -7,48 +7,58 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
         body {
-            background-color: #0a0f1d;
+            background-color: #0b0f19;
             color: #ffffff;
-            font-family: Arial, sans-serif;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         }
         .sidebar {
             background-color: #111827;
             min-height: 100vh;
             padding: 20px;
+            border-right: 1px solid #1f2937;
         }
         .sidebar h2 {
             color: #10b981;
-            font-size: 24px;
-            font-weight: bold;
+            font-size: 22px;
+            font-weight: 800;
             margin-bottom: 5px;
         }
         .sidebar p {
             color: #4b5563;
-            font-size: 12px;
+            font-size: 11px;
             margin-bottom: 30px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
         }
         .nav-link-custom {
-            background-color: #374151;
+            background: linear-gradient(135deg, #374151, #1f2937);
             color: #ffffff;
-            padding: 10px 15px;
+            padding: 12px 15px;
             border-radius: 8px;
             text-decoration: none;
             display: block;
             margin-bottom: 15px;
             font-weight: bold;
+            border: 1px solid #4b5563;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
         }
         .logout-link {
-            color: #4b5563;
+            color: #9ca3af;
             text-decoration: none;
             display: block;
             margin-top: 30px;
+            font-size: 14px;
+            font-weight: 500;
+        }
+        .logout-link:hover {
+            color: #ef4444;
         }
         .main-content {
             padding: 40px;
         }
         .header-title {
-            font-size: 28px;
-            font-weight: bold;
+            font-size: 26px;
+            font-weight: 700;
             margin-bottom: 30px;
             display: flex;
             justify-content: space-between;
@@ -57,82 +67,84 @@
         .badge-sync {
             background-color: #10b981;
             color: #ffffff;
-            font-size: 14px;
-            padding: 8px 16px;
+            font-size: 13px;
+            font-weight: bold;
+            padding: 6px 16px;
             border-radius: 20px;
         }
         .card-panel {
             background-color: #111827;
             border-radius: 12px;
-            padding: 30px;
+            padding: 25px;
             margin-bottom: 30px;
             border: 1px solid #1f2937;
         }
         .card-title {
-            font-size: 20px;
-            font-weight: bold;
-            margin-bottom: 25px;
+            font-size: 18px;
+            font-weight: 700;
+            margin-bottom: 20px;
             display: flex;
             align-items: center;
             gap: 10px;
         }
         .form-group-custom {
-            position: relative;
-            margin-bottom: 20px;
+            margin-bottom: 15px;
         }
         .form-group-custom label {
-            color: #00ff88;
-            font-size: 14px;
-            margin-bottom: 8px;
+            color: #10b981;
+            font-size: 13px;
+            font-weight: 600;
+            margin-bottom: 6px;
             display: block;
         }
         .form-control-custom {
             background-color: #1f2937;
             border: 1px solid #374151;
             color: #ffffff;
-            padding: 12px;
-            border-radius: 8px;
+            padding: 10px 14px;
+            border-radius: 6px;
             width: 100%;
+            font-size: 14px;
         }
         .form-control-custom:focus {
-            background-color: #1f2937;
             border-color: #10b981;
-            color: #ffffff;
-            box-shadow: none;
+            box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.2);
             outline: none;
         }
         .btn-submit-custom {
             background-color: #10b981;
             color: #ffffff;
-            font-weight: bold;
-            padding: 12px 24px;
-            border-radius: 8px;
+            font-weight: 700;
+            padding: 10px 24px;
+            border-radius: 6px;
             border: none;
-            float: right;
+            transition: background 0.2s;
         }
         .btn-submit-custom:hover {
             background-color: #059669;
         }
         .table-custom {
             width: 100%;
-            margin-top: 10px;
+            color: #e5e7eb;
         }
         .table-custom th {
-            color: #6b7280;
-            font-weight: normal;
+            color: #9ca3af;
+            font-size: 13px;
+            font-weight: 600;
             padding: 12px;
-            border-bottom: 1px solid #1f2937;
+            border-bottom: 2px solid #1f2937;
         }
         .table-custom td {
-            padding: 16px 12px;
+            padding: 14px 12px;
             border-bottom: 1px solid #1f2937;
             vertical-align: middle;
+            font-size: 14px;
         }
         .badge-status {
             background-color: rgba(16, 185, 129, 0.2);
             color: #10b981;
-            padding: 4px 12px;
-            border-radius: 6px;
+            padding: 4px 10px;
+            border-radius: 4px;
             font-size: 12px;
             font-weight: bold;
         }
@@ -140,38 +152,25 @@
             background-color: rgba(239, 68, 68, 0.2);
             color: #ef4444;
         }
-        .btn-action-block {
-            background-color: transparent;
-            border: 1px solid #374151;
-            color: #ffffff;
-            padding: 6px 16px;
-            border-radius: 6px;
-            font-size: 14px;
-        }
-        .btn-action-delete {
-            background-color: #ef4444;
+        .btn-tbl {
+            font-size: 13px;
+            font-weight: 600;
+            padding: 5px 12px;
+            border-radius: 4px;
             border: none;
-            color: #ffffff;
-            padding: 6px 16px;
-            border-radius: 6px;
-            font-size: 14px;
-            margin-left: 10px;
+            transition: opacity 0.2s;
         }
-        .btn-link-copy {
-            background-color: #3b82f6;
-            border: none;
-            color: #ffffff;
-            padding: 6px 12px;
-            border-radius: 6px;
-            font-size: 14px;
-            margin-left: 10px;
-        }
+        .btn-tbl:hover { opacity: 0.9; }
+        .btn-tbl-block { background-color: #ffffff; color: #111827; }
+        .btn-tbl-link { background-color: #2563eb; color: #ffffff; margin-left: 5px; }
+        .btn-tbl-delete { background-color: #dc2626; color: #ffffff; margin-left: 5px; }
     </style>
 </head>
 <body>
 
 <div class="container-fluid">
     <div class="row">
+        <!-- Sidebar Original Restaurada -->
         <div class="col-md-3 col-lg-2 sidebar">
             <h2>PontoWeb</h2>
             <p>Master Control</p>
@@ -179,14 +178,16 @@
             <a href="#" onclick="efetuarLogoutMaster()" class="logout-link">◀ Sair do Sistema</a>
         </div>
 
+        <!-- Conteúdo Principal Original Restaurado -->
         <div class="col-md-9 col-lg-10 main-content">
             <div class="header-title">
                 <span>Gestão de Empresas Parceiras</span>
                 <span class="badge-sync">Nuvem Sincronizada</span>
             </div>
 
+            <!-- Card de Registro -->
             <div class="card-panel">
-                <div class="card-title">➕ Registrar Empresa / Novo Administrador</div>
+                <div class="card-title">举 Registrar Empresa / Novo Administrador</div>
                 <form id="formCadastroEmpresa" onsubmit="cadastrarNovaEmpresa(event)">
                     <div class="row">
                         <div class="col-md-3 form-group-custom">
@@ -207,13 +208,14 @@
                         </div>
                     </div>
                     <div class="row mt-3">
-                        <div class="col-12">
+                        <div class="col-12 text-end">
                             <button type="submit" id="btnSalvarEmpresa" class="btn-submit-custom">Salvar Registro na Nuvem</button>
                         </div>
                     </div>
                 </form>
             </div>
 
+            <!-- Tabela de Listagem Corrigida -->
             <div class="card-panel">
                 <div class="card-title">📋 Contas Administrativas Ativas</div>
                 <div class="table-responsive">
@@ -263,10 +265,11 @@
         carregarEmpresasDaNuvem();
     });
 
+    // CORREÇÃO DA VISUALIZAÇÃO: Removido o orderBy que quebrava a listagem dos dados antigos
     async function carregarEmpresasDaNuvem() {
         const corpo = document.getElementById("tabelaEmpresasCorpo");
         try {
-            const snapshot = await db.collection("empresas_clientes").orderBy("timestamp", "desc").get();
+            const snapshot = await db.collection("empresas_clientes").get();
             corpo.innerHTML = "";
 
             if(snapshot.empty) {
@@ -281,17 +284,17 @@
 
                 const tr = document.createElement("tr");
                 tr.innerHTML = `
-                    <td class="fw-bold">${emp.nome}</td>
+                    <td class="fw-bold text-white">${emp.nome}</td>
                     <td>${emp.cnpj}</td>
                     <td class="text-info">${emp.email}</td>
                     <td>
-                        <input type="text" class="bg-dark text-white border-0 px-2 py-1 rounded small" style="width:100px;" value="${emp.senhaAtual}" onchange="atualizarSenhaDireto('${doc.id}', this.value)">
+                        <input type="text" class="bg-dark text-white border-0 px-2 py-1 rounded text-center" style="width:110px; font-size:13px; font-family:monospace;" value="${emp.senhaAtual}" onchange="atualizarSenhaDireto('${doc.id}', this.value)">
                     </td>
                     <td><span class="badge-status ${statusClasse}">${emp.status}</span></td>
                     <td class="text-center">
-                        <button class="btn-action-block" onclick="alternarStatusEmpresa('${doc.id}', '${emp.status}')">${txtBotao}</button>
-                        <button class="btn-link-copy" onclick="copiarLinkAcesso('${emp.email}')">🔗 Link</button>
-                        <button class="btn-action-delete" onclick="excluirContaAdmin('${doc.id}')">Eliminar</button>
+                        <button class="btn-tbl btn-tbl-block" onclick="alternarStatusEmpresa('${doc.id}', '${emp.status}')">${txtBotao}</button>
+                        <button class="btn-tbl btn-tbl-link" onclick="copiarLinkAcesso('${emp.email}')">🔗 Link</button>
+                        <button class="btn-tbl btn-tbl-delete" onclick="excluirContaAdmin('${doc.id}')">Eliminar</button>
                     </td>
                 `;
                 corpo.appendChild(tr);
@@ -315,11 +318,10 @@
         btn.innerHTML = "⏳ Gravando na Nuvem...";
 
         try {
-            // AJUSTE CRUCIAL: Agora valida pelo E-MAIL, permitindo repetir o CNPJ para novos admins!
             const checkEmail = await db.collection("empresas_clientes").where("email", "==", email).get();
             
             if (!checkEmail.empty) {
-                alert("❌ Este e-mail de Administrador já está cadastrado!");
+                alert("❌ Erro: Este e-mail de Administrador já está cadastrado!");
                 btn.disabled = false;
                 btn.innerHTML = "Salvar Registro na Nuvem";
                 return;
@@ -337,20 +339,19 @@
 
             await db.collection("empresas_clientes").add(novaEmpresa);
             
-            // Cria as configurações geográficas de forma espelhada para o novo admin conseguir gerenciar a cerca
             const configCheck = await db.collection("configuracoes_empresa").where("empresaEmail", "==", email).get();
             if(configCheck.empty) {
                 await db.collection("configuracoes_empresa").add({
                     empresaEmail: email,
                     nomeEmpresa: nome,
-                    cep: "", numero: "", latitude: "", longitude: "", raio: "50", endereco: ""
+                    cep: "", numero: "", latitude: "", longitude: "", raio: "200", endereco: ""
                 });
             }
 
             document.getElementById("formCadastroEmpresa").reset();
             document.getElementById("empSenha").value = "mudar123";
             
-            alert("✅ Administrador registrado e associado à empresa com sucesso!");
+            alert("✅ Sucesso! Novo Administrador vinculado à empresa.");
             await carregarEmpresasDaNuvem();
 
         } catch (error) {
@@ -361,22 +362,20 @@
         }
     }
 
-    // FUNÇÃO MANTIDA: Permite alterar a senha editando diretamente o input na tabela
     async function atualizarSenhaDireto(id, novaSenha) {
         if(!novaSenha.trim()) return;
         try {
             await db.collection("empresas_clientes").doc(id).update({ senhaAtual: novaSenha.trim() });
-            alert("🔑 Senha atualizada na nuvem com sucesso!");
+            alert("🔑 Senha do Admin atualizada com sucesso!");
         } catch (error) {
             alert("Erro ao atualizar senha.");
         }
     }
 
-    // FUNÇÃO MANTIDA: Gera e copia o link de convite do administrador para a área de transferência
     function copiarLinkAcesso(emailAdmin) {
         const link = `https://ponto.ldsite.com.br/login-admin.html?user=${encodeURIComponent(emailAdmin)}`;
         navigator.clipboard.writeText(link).then(() => {
-            alert("🔗 Link de acesso copiado com sucesso para este Administrador!");
+            alert("🔗 Link de acesso copiado com sucesso!");
         }).catch(() => {
             alert("Erro ao copiar link automaticamente. Use: " + link);
         });
@@ -393,7 +392,7 @@
     }
 
     async function excluirContaAdmin(id) {
-        if(!confirm("Tem certeza que deseja remover esta conta administrativa permanentemente?")) return;
+        if(!confirm("Tem certeza que deseja remover esta conta permanentemente?")) return;
         try {
             await db.collection("empresas_clientes").doc(id).delete();
             await carregarEmpresasDaNuvem();

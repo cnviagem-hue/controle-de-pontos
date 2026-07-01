@@ -268,7 +268,7 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
 
-    // Função auxiliar para exibir o pop-up customizado bonito
+    // Função auxiliar para exibir o pop-up customizado
     function mostrarAlerta(mensagem) {
         document.getElementById('textoAlertaPersonalizado').innerHTML = mensagem.replace(/\n/g, '<br>');
         new bootstrap.Modal(document.getElementById('modalAlertaPersonalizado')).show();
@@ -388,9 +388,9 @@
         }
     }
 
-    // LINK LIMPO E SEM CODIFICAÇÃO ESTRANHA
+    // LINK 100% LIMPO COMO ERA ANTES (Sem preenchimento automático de e-mail)
     function copiarLinkAcesso(emailAdmin) {
-        const link = `https://ponto.ldsite.com.br/login-admin.html?user=${emailAdmin}`;
+        const link = `https://ponto.ldsite.com.br/login-admin.html`;
         navigator.clipboard.writeText(link).then(() => {
             mostrarAlerta("🔗 Link de acesso copiado com sucesso!");
         }).catch(() => {

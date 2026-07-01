@@ -170,7 +170,6 @@
 
 <div class="container-fluid">
     <div class="row">
-        <!-- Sidebar Original Restaurada -->
         <div class="col-md-3 col-lg-2 sidebar">
             <h2>PontoWeb</h2>
             <p>Master Control</p>
@@ -178,16 +177,14 @@
             <a href="#" onclick="efetuarLogoutMaster()" class="logout-link">◀ Sair do Sistema</a>
         </div>
 
-        <!-- Conteúdo Principal Original Restaurado -->
         <div class="col-md-9 col-lg-10 main-content">
             <div class="header-title">
                 <span>Gestão de Empresas Parceiras</span>
                 <span class="badge-sync">Nuvem Sincronizada</span>
             </div>
 
-            <!-- Card de Registro -->
             <div class="card-panel">
-                <div class="card-title">举 Registrar Empresa / Novo Administrador</div>
+                <div class="card-title">➕ Registrar Empresa / Novo Administrador</div>
                 <form id="formCadastroEmpresa" onsubmit="cadastrarNovaEmpresa(event)">
                     <div class="row">
                         <div class="col-md-3 form-group-custom">
@@ -215,7 +212,6 @@
                 </form>
             </div>
 
-            <!-- Tabela de Listagem Corrigida -->
             <div class="card-panel">
                 <div class="card-title">📋 Contas Administrativas Ativas</div>
                 <div class="table-responsive">
@@ -242,6 +238,21 @@
     </div>
 </div>
 
+<div class="modal fade" id="modalAlertaPersonalizado" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-sm">
+    <div class="modal-content" style="background-color: #1f2937; border: 1px solid #374151; border-radius: 12px;">
+      <div class="modal-header border-0 pb-0">
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body text-center pt-0 pb-4 px-4">
+         <p id="textoAlertaPersonalizado" class="text-white mb-4 mt-2" style="font-size: 15px; font-weight: 500;"></p>
+         <button type="button" class="btn-submit-custom w-100" data-bs-dismiss="modal">Entendido</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore-compat.js"></script>
 
@@ -257,6 +268,12 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
 
+    // Função auxiliar para exibir o pop-up customizado bonito
+    function mostrarAlerta(mensagem) {
+        document.getElementById('textoAlertaPersonalizado').innerHTML = mensagem.replace(/\n/g, '<br>');
+        new bootstrap.Modal(document.getElementById('modalAlertaPersonalizado')).show();
+    }
+
     document.addEventListener("DOMContentLoaded", () => {
         if (!sessionStorage.getItem("super_admin_autenticado")) {
             window.location.href = "index.html";
@@ -265,7 +282,6 @@
         carregarEmpresasDaNuvem();
     });
 
-    // CORREÇÃO DA VISUALIZAÇÃO: Removido o orderBy que quebrava a listagem dos dados antigos
     async function carregarEmpresasDaNuvem() {
         const corpo = document.getElementById("tabelaEmpresasCorpo");
         try {
@@ -321,7 +337,7 @@
             const checkEmail = await db.collection("empresas_clientes").where("email", "==", email).get();
             
             if (!checkEmail.empty) {
-                alert("❌ Erro: Este e-mail de Administrador já está cadastrado!");
+                mostrarAlerta("❌ Erro: Este e-mail de Administrador já está cadastrado!");
                 btn.disabled = false;
                 btn.innerHTML = "Salvar Registro na Nuvem";
                 return;
@@ -351,11 +367,11 @@
             document.getElementById("formCadastroEmpresa").reset();
             document.getElementById("empSenha").value = "mudar123";
             
-            alert("✅ Sucesso! Novo Administrador vinculado à empresa.");
+            mostrarAlerta("✅ Sucesso! Novo Administrador vinculado à empresa.");
             await carregarEmpresasDaNuvem();
 
         } catch (error) {
-            alert("⚠️ Falha ao salvar no banco de dados.");
+            mostrarAlerta("⚠️ Falha ao salvar no banco de dados.");
         } finally {
             btn.disabled = false;
             btn.innerHTML = "Salvar Registro na Nuvem";
@@ -366,18 +382,19 @@
         if(!novaSenha.trim()) return;
         try {
             await db.collection("empresas_clientes").doc(id).update({ senhaAtual: novaSenha.trim() });
-            alert("🔑 Senha do Admin atualizada com sucesso!");
+            mostrarAlerta("🔑 Senha do Admin atualizada com sucesso!");
         } catch (error) {
-            alert("Erro ao atualizar senha.");
+            mostrarAlerta("❌ Erro ao atualizar senha.");
         }
     }
 
+    // LINK LIMPO E SEM CODIFICAÇÃO ESTRANHA
     function copiarLinkAcesso(emailAdmin) {
-        const link = `https://ponto.ldsite.com.br/login-admin.html?user=${encodeURIComponent(emailAdmin)}`;
+        const link = `https://ponto.ldsite.com.br/login-admin.html?user=${emailAdmin}`;
         navigator.clipboard.writeText(link).then(() => {
-            alert("🔗 Link de acesso copiado com sucesso!");
+            mostrarAlerta("🔗 Link de acesso copiado com sucesso!");
         }).catch(() => {
-            alert("Erro ao copiar link automaticamente. Use: " + link);
+            mostrarAlerta("Erro ao copiar link. Tente manualmente: " + link);
         });
     }
 
@@ -387,7 +404,7 @@
             await db.collection("empresas_clientes").doc(id).update({ status: novoStatus });
             await carregarEmpresasDaNuvem();
         } catch (error) {
-            alert("Erro ao mudar status.");
+            mostrarAlerta("❌ Erro ao mudar status.");
         }
     }
 
@@ -397,7 +414,7 @@
             await db.collection("empresas_clientes").doc(id).delete();
             await carregarEmpresasDaNuvem();
         } catch (error) {
-            alert("Erro ao remover conta.");
+            mostrarAlerta("❌ Erro ao remover conta.");
         }
     }
 

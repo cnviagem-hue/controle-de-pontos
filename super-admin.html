@@ -170,6 +170,7 @@
 
 <div class="container-fluid">
     <div class="row">
+        <!-- Sidebar -->
         <div class="col-md-3 col-lg-2 sidebar">
             <h2>PontoWeb</h2>
             <p>Master Control</p>
@@ -177,12 +178,14 @@
             <a href="#" onclick="efetuarLogoutMaster()" class="logout-link">◀ Sair do Sistema</a>
         </div>
 
+        <!-- Conteúdo Principal -->
         <div class="col-md-9 col-lg-10 main-content">
             <div class="header-title">
                 <span>Gestão de Empresas Parceiras</span>
                 <span class="badge-sync">Nuvem Sincronizada</span>
             </div>
 
+            <!-- Card de Registro -->
             <div class="card-panel">
                 <div class="card-title">➕ Registrar Empresa / Novo Administrador</div>
                 <form id="formCadastroEmpresa" onsubmit="cadastrarNovaEmpresa(event)">
@@ -193,7 +196,8 @@
                         </div>
                         <div class="col-md-3 form-group-custom">
                             <label>CNPJ</label>
-                            <input type="text" id="empCnpj" class="form-control-custom" placeholder="Apenas números ou com máscara" required>
+                            <!-- MÁSCARA E TRAVA DE QUANTIDADE EXATA APLICADAS AQUI -->
+                            <input type="text" id="empCnpj" class="form-control-custom" placeholder="00.000.000/0000-00" maxlength="18" oninput="mascaraCNPJ(this)" required>
                         </div>
                         <div class="col-md-3 form-group-custom">
                             <label>E-mail do Administrador (RH)</label>
@@ -212,6 +216,7 @@
                 </form>
             </div>
 
+            <!-- Tabela de Listagem -->
             <div class="card-panel">
                 <div class="card-title">📋 Contas Administrativas Ativas</div>
                 <div class="table-responsive">
@@ -238,6 +243,7 @@
     </div>
 </div>
 
+<!-- Modal Escuro Profissional para Alertas -->
 <div class="modal fade" id="modalAlertaPersonalizado" tabindex="-1" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered modal-sm">
     <div class="modal-content" style="background-color: #1f2937; border: 1px solid #374151; border-radius: 12px;">
@@ -268,160 +274,12 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
 
-    // Função auxiliar para exibir o pop-up customizado
-    function mostrarAlerta(mensagem) {
-        document.getElementById('textoAlertaPersonalizado').innerHTML = mensagem.replace(/\n/g, '<br>');
-        new bootstrap.Modal(document.getElementById('modalAlertaPersonalizado')).show();
-    }
-
-    document.addEventListener("DOMContentLoaded", () => {
-        if (!sessionStorage.getItem("super_admin_autenticado")) {
-            window.location.href = "index.html";
-            return;
-        }
-        carregarEmpresasDaNuvem();
-    });
-
-    async function carregarEmpresasDaNuvem() {
-        const corpo = document.getElementById("tabelaEmpresasCorpo");
-        try {
-            const snapshot = await db.collection("empresas_clientes").get();
-            corpo.innerHTML = "";
-
-            if(snapshot.empty) {
-                corpo.innerHTML = `<tr><td colspan="6" class="text-center text-muted py-3">Nenhuma empresa registrada.</td></tr>`;
-                return;
-            }
-
-            snapshot.forEach(doc => {
-                const emp = doc.data();
-                const statusClasse = emp.status === "ATIVO" ? "" : "bloqueado";
-                const txtBotao = emp.status === "ATIVO" ? "Bloquear" : "Ativar";
-
-                const tr = document.createElement("tr");
-                tr.innerHTML = `
-                    <td class="fw-bold text-white">${emp.nome}</td>
-                    <td>${emp.cnpj}</td>
-                    <td class="text-info">${emp.email}</td>
-                    <td>
-                        <input type="text" class="bg-dark text-white border-0 px-2 py-1 rounded text-center" style="width:110px; font-size:13px; font-family:monospace;" value="${emp.senhaAtual}" onchange="atualizarSenhaDireto('${doc.id}', this.value)">
-                    </td>
-                    <td><span class="badge-status ${statusClasse}">${emp.status}</span></td>
-                    <td class="text-center">
-                        <button class="btn-tbl btn-tbl-block" onclick="alternarStatusEmpresa('${doc.id}', '${emp.status}')">${txtBotao}</button>
-                        <button class="btn-tbl btn-tbl-link" onclick="copiarLinkAcesso('${emp.email}')">🔗 Link</button>
-                        <button class="btn-tbl btn-tbl-delete" onclick="excluirContaAdmin('${doc.id}')">Eliminar</button>
-                    </td>
-                `;
-                corpo.appendChild(tr);
-            });
-        } catch (error) {
-            console.error(error);
-            corpo.innerHTML = `<tr><td colspan="6" class="text-center text-danger py-3">Erro ao ler dados da nuvem.</td></tr>`;
-        }
-    }
-
-    async function cadastrarNovaEmpresa(event) {
-        event.preventDefault();
-        const btn = document.getElementById("btnSalvarEmpresa");
-        
-        const nome = document.getElementById("empNome").value.trim();
-        const cnpj = document.getElementById("empCnpj").value.trim();
-        const email = document.getElementById("empEmail").value.trim().toLowerCase();
-        const senha = document.getElementById("empSenha").value.trim();
-
-        btn.disabled = true;
-        btn.innerHTML = "⏳ Gravando na Nuvem...";
-
-        try {
-            const checkEmail = await db.collection("empresas_clientes").where("email", "==", email).get();
-            
-            if (!checkEmail.empty) {
-                mostrarAlerta("❌ Erro: Este e-mail de Administrador já está cadastrado!");
-                btn.disabled = false;
-                btn.innerHTML = "Salvar Registro na Nuvem";
-                return;
-            }
-
-            const novaEmpresa = {
-                nome: nome,
-                cnpj: cnpj,
-                email: email,
-                senhaAtual: senha,
-                status: "ATIVO",
-                primeiroAcesso: true,
-                timestamp: firebase.firestore.FieldValue.serverTimestamp()
-            };
-
-            await db.collection("empresas_clientes").add(novaEmpresa);
-            
-            const configCheck = await db.collection("configuracoes_empresa").where("empresaEmail", "==", email).get();
-            if(configCheck.empty) {
-                await db.collection("configuracoes_empresa").add({
-                    empresaEmail: email,
-                    nomeEmpresa: nome,
-                    cep: "", numero: "", latitude: "", longitude: "", raio: "200", endereco: ""
-                });
-            }
-
-            document.getElementById("formCadastroEmpresa").reset();
-            document.getElementById("empSenha").value = "mudar123";
-            
-            mostrarAlerta("✅ Sucesso! Novo Administrador vinculado à empresa.");
-            await carregarEmpresasDaNuvem();
-
-        } catch (error) {
-            mostrarAlerta("⚠️ Falha ao salvar no banco de dados.");
-        } finally {
-            btn.disabled = false;
-            btn.innerHTML = "Salvar Registro na Nuvem";
-        }
-    }
-
-    async function atualizarSenhaDireto(id, novaSenha) {
-        if(!novaSenha.trim()) return;
-        try {
-            await db.collection("empresas_clientes").doc(id).update({ senhaAtual: novaSenha.trim() });
-            mostrarAlerta("🔑 Senha do Admin atualizada com sucesso!");
-        } catch (error) {
-            mostrarAlerta("❌ Erro ao atualizar senha.");
-        }
-    }
-
-    // LINK 100% LIMPO COMO ERA ANTES (Sem preenchimento automático de e-mail)
-    function copiarLinkAcesso(emailAdmin) {
-        const link = `https://ponto.ldsite.com.br/login-admin.html`;
-        navigator.clipboard.writeText(link).then(() => {
-            mostrarAlerta("🔗 Link de acesso copiado com sucesso!");
-        }).catch(() => {
-            mostrarAlerta("Erro ao copiar link. Tente manualmente: " + link);
-        });
-    }
-
-    async function alternarStatusEmpresa(id, statusAtual) {
-        const novoStatus = statusAtual === "ATIVO" ? "BLOQUEADO" : "ATIVO";
-        try {
-            await db.collection("empresas_clientes").doc(id).update({ status: novoStatus });
-            await carregarEmpresasDaNuvem();
-        } catch (error) {
-            mostrarAlerta("❌ Erro ao mudar status.");
-        }
-    }
-
-    async function excluirContaAdmin(id) {
-        if(!confirm("Tem certeza que deseja remover esta conta permanentemente?")) return;
-        try {
-            await db.collection("empresas_clientes").doc(id).delete();
-            await carregarEmpresasDaNuvem();
-        } catch (error) {
-            mostrarAlerta("❌ Erro ao remover conta.");
-        }
-    }
-
-    function efetuarLogoutMaster() {
-        sessionStorage.clear();
-        window.location.href = "index.html";
-    }
-</script>
-</body>
-</html>
+    // ==========================================
+    // NOVA FUNÇÃO: MÁSCARA AUTOMÁTICA DE CNPJ
+    // ==========================================
+    function mascaraCNPJ(input) {
+        let v = input.value;
+        v = v.replace(/\D/g, ""); // Remove tudo o que não for dígito
+        v = v.replace(/^(\d{2})(\d)/, "$1.$2"); // Coloca ponto entre o segundo e o terceiro dígitos
+        v = v.replace(/^(\d{2})\.(\d{3})(\d)/, "$1.$2.$3"); // Coloca ponto entre o quinto e o sexto dígitos
+        v = v.replace(/\.(\Normally I can help with things like this, but I don't seem to have access to that content. You can try again or ask me for something else.

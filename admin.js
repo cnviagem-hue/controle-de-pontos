@@ -433,7 +433,7 @@ function aplicarFiltroRapido(tipo) {
 }
 
 // ==========================================
-// SEÇÃO CORRIGIDA: RELATÓRIOS CONECTADOS À NUVEM
+// SEÇÃO CORRIGIDA: RELATÓRIOS E MATEMÁTICA
 // ==========================================
 
 async function puxarLogsEFiltrar() {
@@ -444,14 +444,12 @@ async function puxarLogsEFiltrar() {
     let dadosBrutosNuvem = [];
 
     try {
-        // Consulta baseada no email da empresa ativa para isolar dados de forma segura
         const queryRef = db.collection("historico_pontos").where("empresaEmail", "==", PREFIXO_EMPRESA);
         const snapshot = await queryRef.get();
         
         snapshot.forEach(doc => {
             const data = doc.data();
             if (!data.data) return; 
-            // Filtra o colaborador específico selecionado ou puxa todos
             if (filtroColab === "todos" || String(data.colaboradorId) === String(filtroColab)) {
                 dadosBrutosNuvem.push(data);
             }
@@ -522,11 +520,19 @@ function consolidarLogsBrutos(logsArray) {
             }
         }
 
-        if(mEntrada !== null && calcAlmIda !== null && calcAlmIda > mEntrada) {
-            minutosTrabalhados += (calcAlmIda - mEntrada);
-        }
-        if(mAlmVolta !== null && calcSaida !== null && calcSaida > mAlmVolta) {
-            minutosTrabalhados += (calcSaida - mAlmVolta);
+        // CORREÇÃO MATEMÁTICA: Se o colaborador marcou apenas Entrada e Saída (sem almoço)
+        if (mEntrada !== null && calcAlmIda === null && mAlmVolta === null && calcSaida !== null) {
+            if (calcSaida > mEntrada) {
+                minutosTrabalhados += (calcSaida - mEntrada);
+            }
+        } else {
+            // CÁLCULO PADRÃO: Com as pausas de almoço respeitadas
+            if(mEntrada !== null && calcAlmIda !== null && calcAlmIda > mEntrada) {
+                minutosTrabalhados += (calcAlmIda - mEntrada);
+            }
+            if(mAlmVolta !== null && calcSaida !== null && calcSaida > mAlmVolta) {
+                minutosTrabalhados += (calcSaida - mAlmVolta);
+            }
         }
 
         r.minutosTrabalhadosNum = minutosTrabalhados;
@@ -808,7 +814,7 @@ async function buscarCoordenadasPorCEP() {
     }
 }
 
-function obtenerLocalizacaoAtual() {
+function obterLocalizacaoAtual() {
     if (!navigator.geolocation) {
         exibirAlertaTop("Erro", "Geolocalização não é suportada pelo seu navegador.");
         return;

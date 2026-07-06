@@ -13,8 +13,8 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
 
-// Pega de qual empresa o RH logou
-const PREFIXO_EMPRESA = sessionStorage.getItem("email_empresa_ativa"); 
+// Pega de qual empresa o RH logou (Trocado para "let" para permitir o espelhamento)
+let PREFIXO_EMPRESA = sessionStorage.getItem("email_empresa_ativa"); 
 
 let usuarioSelecionadoId = null;
 let bancoUsuarios = [];
@@ -25,6 +25,37 @@ document.addEventListener("DOMContentLoaded", async () => {
         window.location.href = "login-admin.html"; 
         return;
     }
+
+    // =========================================================================
+    // CORREÇÃO: ESPELHAMENTO DE DADOS (MATRIZ E FILIAIS PELO MESMO CNPJ)
+    // =========================================================================
+    try {
+        const snapAtual = await db.collection("empresas_clientes").where("email", "==", PREFIXO_EMPRESA).get();
+        if (!snapAtual.empty) {
+            const cnpjAtual = snapAtual.docs[0].data().cnpj;
+
+            // Busca todas as contas que possuem o mesmo CNPJ
+            const snapTodos = await db.collection("empresas_clientes").where("cnpj", "==", cnpjAtual).get();
+            let contasVinculadas = [];
+            snapTodos.forEach(doc => contasVinculadas.push(doc.data()));
+
+            // Ordena para pegar a conta mais antiga (Matriz). Contas antigas (sem timestamp) vêm primeiro (valor 0)
+            contasVinculadas.sort((a, b) => {
+                const tempoA = a.timestamp && typeof a.timestamp.toMillis === 'function' ? a.timestamp.toMillis() : 0;
+                const tempoB = b.timestamp && typeof b.timestamp.toMillis === 'function' ? b.timestamp.toMillis() : 0;
+                return tempoA - tempoB;
+            });
+
+            // Força o sistema a usar o e-mail da conta Matriz (a primeira criada) como base de dados global!
+            if (contasVinculadas.length > 0) {
+                PREFIXO_EMPRESA = contasVinculadas[0].email;
+            }
+        }
+    } catch(error) {
+        console.error("Erro ao sincronizar matriz e filiais:", error);
+    }
+    // =========================================================================
+
     document.getElementById("sidebarNomeEmpresa").innerText = sessionStorage.getItem("nome_empresa_ativa");
     
     await carregarConfigsNuvem();
@@ -432,10 +463,6 @@ function aplicarFiltroRapido(tipo) {
     filtrarRelatorioTela();
 }
 
-// ==========================================
-// SEÇÃO CORRIGIDA: RELATÓRIOS E MATEMÁTICA
-// ==========================================
-
 async function puxarLogsEFiltrar() {
     const filtroColab = document.getElementById('filtroRelatorioColaborador').value;
     const btn = document.getElementById('btnFiltrarTela');
@@ -520,13 +547,12 @@ function consolidarLogsBrutos(logsArray) {
             }
         }
 
-        // CORREÇÃO MATEMÁTICA: Se o colaborador marcou apenas Entrada e Saída (sem almoço)
+        // CORREÇÃO MATEMÁTICA
         if (mEntrada !== null && calcAlmIda === null && mAlmVolta === null && calcSaida !== null) {
             if (calcSaida > mEntrada) {
                 minutosTrabalhados += (calcSaida - mEntrada);
             }
         } else {
-            // CÁLCULO PADRÃO: Com as pausas de almoço respeitadas
             if(mEntrada !== null && calcAlmIda !== null && calcAlmIda > mEntrada) {
                 minutosTrabalhados += (calcAlmIda - mEntrada);
             }
@@ -749,10 +775,6 @@ async function exportarPontosExcel() {
     XLSX.utils.book_append_sheet(workbook, worksheet, "Espelho_Executivo");
     XLSX.writeFile(workbook, `Espelho_Ponto_${colabNome.replace(/ /g, "_")}.xlsx`);
 }
-
-// ==========================================
-// RESTANTE DO ARQUIVO MANTIDO INTACTO
-// ==========================================
 
 let idConfigNuvemAtual = null;
 

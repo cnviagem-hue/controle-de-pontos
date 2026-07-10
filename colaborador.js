@@ -16,7 +16,7 @@ const db = firebase.firestore();
 let usuarioLogado = null;
 let tipoPontoPendente = ""; 
 let PREFIXO_DB_EMPRESA = "default";
-let idPontoPendenteObs = null; // NOVO: Guarda o ID do ponto recém-criado
+let idPontoPendenteObs = null; 
 
 document.addEventListener("DOMContentLoaded", () => {
     inicializarRelogio();
@@ -166,16 +166,6 @@ async function executarLoginColaborador(event) {
                         return;
                     }
 
-                    const configEmpresa = configSnapshot.docs[0].data();
-                    
-                    if (configEmpresa.latitude && configEmpresa.longitude) {
-                        const empresaLat = parseFloat(configEmpresa.latitude);
-                        const empresaLng = parseFloat(configEmpresa.longitude);
-                        const raioMaximo = parseInt(configEmpresa.raio, 10) || 50;
-                        const distanciaRealMetros = calcularDistanciaHaversine(usuarioLat, usuarioLng, empresaLat, empresaLng);
-                        //console.log("Distância real medida: " + distanciaRealMetros + "m contra raio de: " + raioMaximo + "m");
-                    }
-
                     const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
                     
                     if (encontrarUser.permissao === "Celular" && !isMobile) {
@@ -294,12 +284,14 @@ function confirmarEGravarPonto() {
                 };
                 
                 const docRef = await db.collection("historico_pontos").add(novoPonto);
-                idPontoPendenteObs = docRef.id; // Guarda o ID gerado para poder atrelar a observação
+                idPontoPendenteObs = docRef.id; 
                 
-                bootstrap.Modal.getInstance(document.getElementById("modalConfirmarPonto")).hide();
+                const modalConf = bootstrap.Modal.getInstance(document.getElementById("modalConfirmarPonto"));
+                if(modalConf) modalConf.hide();
+                
                 renderizarHistoricoHoje(); 
                 
-                // NOVO: Ao invés de finalizar, chama o modal de Observação
+                // Abre a tela de justificativa/observação após bater o ponto
                 document.getElementById("obsOpcoes").style.display = "block";
                 document.getElementById("obsCampo").style.display = "none";
                 document.getElementById("txtObservacaoPonto").value = "";
@@ -314,7 +306,8 @@ function confirmarEGravarPonto() {
             }
         },
         (error) => { 
-            bootstrap.Modal.getInstance(document.getElementById("modalConfirmarPonto")).hide();
+            const modalConf = bootstrap.Modal.getInstance(document.getElementById("modalConfirmarPonto"));
+            if(modalConf) modalConf.hide();
             exibirAvisoColab("Erro GPS", "Ative o seu GPS para marcar o ponto.");
             btn.disabled = false;
             btn.innerHTML = "Sim, Gravar";
@@ -324,11 +317,12 @@ function confirmarEGravarPonto() {
 }
 
 // ==========================================
-// NOVA LÓGICA DE JUSTIFICATIVA/OBSERVAÇÃO
+// LÓGICA DE JUSTIFICATIVA/OBSERVAÇÃO
 // ==========================================
 
 function ignorarObservacao() {
-    bootstrap.Modal.getInstance(document.getElementById("modalObservacao")).hide();
+    const modalObs = bootstrap.Modal.getInstance(document.getElementById("modalObservacao"));
+    if(modalObs) modalObs.hide();
     exibirAvisoColab("🎯 Sucesso!", `Ponto de <strong>${tipoPontoPendente}</strong> gravado com sucesso!`);
 }
 
@@ -354,7 +348,9 @@ async function salvarObservacaoPonto() {
             observacao: texto
         });
         
-        bootstrap.Modal.getInstance(document.getElementById("modalObservacao")).hide();
+        const modalObs = bootstrap.Modal.getInstance(document.getElementById("modalObservacao"));
+        if(modalObs) modalObs.hide();
+        
         exibirAvisoColab("🎯 Sucesso!", `Ponto e justificativa salvos com sucesso na nuvem!`);
     } catch (error) {
         console.error(error);

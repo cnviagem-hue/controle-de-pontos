@@ -482,9 +482,6 @@ async function puxarLogsEFiltrar() {
     return consolidarLogsBrutos(dadosBrutosNuvem);
 }
 
-// ==========================================
-// NOVA LÓGICA DE ESPELHAMENTO DE OBSERVAÇÕES
-// ==========================================
 function consolidarLogsBrutos(logsArray) {
     const espelhosAgrupados = {};
 
@@ -505,7 +502,7 @@ function consolidarLogsBrutos(logsArray) {
                 minutosExtrasNum: 0,
                 horasTrabalhadas: "00:00",
                 horasExtras: "00:00",
-                observacoes: [] // Array para guardar as justificativas
+                observacoes: []
             };
         }
 
@@ -514,7 +511,6 @@ function consolidarLogsBrutos(logsArray) {
         if (log.tipo === "Almoço Volta") espelhosAgrupados[chaveChave].almocoVolta = log.hora;
         if (log.tipo === "Saída") espelhosAgrupados[chaveChave].saida = log.hora;
 
-        // Se houver observação neste registro específico, atrelamos à batida
         if (log.observacao && log.observacao.trim() !== "") {
             espelhosAgrupados[chaveChave].observacoes.push({
                 tipo: log.tipo,
@@ -601,9 +597,9 @@ function consolidarLogsBrutos(logsArray) {
     return listaFinal;
 }
 
-// NOVO: Função para o modal do gestor ler a observação formatada
-window.abrirModalLerObs = function(obsStrEncoded) {
-    const observacoes = JSON.parse(decodeURIComponent(obsStrEncoded));
+// Abertura segura do modal de observações
+window.abrirModalLerObs = function(obsStrBase64) {
+    const observacoes = JSON.parse(decodeURIComponent(escape(atob(obsStrBase64))));
     let html = "";
     observacoes.forEach(obs => {
         html += `<div class="mb-3 p-3 bg-light border rounded text-start">
@@ -670,11 +666,11 @@ async function filtrarRelatorioTela() {
         acumuladorTrabalhadas += r.minutosTrabalhadosNum;
         acumuladorExtras += r.minutosExtrasNum;
 
-        // NOVO: Adiciona o selo Verde ou o Botão Vermelho de leitura de Obs
+        // Botões de observação interativos
         let btnObsHtml = `<span class="badge bg-success bg-opacity-25 text-success border border-success-subtle px-2" style="font-size:0.75rem;">● Sem Obs.</span>`;
         if (r.observacoes && r.observacoes.length > 0) {
-            const obsStr = encodeURIComponent(JSON.stringify(r.observacoes));
-            btnObsHtml = `<button class="btn btn-sm btn-danger fw-bold shadow-sm" style="font-size: 0.7rem; padding: 3px 8px; animation: pulse 2s infinite;" onclick="abrirModalLerObs('${obsStr}')">🔔 Ver Obs.</button>`;
+            const obsStrBase64 = btoa(unescape(encodeURIComponent(JSON.stringify(r.observacoes))));
+            btnObsHtml = `<button class="btn btn-sm btn-danger fw-bold shadow-sm" style="font-size: 0.7rem; padding: 3px 8px; animation: pulse 2s infinite;" onclick="abrirModalLerObs('${obsStrBase64}')">🔔 Ver Obs.</button>`;
         }
 
         const tr = document.createElement('tr');
@@ -756,7 +752,6 @@ async function exportarPontosExcel() {
         ["DRE - ESPELHO DE PONTO EXECUTIVO"],
         [`Colaborador: ${colabNome} | Emissão: ${dataEmissao}`],
         [],
-        // NOVO: Adicionado Cabeçalho de Observações para o Excel
         ["Data", "Colaborador", "Entrada", "Almoço Ida", "Almoço Volta", "Saída", "Horas Trab.", "Horas Extras", "Observações/Justificativas"]
     ];
 
@@ -767,7 +762,6 @@ async function exportarPontosExcel() {
         somaTrab += r.minutosTrabalhadosNum;
         somaExtra += r.minutosExtrasNum;
 
-        // NOVO: Formata as observações do dia para texto corrido no Excel
         let textoObsFinal = "Sem observação";
         if (r.observacoes && r.observacoes.length > 0) {
             textoObsFinal = r.observacoes.map(o => `[${o.tipo}] ${o.texto}`).join(" | ");
@@ -779,4 +773,63 @@ async function exportarPontosExcel() {
     matrizPlanilha.push([]);
     matrizPlanilha.push(["TOTAL DE HORAS TRABALHADAS DO PERÍODO:", "", "", "", "", "", formatarMinutosParaString(somaTrab), formatarMinutosParaString(somaExtra), ""]);
 
-    const worksheet = XLSX.utils.aoa_
+    const worksheet = XLSX.utils.aoa_to_sheet(matrizPlanilha);
+
+    const orangeFill = { fill: { fgColor: { rgb: "F97316" } }, font: { bold: true, color: { rgb: "FFFFFF" }, size: 12 }, alignment: { horizontal: "center", vertical: "center" } };
+    const greyTotalAlignRight = { fill: { fgColor: { rgb: "E5E7EB" } }, font: { bold: true, color: { rgb: "000000" } }, alignment: { horizontal: "right", vertical: "center" } };
+    const greyTotalGreen = { fill: { fgColor: { rgb: "E5E7EB" } }, font: { bold: true, color: { rgb: "16A34A" } }, alignment: { horizontal: "center", vertical: "center" } };
+    const greyTotalRed = { fill: { fgColor: { rgb: "E5E7EB" } }, font: { bold: true, color: { rgb: "EF4444" } }, alignment: { horizontal: "center", vertical: "center" } };
+
+    if(worksheet['A1']) worksheet['A1'].s = orangeFill;
+    
+    const ultimaLinhaIndex = matrizPlanilha.length;
+    if(worksheet[`A${ultimaLinhaIndex}`]) worksheet[`A${ultimaLinhaIndex}`].s = greyTotalAlignRight;
+    if(worksheet[`G${ultimaLinhaIndex}`]) worksheet[`G${ultimaLinhaIndex}`].s = greyTotalGreen;
+    if(worksheet[`H${ultimaLinhaIndex}`]) worksheet[`H${ultimaLinhaIndex}`].s = greyTotalRed;
+
+    worksheet['!merges'] = [
+        { s: { r: 0, c: 0 }, e: { r: 0, c: 8 } }, 
+        { s: { r: 1, c: 0 }, e: { r: 1, c: 8 } }, 
+        { s: { r: ultimaLinhaIndex - 1, c: 0 }, e: { r: ultimaLinhaIndex - 1, c: 5 } } 
+    ];
+
+    worksheet['!cols'] = [
+        { wch: 12 }, { wch: 40 }, { wch: 10 }, { wch: 12 }, { wch: 14 }, { wch: 10 }, { wch: 14 }, { wch: 14 }, { wch: 45 }
+    ];
+
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Espelho_Executivo");
+    XLSX.writeFile(workbook, `Espelho_Ponto_${colabNome.replace(/ /g, "_")}.xlsx`);
+}
+
+let idConfigNuvemAtual = null;
+
+async function buscarCoordenadasPorCEP() {
+    const cepInput = document.getElementById("cepBusca").value.replace(/\D/g, '');
+    const numInput = document.getElementById("numeroBusca").value.trim();
+
+    if (cepInput.length !== 8) {
+        exibirAlertaTop("⚠️ Aviso", "Por favor, digite um CEP válido com 8 dígitos.");
+        return;
+    }
+
+    const btn = document.getElementById("btnBuscarCep");
+    const textoOriginal = btn.innerText;
+    btn.innerText = "⏳ Buscando Endereço...";
+    btn.disabled = true;
+
+    try {
+        const resViaCep = await fetch(`https://viacep.com.br/ws/${cepInput}/json/`);
+        const dadosCep = await resViaCep.json();
+
+        if (dadosCep.erro) throw new Error("CEP não encontrado na base de dados.");
+
+        const enderecoCompleto = `${dadosCep.logradouro}${numInput ? ', ' + numInput : ''}, ${dadosCep.bairro}, ${dadosCep.localidade} - ${dadosCep.uf}`;
+        
+        btn.innerText = "⏳ Buscando Coordenadas...";
+
+        const query = encodeURIComponent(`${dadosCep.logradouro}, ${dadosCep.localidade}, ${dadosCep.uf}, Brazil`);
+        const resGeo = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${query}&limit=1`);
+        const dadosGeo = await resGeo.json();
+
+        if (dadosGeo.length >

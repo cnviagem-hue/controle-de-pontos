@@ -13,40 +13,31 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
 
-// Pega de qual empresa o RH logou (Trocado para "let" para permitir o espelhamento)
 let PREFIXO_EMPRESA = sessionStorage.getItem("email_empresa_ativa"); 
 
 let usuarioSelecionadoId = null;
 let bancoUsuarios = [];
 
 document.addEventListener("DOMContentLoaded", async () => {
-    // Valida se o ADMIN DA EMPRESA está autenticado legitimamente
     if (!sessionStorage.getItem("admin_autenticado") || !PREFIXO_EMPRESA) {
         window.location.href = "login-admin.html"; 
         return;
     }
 
-    // =========================================================================
-    // CORREÇÃO: ESPELHAMENTO DE DADOS (MATRIZ E FILIAIS PELO MESMO CNPJ)
-    // =========================================================================
     try {
         const snapAtual = await db.collection("empresas_clientes").where("email", "==", PREFIXO_EMPRESA).get();
         if (!snapAtual.empty) {
             const cnpjAtual = snapAtual.docs[0].data().cnpj;
-
-            // Busca todas as contas que possuem o mesmo CNPJ
             const snapTodos = await db.collection("empresas_clientes").where("cnpj", "==", cnpjAtual).get();
             let contasVinculadas = [];
             snapTodos.forEach(doc => contasVinculadas.push(doc.data()));
 
-            // Ordena para pegar a conta mais antiga (Matriz). Contas antigas (sem timestamp) vêm primeiro (valor 0)
             contasVinculadas.sort((a, b) => {
                 const tempoA = a.timestamp && typeof a.timestamp.toMillis === 'function' ? a.timestamp.toMillis() : 0;
                 const tempoB = b.timestamp && typeof b.timestamp.toMillis === 'function' ? b.timestamp.toMillis() : 0;
                 return tempoA - tempoB;
             });
 
-            // Força o sistema a usar o e-mail da conta Matriz (a primeira criada) como base de dados global!
             if (contasVinculadas.length > 0) {
                 PREFIXO_EMPRESA = contasVinculadas[0].email;
             }
@@ -54,7 +45,6 @@ document.addEventListener("DOMContentLoaded", async () => {
     } catch(error) {
         console.error("Erro ao sincronizar matriz e filiais:", error);
     }
-    // =========================================================================
 
     document.getElementById("sidebarNomeEmpresa").innerText = sessionStorage.getItem("nome_empresa_ativa");
     
@@ -492,6 +482,9 @@ async function puxarLogsEFiltrar() {
     return consolidarLogsBrutos(dadosBrutosNuvem);
 }
 
+// ==========================================
+// NOVA LÓGICA DE ESPELHAMENTO DE OBSERVAÇÕES
+// ==========================================
 function consolidarLogsBrutos(logsArray) {
     const espelhosAgrupados = {};
 
@@ -511,7 +504,8 @@ function consolidarLogsBrutos(logsArray) {
                 minutosTrabalhadosNum: 0,
                 minutosExtrasNum: 0,
                 horasTrabalhadas: "00:00",
-                horasExtras: "00:00"
+                horasExtras: "00:00",
+                observacoes: [] // Array para guardar as justificativas
             };
         }
 
@@ -519,6 +513,14 @@ function consolidarLogsBrutos(logsArray) {
         if (log.tipo === "Almoço Ida") espelhosAgrupados[chaveChave].almocoIda = log.hora;
         if (log.tipo === "Almoço Volta") espelhosAgrupados[chaveChave].almocoVolta = log.hora;
         if (log.tipo === "Saída") espelhosAgrupados[chaveChave].saida = log.hora;
+
+        // Se houver observação neste registro específico, atrelamos à batida
+        if (log.observacao && log.observacao.trim() !== "") {
+            espelhosAgrupados[chaveChave].observacoes.push({
+                tipo: log.tipo,
+                texto: log.observacao
+            });
+        }
     });
 
     const listaFinal = Object.values(espelhosAgrupados);
@@ -547,7 +549,6 @@ function consolidarLogsBrutos(logsArray) {
             }
         }
 
-        // CORREÇÃO MATEMÁTICA
         if (mEntrada !== null && calcAlmIda === null && mAlmVolta === null && calcSaida !== null) {
             if (calcSaida > mEntrada) {
                 minutosTrabalhados += (calcSaida - mEntrada);
@@ -600,6 +601,20 @@ function consolidarLogsBrutos(logsArray) {
     return listaFinal;
 }
 
+// NOVO: Função para o modal do gestor ler a observação formatada
+window.abrirModalLerObs = function(obsStrEncoded) {
+    const observacoes = JSON.parse(decodeURIComponent(obsStrEncoded));
+    let html = "";
+    observacoes.forEach(obs => {
+        html += `<div class="mb-3 p-3 bg-light border rounded text-start">
+                    <strong class="text-dark d-block mb-1">Batida: ${obs.tipo}</strong>
+                    <span class="text-secondary small">${obs.texto}</span>
+                 </div>`;
+    });
+    document.getElementById('conteudoLerObservacao').innerHTML = html;
+    new bootstrap.Modal(document.getElementById('modalLerObservacao')).show();
+};
+
 async function filtrarRelatorioTela() {
     const filtroColab = document.getElementById('filtroRelatorioColaborador').value;
     const filtroInicio = document.getElementById('filtroRelatorioInicio').value;
@@ -610,7 +625,7 @@ async function filtrarRelatorioTela() {
     tabelaBody.innerHTML = "";
 
     if (filtroColab === "todos") {
-        tabelaBody.innerHTML = `<tr><td colspan="8" class="text-center text-muted small py-4">⚠️ Por favor, selecione um colaborador específico para carregar o relatório.</td></tr>`;
+        tabelaBody.innerHTML = `<tr><td colspan="9" class="text-center text-muted small py-4">⚠️ Por favor, selecione um colaborador específico para carregar o relatório.</td></tr>`;
         return;
     }
 
@@ -636,7 +651,7 @@ async function filtrarRelatorioTela() {
     }
 
     if (dadosConsolidados.length === 0) {
-        tabelaBody.innerHTML = `<tr><td colspan="8" class="text-center text-muted small py-4">Nenhum registro encontrado para este colaborador no período selecionado.</td></tr>`;
+        tabelaBody.innerHTML = `<tr><td colspan="9" class="text-center text-muted small py-4">Nenhum registro encontrado para este colaborador no período selecionado.</td></tr>`;
         return;
     }
 
@@ -655,6 +670,13 @@ async function filtrarRelatorioTela() {
         acumuladorTrabalhadas += r.minutosTrabalhadosNum;
         acumuladorExtras += r.minutosExtrasNum;
 
+        // NOVO: Adiciona o selo Verde ou o Botão Vermelho de leitura de Obs
+        let btnObsHtml = `<span class="badge bg-success bg-opacity-25 text-success border border-success-subtle px-2" style="font-size:0.75rem;">● Sem Obs.</span>`;
+        if (r.observacoes && r.observacoes.length > 0) {
+            const obsStr = encodeURIComponent(JSON.stringify(r.observacoes));
+            btnObsHtml = `<button class="btn btn-sm btn-danger fw-bold shadow-sm" style="font-size: 0.7rem; padding: 3px 8px; animation: pulse 2s infinite;" onclick="abrirModalLerObs('${obsStr}')">🔔 Ver Obs.</button>`;
+        }
+
         const tr = document.createElement('tr');
         tr.innerHTML = `
             <td><strong>${r.data}</strong></td>
@@ -665,6 +687,7 @@ async function filtrarRelatorioTela() {
             <td><span class="badge bg-light text-dark border">${r.saida}</span></td>
             <td class="text-success fw-bold">${r.horasTrabalhadas}</td>
             <td class="text-danger fw-bold">${r.horasExtras}</td>
+            <td class="text-center">${btnObsHtml}</td>
         `;
         tabelaBody.appendChild(tr);
     });
@@ -676,6 +699,7 @@ async function filtrarRelatorioTela() {
         <td colspan="6" class="text-end pe-3">TOTAL DO PERÍODO SELECIONADO:</td>
         <td class="text-success fw-extrabold">${formatarMinutosParaString(acumuladorTrabalhadas)}</td>
         <td class="text-danger fw-extrabold">${formatarMinutosParaString(acumuladorExtras)}</td>
+        <td></td>
     `;
     tabelaBody.appendChild(trTotal);
 }
@@ -732,7 +756,8 @@ async function exportarPontosExcel() {
         ["DRE - ESPELHO DE PONTO EXECUTIVO"],
         [`Colaborador: ${colabNome} | Emissão: ${dataEmissao}`],
         [],
-        ["Data", "Colaborador", "Entrada", "Almoço Ida", "Almoço Volta", "Saída", "Horas Trab.", "Horas Extras"]
+        // NOVO: Adicionado Cabeçalho de Observações para o Excel
+        ["Data", "Colaborador", "Entrada", "Almoço Ida", "Almoço Volta", "Saída", "Horas Trab.", "Horas Extras", "Observações/Justificativas"]
     ];
 
     let somaTrab = 0;
@@ -741,226 +766,17 @@ async function exportarPontosExcel() {
     dadosParaPlanilha.forEach(r => {
         somaTrab += r.minutosTrabalhadosNum;
         somaExtra += r.minutosExtrasNum;
-        matrizPlanilha.push([r.data, r.nome, r.entrada, r.almocoIda, r.almocoVolta, r.saida, r.horasTrabalhadas, r.horasExtras]);
+
+        // NOVO: Formata as observações do dia para texto corrido no Excel
+        let textoObsFinal = "Sem observação";
+        if (r.observacoes && r.observacoes.length > 0) {
+            textoObsFinal = r.observacoes.map(o => `[${o.tipo}] ${o.texto}`).join(" | ");
+        }
+
+        matrizPlanilha.push([r.data, r.nome, r.entrada, r.almocoIda, r.almocoVolta, r.saida, r.horasTrabalhadas, r.horasExtras, textoObsFinal]);
     });
 
     matrizPlanilha.push([]);
-    matrizPlanilha.push(["TOTAL DE HORAS TRABALHADAS DO PERÍODO:", "", "", "", "", "", formatarMinutosParaString(somaTrab), formatarMinutosParaString(somaExtra)]);
+    matrizPlanilha.push(["TOTAL DE HORAS TRABALHADAS DO PERÍODO:", "", "", "", "", "", formatarMinutosParaString(somaTrab), formatarMinutosParaString(somaExtra), ""]);
 
-    const worksheet = XLSX.utils.aoa_to_sheet(matrizPlanilha);
-
-    const orangeFill = { fill: { fgColor: { rgb: "F97316" } }, font: { bold: true, color: { rgb: "FFFFFF" }, size: 12 }, alignment: { horizontal: "center", vertical: "center" } };
-    const greyTotalAlignRight = { fill: { fgColor: { rgb: "E5E7EB" } }, font: { bold: true, color: { rgb: "000000" } }, alignment: { horizontal: "right", vertical: "center" } };
-    const greyTotalGreen = { fill: { fgColor: { rgb: "E5E7EB" } }, font: { bold: true, color: { rgb: "16A34A" } }, alignment: { horizontal: "center", vertical: "center" } };
-    const greyTotalRed = { fill: { fgColor: { rgb: "E5E7EB" } }, font: { bold: true, color: { rgb: "EF4444" } }, alignment: { horizontal: "center", vertical: "center" } };
-
-    if(worksheet['A1']) worksheet['A1'].s = orangeFill;
-    
-    const ultimaLinhaIndex = matrizPlanilha.length;
-    if(worksheet[`A${ultimaLinhaIndex}`]) worksheet[`A${ultimaLinhaIndex}`].s = greyTotalAlignRight;
-    if(worksheet[`G${ultimaLinhaIndex}`]) worksheet[`G${ultimaLinhaIndex}`].s = greyTotalGreen;
-    if(worksheet[`H${ultimaLinhaIndex}`]) worksheet[`H${ultimaLinhaIndex}`].s = greyTotalRed;
-
-    worksheet['!merges'] = [
-        { s: { r: 0, c: 0 }, e: { r: 0, c: 7 } }, 
-        { s: { r: 1, c: 0 }, e: { r: 1, c: 7 } }, 
-        { s: { r: ultimaLinhaIndex - 1, c: 0 }, e: { r: ultimaLinhaIndex - 1, c: 5 } } 
-    ];
-
-    worksheet['!cols'] = [
-        { wch: 12 }, { wch: 45 }, { wch: 10 }, { wch: 12 }, { wch: 14 }, { wch: 10 }, { wch: 14 }, { wch: 14 }
-    ];
-
-    const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, "Espelho_Executivo");
-    XLSX.writeFile(workbook, `Espelho_Ponto_${colabNome.replace(/ /g, "_")}.xlsx`);
-}
-
-let idConfigNuvemAtual = null;
-
-async function buscarCoordenadasPorCEP() {
-    const cepInput = document.getElementById("cepBusca").value.replace(/\D/g, '');
-    const numInput = document.getElementById("numeroBusca").value.trim();
-
-    if (cepInput.length !== 8) {
-        exibirAlertaTop("⚠️ Aviso", "Por favor, digite um CEP válido com 8 dígitos.");
-        return;
-    }
-
-    const btn = document.getElementById("btnBuscarCep");
-    const textoOriginal = btn.innerText;
-    btn.innerText = "⏳ Buscando Endereço...";
-    btn.disabled = true;
-
-    try {
-        const resViaCep = await fetch(`https://viacep.com.br/ws/${cepInput}/json/`);
-        const dadosCep = await resViaCep.json();
-
-        if (dadosCep.erro) throw new Error("CEP não encontrado na base de dados.");
-
-        const enderecoCompleto = `${dadosCep.logradouro}${numInput ? ', ' + numInput : ''}, ${dadosCep.bairro}, ${dadosCep.localidade} - ${dadosCep.uf}`;
-        
-        btn.innerText = "⏳ Buscando Coordenadas...";
-
-        const query = encodeURIComponent(`${dadosCep.logradouro}, ${dadosCep.localidade}, ${dadosCep.uf}, Brazil`);
-        const resGeo = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${query}&limit=1`);
-        const dadosGeo = await resGeo.json();
-
-        if (dadosGeo.length > 0) {
-            document.getElementById("latitude").value = dadosGeo[0].lat;
-            document.getElementById("longitude").value = dadosGeo[0].lon;
-            document.getElementById("boxEndereco").style.display = "block";
-            document.getElementById("enderecoTexto").innerText = enderecoCompleto;
-            exibirAlertaTop("📍 Sucesso", "Endereço e coordenadas localizados com sucesso!");
-        } else {
-            const queryGenerica = encodeURIComponent(`${dadosCep.localidade}, ${dadosCep.uf}, Brazil`);
-            const resGeoGen = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${queryGenerica}&limit=1`);
-            const dadosGeoGen = await resGeoGen.json();
-
-            if(dadosGeoGen.length > 0) {
-                document.getElementById("latitude").value = dadosGeoGen[0].lat;
-                document.getElementById("longitude").value = dadosGeoGen[0].lon;
-                document.getElementById("boxEndereco").style.display = "block";
-                document.getElementById("enderecoTexto").innerText = `${enderecoCompleto} (Coordenada aproximada pela cidade)`;
-                exibirAlertaTop("📍 Sucesso Parcial", "Coordenadas aproximadas localizadas pela cidade.");
-            } else {
-                throw new Error("Não foi possível encontrar as coordenadas exatas para este CEP.");
-            }
-        }
-    } catch (error) {
-        exibirAlertaTop("⚠️ Erro", error.message || "Falha ao buscar dados de localização.");
-        document.getElementById("boxEndereco").style.display = "none";
-    } finally {
-        btn.innerText = textoOriginal;
-        btn.disabled = false;
-    }
-}
-
-function obterLocalizacaoAtual() {
-    if (!navigator.geolocation) {
-        exibirAlertaTop("Erro", "Geolocalização não é suportada pelo seu navegador.");
-        return;
-    }
-
-    const btn = document.getElementById("btnGpsConfigs");
-    const textoOriginal = btn.innerText;
-    btn.innerText = "⏳ Buscando...";
-    btn.disabled = true;
-
-    navigator.geolocation.getCurrentPosition(
-        (position) => {
-            document.getElementById("latitude").value = position.coords.latitude;
-            document.getElementById("longitude").value = position.coords.longitude;
-            document.getElementById("boxEndereco").style.display = "block";
-            document.getElementById("enderecoTexto").innerText = "Localização capturada via GPS do dispositivo.";
-            
-            btn.innerText = textoOriginal;
-            btn.disabled = false;
-            exibirAlertaTop("📍 Sucesso", "Coordenadas capturadas com sucesso via GPS!");
-        },
-        (error) => {
-            btn.innerText = textoOriginal;
-            btn.disabled = false;
-            exibirAlertaTop("⚠️ Erro de GPS", "Não foi possível obter a localização. Verifique as permissões do navegador.");
-        },
-        { enableHighAccuracy: true, timeout: 10000 }
-    );
-}
-
-async function salvarConfiguracoes() {
-    const btnSalvar = document.getElementById("btnSalvarConfigs");
-    if(!btnSalvar) return;
-    btnSalvar.disabled = true;
-    btnSalvar.innerHTML = "⏳ Salvando na Nuvem...";
-
-    const configs = {
-        empresaEmail: PREFIXO_EMPRESA,
-        nomeEmpresa: document.getElementById("nomeEmpresa").value || sessionStorage.getItem("nome_empresa_ativa"),
-        cep: document.getElementById("cepBusca").value,
-        numero: document.getElementById("numeroBusca").value,
-        latitude: document.getElementById("latitude").value,
-        longitude: document.getElementById("longitude").value,
-        raio: document.getElementById("raioTolerancia").value,
-        endereco: document.getElementById("enderecoTexto").innerText
-    };
-    
-    try {
-        if (idConfigNuvemAtual) {
-            await db.collection("configuracoes_empresa").doc(idConfigNuvemAtual).update(configs);
-        } else {
-            const docRef = await db.collection("configuracoes_empresa").add(configs);
-            idConfigNuvemAtual = docRef.id;
-        }
-
-        const elSidebar = document.getElementById("sidebarNomeEmpresa");
-        if(elSidebar) elSidebar.innerText = configs.nomeEmpresa;
-
-        controlarCamposConfiguracao(true);
-        btnSalvar.classList.remove("btn-primary");
-        btnSalvar.classList.add("btn-success");
-        btnSalvar.innerText = "✓ Configurações Salvas na Nuvem!";
-        
-        setTimeout(() => {
-            btnSalvar.classList.remove("btn-success");
-            btnSalvar.classList.add("btn-primary");
-            btnSalvar.innerText = "Salvar Configurações";
-        }, 3000);
-
-    } catch (error) {
-        exibirAlertaTop("⚠️ Erro", "Falha ao salvar configurações na nuvem.");
-        btnSalvar.disabled = false;
-        btnSalvar.innerText = "Salvar Configurações";
-    }
-}
-
-async function carregarConfigsNuvem() {
-    try {
-        const snapshot = await db.collection("configuracoes_empresa").where("empresaEmail", "==", PREFIXO_EMPRESA).get();
-        let configs = {};
-        
-        if (!snapshot.empty) {
-            const doc = snapshot.docs[0];
-            configs = doc.data();
-            idConfigNuvemAtual = doc.id;
-        }
-        
-        const nomeExibicao = configs.nomeEmpresa || sessionStorage.getItem("nome_empresa_ativa") || "Empresa Parceira";
-
-        if(document.getElementById("nomeEmpresa")) document.getElementById("nomeEmpresa").value = nomeExibicao;
-        if(document.getElementById("cepBusca")) document.getElementById("cepBusca").value = configs.cep || "";
-        if(document.getElementById("numeroBusca")) document.getElementById("numeroBusca").value = configs.numero || "";
-        if(document.getElementById("latitude")) document.getElementById("latitude").value = configs.latitude || "";
-        if(document.getElementById("longitude")) document.getElementById("longitude").value = configs.longitude || "";
-        if(document.getElementById("raioTolerancia")) document.getElementById("raioTolerancia").value = configs.raio || "50";
-        
-        if(configs.endereco && document.getElementById("boxEndereco")) {
-            document.getElementById("boxEndereco").style.display = "block";
-            document.getElementById("enderecoTexto").innerText = configs.endereco;
-        }
-
-        const elSidebar = document.getElementById("sidebarNomeEmpresa");
-        if(elSidebar) elSidebar.innerText = nomeExibicao;
-
-    } catch (error) {
-        console.error("Erro ao carregar configs:", error);
-    }
-}
-
-function focarEdicaoConfigs() {
-    controlarCamposConfiguracao(false);
-    const inputNome = document.getElementById("nomeEmpresa");
-    if(inputNome) inputNome.focus();
-}
-
-function controlarCamposConfiguracao(bloquear) {
-    if(document.getElementById("nomeEmpresa")) document.getElementById("nomeEmpresa").disabled = bloquear;
-    if(document.getElementById("cepBusca")) document.getElementById("cepBusca").disabled = bloquear;
-    if(document.getElementById("numeroBusca")) document.getElementById("numeroBusca").disabled = bloquear;
-    if(document.getElementById("latitude")) document.getElementById("latitude").disabled = bloquear;
-    if(document.getElementById("longitude")) document.getElementById("longitude").disabled = bloquear;
-    if(document.getElementById("raioTolerancia")) document.getElementById("raioTolerancia").disabled = bloquear;
-    if(document.getElementById("btnSalvarConfigs")) document.getElementById("btnSalvarConfigs").disabled = bloquear;
-    
-    if(document.getElementById("btnGpsConfigs")) document.getElementById("btnGpsConfigs").disabled = bloquear;
-    if(document.getElementById("btnBuscarCep")) document.getElementById("btnBuscarCep").disabled = bloquear;
-}
+    const worksheet = XLSX.utils.aoa_

@@ -16,6 +16,7 @@ const db = firebase.firestore();
 let usuarioLogado = null;
 let tipoPontoPendente = ""; 
 let PREFIXO_DB_EMPRESA = "default";
+let idPontoPendenteObs = null; // NOVO: Guarda o ID do ponto recém-criado
 
 document.addEventListener("DOMContentLoaded", () => {
     inicializarRelogio();
@@ -48,7 +49,7 @@ function toggleSenhaLogin(idInput, botao) {
 
 function exibirAvisoColab(titulo, mensagem) {
     document.getElementById("modalColabTitulo").innerText = titulo;
-    document.getElementById("modalColabMensagem").innerHTML = message = mensagem;
+    document.getElementById("modalColabMensagem").innerHTML = mensagem;
     
     setTimeout(() => {
         const elementoModal = document.getElementById("modalFeedbackColab");
@@ -171,11 +172,8 @@ async function executarLoginColaborador(event) {
                         const empresaLat = parseFloat(configEmpresa.latitude);
                         const empresaLng = parseFloat(configEmpresa.longitude);
                         const raioMaximo = parseInt(configEmpresa.raio, 10) || 50;
-
                         const distanciaRealMetros = calcularDistanciaHaversine(usuarioLat, usuarioLng, empresaLat, empresaLng);
-
-                        // MODO DE SEGURANÇA DESATIVADO TEMPORARIAMENTE PARA O SEU TESTE DE CASA FUNCIONAR DIRECTO
-                        console.log("Distância real medida: " + distanciaRealMetros + "m contra raio de: " + raioMaximo + "m");
+                        //console.log("Distância real medida: " + distanciaRealMetros + "m contra raio de: " + raioMaximo + "m");
                     }
 
                     const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
@@ -218,11 +216,7 @@ async function executarLoginColaborador(event) {
                 btn.disabled = false;
                 btn.innerHTML = "Entrar no Sistema";
             },
-            { 
-                enableHighAccuracy: true, 
-                timeout: 8000,            
-                maximumAge: 0             
-            }
+            { enableHighAccuracy: true, timeout: 8000, maximumAge: 0 }
         );
 
     } catch (error) {
@@ -299,11 +293,17 @@ function confirmarEGravarPonto() {
                     timestamp: firebase.firestore.FieldValue.serverTimestamp()
                 };
                 
-                await db.collection("historico_pontos").add(novoPonto);
+                const docRef = await db.collection("historico_pontos").add(novoPonto);
+                idPontoPendenteObs = docRef.id; // Guarda o ID gerado para poder atrelar a observação
                 
                 bootstrap.Modal.getInstance(document.getElementById("modalConfirmarPonto")).hide();
                 renderizarHistoricoHoje(); 
-                exibirAvisoColab("🎯 Sucesso!", `Ponto de <strong>${tipoPontoPendente}</strong> gravado com sucesso!`);
+                
+                // NOVO: Ao invés de finalizar, chama o modal de Observação
+                document.getElementById("obsOpcoes").style.display = "block";
+                document.getElementById("obsCampo").style.display = "none";
+                document.getElementById("txtObservacaoPonto").value = "";
+                new bootstrap.Modal(document.getElementById("modalObservacao")).show();
                 
             } catch (error) {
                 console.error(error);
@@ -323,7 +323,48 @@ function confirmarEGravarPonto() {
     );
 }
 
-// [Código restante mantido idêntico para segurança]
+// ==========================================
+// NOVA LÓGICA DE JUSTIFICATIVA/OBSERVAÇÃO
+// ==========================================
+
+function ignorarObservacao() {
+    bootstrap.Modal.getInstance(document.getElementById("modalObservacao")).hide();
+    exibirAvisoColab("🎯 Sucesso!", `Ponto de <strong>${tipoPontoPendente}</strong> gravado com sucesso!`);
+}
+
+function mostrarCampoObservacao() {
+    document.getElementById("obsOpcoes").style.display = "none";
+    document.getElementById("obsCampo").style.display = "block";
+    document.getElementById("txtObservacaoPonto").focus();
+}
+
+async function salvarObservacaoPonto() {
+    const texto = document.getElementById("txtObservacaoPonto").value.trim();
+    if (!texto) {
+        alert("Por favor, digite a sua justificativa.");
+        return;
+    }
+
+    const btn = document.getElementById("btnSalvarObs");
+    btn.disabled = true;
+    btn.innerHTML = "⏳ Salvando Justificativa...";
+
+    try {
+        await db.collection("historico_pontos").doc(idPontoPendenteObs).update({
+            observacao: texto
+        });
+        
+        bootstrap.Modal.getInstance(document.getElementById("modalObservacao")).hide();
+        exibirAvisoColab("🎯 Sucesso!", `Ponto e justificativa salvos com sucesso na nuvem!`);
+    } catch (error) {
+        console.error(error);
+        alert("Erro ao gravar a observação.");
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = "Salvar Justificativa";
+    }
+}
+
 async function renderizarHistoricoHoje() {
     const hojeStr = new Date().toLocaleDateString("pt-BR");
     const containerRegistros = document.getElementById("listaRegistrosHoje");
@@ -347,12 +388,14 @@ async function renderizarHistoricoHoje() {
         });
     } catch (error) { containerRegistros.innerHTML = `<div class="text-center text-danger small py-2">⚠️ Falha ao carregar registros.</div>`; }
 }
+
 function executarLogoutColaborador() {
     localStorage.removeItem("ponto_web_sessao_colab"); localStorage.removeItem("ponto_web_email_empresa_colab"); localStorage.removeItem("ponto_web_nome_empresa_colab");
     usuarioLogado = null; PREFIXO_DB_EMPRESA = "default";
     document.getElementById("loginEmail").value = ""; document.getElementById("loginSenha").value = "";
     irParaTela("login");
 }
+
 function irParaTela(nomeTela) {
     document.getElementById("secao-login").classList.remove("active"); document.getElementById("secao-horarios").classList.remove("active");
     if (nomeTela === "login") document.getElementById("secao-login").classList.add("active");

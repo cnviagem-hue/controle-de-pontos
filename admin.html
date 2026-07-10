@@ -227,6 +227,7 @@
                                 <th>Saída</th>
                                 <th>Horas Trab.</th>
                                 <th>Horas Extras</th>
+                                <th class="text-center">Obs.</th>
                             </tr>
                         </thead>
                         <tbody id="tabelaRelatoriosBody">
@@ -396,6 +397,22 @@
           <div class="modal-footer bg-light py-2">
             <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancelar</button>
             <button type="button" id="btnConfirmarEdicao" class="btn btn-primary btn-sm px-3" onclick="confirmarEdicaoFicha()">Salvar Ficha</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal fade" id="modalLerObservacao" tabindex="-1" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg" style="border-radius:16px;">
+          <div class="modal-header bg-danger text-white py-3" style="border-top-left-radius:16px; border-top-right-radius:16px;">
+            <h5 class="modal-title d-flex align-items-center gap-2">🔔 Justificativas do Dia</h5>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+          </div>
+          <div class="modal-body p-4" id="conteudoLerObservacao">
+             </div>
+          <div class="modal-footer border-0 pt-0 d-flex justify-content-center">
+            <button type="button" class="btn btn-secondary px-4 btn-sm" data-bs-dismiss="modal">Fechar Visualização</button>
           </div>
         </div>
       </div>

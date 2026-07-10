@@ -189,6 +189,29 @@
       </div>
     </div>
 
+    <div class="modal fade" id="modalObservacao" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
+      <div class="modal-dialog modal-dialog-centered modal-sm">
+        <div class="modal-content border-0 shadow-lg" style="border-radius:14px;">
+          <div class="modal-header bg-warning text-dark py-3 border-0">
+            <h5 class="modal-title fs-6 fw-bold">Adicionar Justificativa?</h5>
+          </div>
+          <div class="modal-body p-4 text-center">
+             <div id="obsOpcoes">
+                 <p class="text-secondary small mb-3 fw-medium">Seu ponto foi registrado! Você gostaria de adicionar alguma observação ou justificar um atraso para este registro?</p>
+                 <div class="d-flex gap-2">
+                    <button class="btn btn-light w-50 fw-semibold btn-sm" onclick="ignorarObservacao()">Não</button>
+                    <button class="btn btn-warning w-50 fw-bold btn-sm text-dark" onclick="mostrarCampoObservacao()">Sim, Justificar</button>
+                 </div>
+             </div>
+             <div id="obsCampo" style="display: none;">
+                 <textarea id="txtObservacaoPonto" class="form-control mb-3 text-sm" rows="3" placeholder="Digite o motivo do atraso ou observação..."></textarea>
+                 <button id="btnSalvarObs" class="btn btn-success w-100 fw-bold btn-sm" onclick="salvarObservacaoPonto()">Salvar Justificativa</button>
+             </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     
     <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-app-compat.js"></script>

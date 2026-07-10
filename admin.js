@@ -13,43 +13,56 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
 
+// Pega de qual empresa o RH logou
 let PREFIXO_EMPRESA = sessionStorage.getItem("email_empresa_ativa"); 
 
 let usuarioSelecionadoId = null;
 let bancoUsuarios = [];
 
 document.addEventListener("DOMContentLoaded", async () => {
+    // Valida se o ADMIN DA EMPRESA está autenticado
     if (!sessionStorage.getItem("admin_autenticado") || !PREFIXO_EMPRESA) {
         window.location.href = "login-admin.html"; 
         return;
     }
 
     try {
-        const snapAtual = await db.collection("empresas_clientes").where("email", "==", PREFIXO_EMPRESA).get();
-        if (!snapAtual.empty) {
-            const cnpjAtual = snapAtual.docs[0].data().cnpj;
-            const snapTodos = await db.collection("empresas_clientes").where("cnpj", "==", cnpjAtual).get();
-            let contasVinculadas = [];
-            snapTodos.forEach(doc => contasVinculadas.push(doc.data()));
+        // =========================================================================
+        // ESPELHAMENTO DE DADOS (MATRIZ E FILIAIS PELO MESMO CNPJ)
+        // =========================================================================
+        try {
+            const snapAtual = await db.collection("empresas_clientes").where("email", "==", PREFIXO_EMPRESA).get();
+            if (!snapAtual.empty) {
+                const cnpjAtual = snapAtual.docs[0].data().cnpj;
+                const snapTodos = await db.collection("empresas_clientes").where("cnpj", "==", cnpjAtual).get();
+                let contasVinculadas = [];
+                snapTodos.forEach(doc => contasVinculadas.push(doc.data()));
 
-            contasVinculadas.sort((a, b) => {
-                const tempoA = a.timestamp && typeof a.timestamp.toMillis === 'function' ? a.timestamp.toMillis() : 0;
-                const tempoB = b.timestamp && typeof b.timestamp.toMillis === 'function' ? b.timestamp.toMillis() : 0;
-                return tempoA - tempoB;
-            });
+                contasVinculadas.sort((a, b) => {
+                    const tempoA = a.timestamp && typeof a.timestamp.toMillis === 'function' ? a.timestamp.toMillis() : 0;
+                    const tempoB = b.timestamp && typeof b.timestamp.toMillis === 'function' ? b.timestamp.toMillis() : 0;
+                    return tempoA - tempoB;
+                });
 
-            if (contasVinculadas.length > 0) {
-                PREFIXO_EMPRESA = contasVinculadas[0].email;
+                if (contasVinculadas.length > 0) {
+                    PREFIXO_EMPRESA = contasVinculadas[0].email;
+                }
             }
+        } catch(error) {
+            console.error("Erro ao sincronizar matriz e filiais:", error);
         }
-    } catch(error) {
-        console.error("Erro ao sincronizar matriz e filiais:", error);
-    }
+        // =========================================================================
 
-    document.getElementById("sidebarNomeEmpresa").innerText = sessionStorage.getItem("nome_empresa_ativa");
-    
-    await carregarConfigsNuvem();
-    await carregarUsuariosDaNuvem();
+        const nomeEmpresaSalvo = sessionStorage.getItem("nome_empresa_ativa");
+        document.getElementById("sidebarNomeEmpresa").innerText = nomeEmpresaSalvo ? nomeEmpresaSalvo : "Empresa Parceira";
+        
+        await carregarConfigsNuvem();
+        await carregarUsuariosDaNuvem();
+
+    } catch (e) {
+        console.error("Erro critico de carregamento da tela:", e);
+        document.getElementById("sidebarNomeEmpresa").innerText = "Modo de Segurança";
+    }
 });
 
 function alternarAba(nomeAba) {
@@ -597,9 +610,11 @@ function consolidarLogsBrutos(logsArray) {
     return listaFinal;
 }
 
-// Abertura segura do modal de observações
 window.abrirModalLerObs = function(obsStrBase64) {
-    const observacoes = JSON.parse(decodeURIComponent(escape(atob(obsStrBase64))));
+    // Decodifica a base64 de forma segura
+    const stringDecodificada = decodeURIComponent(escape(atob(obsStrBase64)));
+    const observacoes = JSON.parse(stringDecodificada);
+    
     let html = "";
     observacoes.forEach(obs => {
         html += `<div class="mb-3 p-3 bg-light border rounded text-start">
@@ -666,9 +681,9 @@ async function filtrarRelatorioTela() {
         acumuladorTrabalhadas += r.minutosTrabalhadosNum;
         acumuladorExtras += r.minutosExtrasNum;
 
-        // Botões de observação interativos
         let btnObsHtml = `<span class="badge bg-success bg-opacity-25 text-success border border-success-subtle px-2" style="font-size:0.75rem;">● Sem Obs.</span>`;
         if (r.observacoes && r.observacoes.length > 0) {
+            // Codifica em base64 para nao quebrar o HTML
             const obsStrBase64 = btoa(unescape(encodeURIComponent(JSON.stringify(r.observacoes))));
             btnObsHtml = `<button class="btn btn-sm btn-danger fw-bold shadow-sm" style="font-size: 0.7rem; padding: 3px 8px; animation: pulse 2s infinite;" onclick="abrirModalLerObs('${obsStrBase64}')">🔔 Ver Obs.</button>`;
         }
@@ -832,4 +847,161 @@ async function buscarCoordenadasPorCEP() {
         const resGeo = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${query}&limit=1`);
         const dadosGeo = await resGeo.json();
 
-        if (dadosGeo.length >
+        if (dadosGeo.length > 0) {
+            document.getElementById("latitude").value = dadosGeo[0].lat;
+            document.getElementById("longitude").value = dadosGeo[0].lon;
+            document.getElementById("boxEndereco").style.display = "block";
+            document.getElementById("enderecoTexto").innerText = enderecoCompleto;
+            exibirAlertaTop("📍 Sucesso", "Endereço e coordenadas localizados com sucesso!");
+        } else {
+            const queryGenerica = encodeURIComponent(`${dadosCep.localidade}, ${dadosCep.uf}, Brazil`);
+            const resGeoGen = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${queryGenerica}&limit=1`);
+            const dadosGeoGen = await resGeoGen.json();
+
+            if(dadosGeoGen.length > 0) {
+                document.getElementById("latitude").value = dadosGeoGen[0].lat;
+                document.getElementById("longitude").value = dadosGeoGen[0].lon;
+                document.getElementById("boxEndereco").style.display = "block";
+                document.getElementById("enderecoTexto").innerText = `${enderecoCompleto} (Coordenada aproximada pela cidade)`;
+                exibirAlertaTop("📍 Sucesso Parcial", "Coordenadas aproximadas localizadas pela cidade.");
+            } else {
+                throw new Error("Não foi possível encontrar as coordenadas exatas para este CEP.");
+            }
+        }
+    } catch (error) {
+        exibirAlertaTop("⚠️ Erro", error.message || "Falha ao buscar dados de localização.");
+        document.getElementById("boxEndereco").style.display = "none";
+    } finally {
+        btn.innerText = textoOriginal;
+        btn.disabled = false;
+    }
+}
+
+function obterLocalizacaoAtual() {
+    if (!navigator.geolocation) {
+        exibirAlertaTop("Erro", "Geolocalização não é suportada pelo seu navegador.");
+        return;
+    }
+
+    const btn = document.getElementById("btnGpsConfigs");
+    const textoOriginal = btn.innerText;
+    btn.innerText = "⏳ Buscando...";
+    btn.disabled = true;
+
+    navigator.geolocation.getCurrentPosition(
+        (position) => {
+            document.getElementById("latitude").value = position.coords.latitude;
+            document.getElementById("longitude").value = position.coords.longitude;
+            document.getElementById("boxEndereco").style.display = "block";
+            document.getElementById("enderecoTexto").innerText = "Localização capturada via GPS do dispositivo.";
+            
+            btn.innerText = textoOriginal;
+            btn.disabled = false;
+            exibirAlertaTop("📍 Sucesso", "Coordenadas capturadas com sucesso via GPS!");
+        },
+        (error) => {
+            btn.innerText = textoOriginal;
+            btn.disabled = false;
+            exibirAlertaTop("⚠️ Erro de GPS", "Não foi possível obter a localização. Verifique as permissões do navegador.");
+        },
+        { enableHighAccuracy: true, timeout: 10000 }
+    );
+}
+
+async function salvarConfiguracoes() {
+    const btnSalvar = document.getElementById("btnSalvarConfigs");
+    if(!btnSalvar) return;
+    btnSalvar.disabled = true;
+    btnSalvar.innerHTML = "⏳ Salvando na Nuvem...";
+
+    const configs = {
+        empresaEmail: PREFIXO_EMPRESA,
+        nomeEmpresa: document.getElementById("nomeEmpresa").value || sessionStorage.getItem("nome_empresa_ativa"),
+        cep: document.getElementById("cepBusca").value,
+        numero: document.getElementById("numeroBusca").value,
+        latitude: document.getElementById("latitude").value,
+        longitude: document.getElementById("longitude").value,
+        raio: document.getElementById("raioTolerancia").value,
+        endereco: document.getElementById("enderecoTexto").innerText
+    };
+    
+    try {
+        if (idConfigNuvemAtual) {
+            await db.collection("configuracoes_empresa").doc(idConfigNuvemAtual).update(configs);
+        } else {
+            const docRef = await db.collection("configuracoes_empresa").add(configs);
+            idConfigNuvemAtual = docRef.id;
+        }
+
+        const elSidebar = document.getElementById("sidebarNomeEmpresa");
+        if(elSidebar) elSidebar.innerText = configs.nomeEmpresa;
+
+        controlarCamposConfiguracao(true);
+        btnSalvar.classList.remove("btn-primary");
+        btnSalvar.classList.add("btn-success");
+        btnSalvar.innerText = "✓ Configurações Salvas na Nuvem!";
+        
+        setTimeout(() => {
+            btnSalvar.classList.remove("btn-success");
+            btnSalvar.classList.add("btn-primary");
+            btnSalvar.innerText = "Salvar Configurações";
+        }, 3000);
+
+    } catch (error) {
+        exibirAlertaTop("⚠️ Erro", "Falha ao salvar configurações na nuvem.");
+        btnSalvar.disabled = false;
+        btnSalvar.innerText = "Salvar Configurações";
+    }
+}
+
+async function carregarConfigsNuvem() {
+    try {
+        const snapshot = await db.collection("configuracoes_empresa").where("empresaEmail", "==", PREFIXO_EMPRESA).get();
+        let configs = {};
+        
+        if (!snapshot.empty) {
+            const doc = snapshot.docs[0];
+            configs = doc.data();
+            idConfigNuvemAtual = doc.id;
+        }
+        
+        const nomeExibicao = configs.nomeEmpresa || sessionStorage.getItem("nome_empresa_ativa") || "Empresa Parceira";
+
+        if(document.getElementById("nomeEmpresa")) document.getElementById("nomeEmpresa").value = nomeExibicao;
+        if(document.getElementById("cepBusca")) document.getElementById("cepBusca").value = configs.cep || "";
+        if(document.getElementById("numeroBusca")) document.getElementById("numeroBusca").value = configs.numero || "";
+        if(document.getElementById("latitude")) document.getElementById("latitude").value = configs.latitude || "";
+        if(document.getElementById("longitude")) document.getElementById("longitude").value = configs.longitude || "";
+        if(document.getElementById("raioTolerancia")) document.getElementById("raioTolerancia").value = configs.raio || "50";
+        
+        if(configs.endereco && document.getElementById("boxEndereco")) {
+            document.getElementById("boxEndereco").style.display = "block";
+            document.getElementById("enderecoTexto").innerText = configs.endereco;
+        }
+
+        const elSidebar = document.getElementById("sidebarNomeEmpresa");
+        if(elSidebar) elSidebar.innerText = nomeExibicao;
+
+    } catch (error) {
+        console.error("Erro ao carregar configs:", error);
+    }
+}
+
+function focarEdicaoConfigs() {
+    controlarCamposConfiguracao(false);
+    const inputNome = document.getElementById("nomeEmpresa");
+    if(inputNome) inputNome.focus();
+}
+
+function controlarCamposConfiguracao(bloquear) {
+    if(document.getElementById("nomeEmpresa")) document.getElementById("nomeEmpresa").disabled = bloquear;
+    if(document.getElementById("cepBusca")) document.getElementById("cepBusca").disabled = bloquear;
+    if(document.getElementById("numeroBusca")) document.getElementById("numeroBusca").disabled = bloquear;
+    if(document.getElementById("latitude")) document.getElementById("latitude").disabled = bloquear;
+    if(document.getElementById("longitude")) document.getElementById("longitude").disabled = bloquear;
+    if(document.getElementById("raioTolerancia")) document.getElementById("raioTolerancia").disabled = bloquear;
+    if(document.getElementById("btnSalvarConfigs")) document.getElementById("btnSalvarConfigs").disabled = bloquear;
+    
+    if(document.getElementById("btnGpsConfigs")) document.getElementById("btnGpsConfigs").disabled = bloquear;
+    if(document.getElementById("btnBuscarCep")) document.getElementById("btnBuscarCep").disabled = bloquear;
+}

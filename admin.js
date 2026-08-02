@@ -13,23 +13,18 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
 
-// Pega de qual empresa o RH logou
 let PREFIXO_EMPRESA = sessionStorage.getItem("email_empresa_ativa"); 
 
 let usuarioSelecionadoId = null;
 let bancoUsuarios = [];
 
 document.addEventListener("DOMContentLoaded", async () => {
-    // Valida se o ADMIN DA EMPRESA está autenticado
     if (!sessionStorage.getItem("admin_autenticado") || !PREFIXO_EMPRESA) {
         window.location.href = "login-admin.html"; 
         return;
     }
 
     try {
-        // =========================================================================
-        // ESPELHAMENTO DE DADOS (MATRIZ E FILIAIS PELO MESMO CNPJ)
-        // =========================================================================
         try {
             const snapAtual = await db.collection("empresas_clientes").where("email", "==", PREFIXO_EMPRESA).get();
             if (!snapAtual.empty) {
@@ -51,7 +46,6 @@ document.addEventListener("DOMContentLoaded", async () => {
         } catch(error) {
             console.error("Erro ao sincronizar matriz e filiais:", error);
         }
-        // =========================================================================
 
         const nomeEmpresaSalvo = sessionStorage.getItem("nome_empresa_ativa");
         document.getElementById("sidebarNomeEmpresa").innerText = nomeEmpresaSalvo ? nomeEmpresaSalvo : "Empresa Parceira";
@@ -513,6 +507,7 @@ function consolidarLogsBrutos(logsArray) {
                 saida: "-",
                 minutosTrabalhadosNum: 0,
                 minutosExtrasNum: 0,
+                minutosEsperadosNum: 0, // NOVO: Armazena a carga horária que a empresa espera
                 horasTrabalhadas: "00:00",
                 horasExtras: "00:00",
                 observacoes: []
@@ -596,6 +591,9 @@ function consolidarLogsBrutos(logsArray) {
                 cargaObrigatoriaDoDia = minCalc !== null ? minCalc : 480;
             }
 
+            // NOVO: Guarda o valor exato que o sistema espera do funcionário
+            r.minutosEsperadosNum = cargaObrigatoriaDoDia;
+
             if(minutosTrabalhados > cargaObrigatoriaDoDia) {
                 const extra = minutosTrabalhados - cargaObrigatoriaDoDia;
                 r.minutosExtrasNum = extra;
@@ -611,7 +609,6 @@ function consolidarLogsBrutos(logsArray) {
 }
 
 window.abrirModalLerObs = function(obsStrBase64) {
-    // Decodifica a base64 de forma segura
     const stringDecodificada = decodeURIComponent(escape(atob(obsStrBase64)));
     const observacoes = JSON.parse(stringDecodificada);
     
@@ -667,7 +664,7 @@ async function filtrarRelatorioTela() {
     }
 
     let acumuladorTrabalhadas = 0;
-    let acumuladorExtras = 0;
+    let acumuladorEsperadas = 0;
 
     dadosConsolidados.sort((a,b) => {
         if(!a.data || !b.data) return 0;
@@ -679,11 +676,10 @@ async function filtrarRelatorioTela() {
 
     dadosConsolidados.forEach(r => {
         acumuladorTrabalhadas += r.minutosTrabalhadosNum;
-        acumuladorExtras += r.minutosExtrasNum;
+        acumuladorEsperadas += r.minutosEsperadosNum;
 
         let btnObsHtml = `<span class="badge bg-success bg-opacity-25 text-success border border-success-subtle px-2" style="font-size:0.75rem;">● Sem Obs.</span>`;
         if (r.observacoes && r.observacoes.length > 0) {
-            // Codifica em base64 para nao quebrar o HTML
             const obsStrBase64 = btoa(unescape(encodeURIComponent(JSON.stringify(r.observacoes))));
             btnObsHtml = `<button class="btn btn-sm btn-danger fw-bold shadow-sm" style="font-size: 0.7rem; padding: 3px 8px; animation: pulse 2s infinite;" onclick="abrirModalLerObs('${obsStrBase64}')">🔔 Ver Obs.</button>`;
         }
@@ -703,14 +699,30 @@ async function filtrarRelatorioTela() {
         tabelaBody.appendChild(tr);
     });
 
+    // NOVO: Cálculo real e matemático de banco de horas (Saldo Final)
+    const saldoFinal = acumuladorTrabalhadas - acumuladorEsperadas;
+    const saldoAbsoluto = Math.abs(saldoFinal);
+    const strSaldo = formatarMinutosParaString(saldoAbsoluto);
+    
+    let htmlSaldo = "";
+    if (saldoFinal > 0) {
+        htmlSaldo = `<span style="color: #16a34a; font-weight: 900; font-size: 1.1rem;">+ ${strSaldo} (Horas Extras Reais)</span>`;
+    } else if (saldoFinal < 0) {
+        htmlSaldo = `<span style="color: #ef4444; font-weight: 900; font-size: 1.1rem;">- ${strSaldo} (Horas Faltantes)</span>`;
+    } else {
+        htmlSaldo = `<span style="color: #64748b; font-weight: 900; font-size: 1.1rem;">00:00 (Zerado)</span>`;
+    }
+
     const trTotal = document.createElement('tr');
-    trTotal.style.backgroundColor = "#e5e7eb";
-    trTotal.className = "table-secondary fw-bold text-dark";
+    trTotal.style.backgroundColor = "#f8fafc";
     trTotal.innerHTML = `
-        <td colspan="6" class="text-end pe-3">TOTAL DO PERÍODO SELECIONADO:</td>
-        <td class="text-success fw-extrabold">${formatarMinutosParaString(acumuladorTrabalhadas)}</td>
-        <td class="text-danger fw-extrabold">${formatarMinutosParaString(acumuladorExtras)}</td>
-        <td></td>
+        <td colspan="9" class="text-end pe-4 py-4 border-top">
+            <div style="font-size: 0.95rem; line-height: 1.8;">
+                <span class="text-secondary fw-bold text-uppercase me-2">Carga Esperada do Período:</span> <span class="fw-bold text-dark fs-6">${formatarMinutosParaString(acumuladorEsperadas)}</span><br>
+                <span class="text-secondary fw-bold text-uppercase me-2">Total Realizado:</span> <span class="fw-bold text-dark fs-6">${formatarMinutosParaString(acumuladorTrabalhadas)}</span><br>
+                <span class="text-dark fw-extrabold text-uppercase me-2" style="font-size: 1.1rem;">Saldo Final:</span> ${htmlSaldo}
+            </div>
+        </td>
     `;
     tabelaBody.appendChild(trTotal);
 }
@@ -771,11 +783,11 @@ async function exportarPontosExcel() {
     ];
 
     let somaTrab = 0;
-    let somaExtra = 0;
+    let somaEsperada = 0;
 
     dadosParaPlanilha.forEach(r => {
         somaTrab += r.minutosTrabalhadosNum;
-        somaExtra += r.minutosExtrasNum;
+        somaEsperada += r.minutosEsperadosNum;
 
         let textoObsFinal = "Sem observação";
         if (r.observacoes && r.observacoes.length > 0) {
@@ -785,27 +797,62 @@ async function exportarPontosExcel() {
         matrizPlanilha.push([r.data, r.nome, r.entrada, r.almocoIda, r.almocoVolta, r.saida, r.horasTrabalhadas, r.horasExtras, textoObsFinal]);
     });
 
+    // NOVO: Cálculo matemático de banco de horas (Saldo Final para o Excel)
+    const saldoFinal = somaTrab - somaEsperada;
+    const saldoAbs = Math.abs(saldoFinal);
+    const strSaldo = formatarMinutosParaString(saldoAbs);
+    
+    let textoSaldo = "";
+    if (saldoFinal > 0) textoSaldo = `+ ${strSaldo} (Horas Extras Reais)`;
+    else if (saldoFinal < 0) textoSaldo = `- ${strSaldo} (Horas Faltantes)`;
+    else textoSaldo = "00:00 (Zerado)";
+
+    const idxEmpty = matrizPlanilha.length;
     matrizPlanilha.push([]);
-    matrizPlanilha.push(["TOTAL DE HORAS TRABALHADAS DO PERÍODO:", "", "", "", "", "", formatarMinutosParaString(somaTrab), formatarMinutosParaString(somaExtra), ""]);
+    
+    const idxTitle = matrizPlanilha.length;
+    matrizPlanilha.push(["RESUMO FINANCEIRO DO PERÍODO", "", "", "", "", "", "", "", ""]);
+    
+    const idxCarga = matrizPlanilha.length;
+    matrizPlanilha.push(["CARGA ESPERADA DO PERÍODO:", "", "", "", "", "", formatarMinutosParaString(somaEsperada), "", ""]);
+    
+    const idxTrab = matrizPlanilha.length;
+    matrizPlanilha.push(["TOTAL REALIZADO:", "", "", "", "", "", formatarMinutosParaString(somaTrab), "", ""]);
+    
+    const idxSaldo = matrizPlanilha.length;
+    matrizPlanilha.push(["SALDO FINAL:", "", "", "", "", "", textoSaldo, "", ""]);
 
     const worksheet = XLSX.utils.aoa_to_sheet(matrizPlanilha);
 
     const orangeFill = { fill: { fgColor: { rgb: "F97316" } }, font: { bold: true, color: { rgb: "FFFFFF" }, size: 12 }, alignment: { horizontal: "center", vertical: "center" } };
     const greyTotalAlignRight = { fill: { fgColor: { rgb: "E5E7EB" } }, font: { bold: true, color: { rgb: "000000" } }, alignment: { horizontal: "right", vertical: "center" } };
-    const greyTotalGreen = { fill: { fgColor: { rgb: "E5E7EB" } }, font: { bold: true, color: { rgb: "16A34A" } }, alignment: { horizontal: "center", vertical: "center" } };
-    const greyTotalRed = { fill: { fgColor: { rgb: "E5E7EB" } }, font: { bold: true, color: { rgb: "EF4444" } }, alignment: { horizontal: "center", vertical: "center" } };
+    const greyTotalCenter = { fill: { fgColor: { rgb: "E5E7EB" } }, font: { bold: true, color: { rgb: "000000" } }, alignment: { horizontal: "center", vertical: "center" } };
+    const greenStyle = { font: { bold: true, color: { rgb: "16A34A" } }, alignment: { horizontal: "center", vertical: "center" } };
+    const redStyle = { font: { bold: true, color: { rgb: "EF4444" } }, alignment: { horizontal: "center", vertical: "center" } };
+    const defaultBold = { font: { bold: true, color: { rgb: "000000" } }, alignment: { horizontal: "center", vertical: "center" } };
 
     if(worksheet['A1']) worksheet['A1'].s = orangeFill;
     
-    const ultimaLinhaIndex = matrizPlanilha.length;
-    if(worksheet[`A${ultimaLinhaIndex}`]) worksheet[`A${ultimaLinhaIndex}`].s = greyTotalAlignRight;
-    if(worksheet[`G${ultimaLinhaIndex}`]) worksheet[`G${ultimaLinhaIndex}`].s = greyTotalGreen;
-    if(worksheet[`H${ultimaLinhaIndex}`]) worksheet[`H${ultimaLinhaIndex}`].s = greyTotalRed;
+    if(worksheet[`A${idxTitle + 1}`]) worksheet[`A${idxTitle + 1}`].s = greyTotalCenter;
+    if(worksheet[`A${idxCarga + 1}`]) worksheet[`A${idxCarga + 1}`].s = greyTotalAlignRight;
+    if(worksheet[`G${idxCarga + 1}`]) worksheet[`G${idxCarga + 1}`].s = greyTotalCenter;
+    if(worksheet[`A${idxTrab + 1}`]) worksheet[`A${idxTrab + 1}`].s = greyTotalAlignRight;
+    if(worksheet[`G${idxTrab + 1}`]) worksheet[`G${idxTrab + 1}`].s = greyTotalCenter;
+    if(worksheet[`A${idxSaldo + 1}`]) worksheet[`A${idxSaldo + 1}`].s = greyTotalAlignRight;
+
+    if(worksheet[`G${idxSaldo + 1}`]) {
+        if(saldoFinal > 0) worksheet[`G${idxSaldo + 1}`].s = greenStyle;
+        else if(saldoFinal < 0) worksheet[`G${idxSaldo + 1}`].s = redStyle;
+        else worksheet[`G${idxSaldo + 1}`].s = defaultBold;
+    }
 
     worksheet['!merges'] = [
         { s: { r: 0, c: 0 }, e: { r: 0, c: 8 } }, 
         { s: { r: 1, c: 0 }, e: { r: 1, c: 8 } }, 
-        { s: { r: ultimaLinhaIndex - 1, c: 0 }, e: { r: ultimaLinhaIndex - 1, c: 5 } } 
+        { s: { r: idxTitle, c: 0 }, e: { r: idxTitle, c: 8 } }, 
+        { s: { r: idxCarga, c: 0 }, e: { r: idxCarga, c: 5 } }, 
+        { s: { r: idxTrab, c: 0 }, e: { r: idxTrab, c: 5 } }, 
+        { s: { r: idxSaldo, c: 0 }, e: { r: idxSaldo, c: 5 } } 
     ];
 
     worksheet['!cols'] = [

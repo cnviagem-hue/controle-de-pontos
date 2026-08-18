@@ -9,29 +9,119 @@
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body { background-color: #f8fafc; font-family: 'Segoe UI', Arial, sans-serif; display: flex; min-height: 100vh; }
         
-        /* MENU LATERAL FIXO À ESQUERDA */
-        .sidebar { width: 260px; background-color: #0f172a; color: #94a3b8; padding: 24px 16px; position: fixed; top: 0; left: 0; bottom: 0; display: flex; flex-direction: column; justify-content: space-between; z-index: 100; }
+        /* MENU LATERAL FIXO À ESQUERDA COM TRANSIÇÃO SUAVE */
+        .sidebar { 
+            width: 260px; 
+            background-color: #0f172a; 
+            color: #94a3b8; 
+            padding: 24px 16px; 
+            position: fixed; 
+            top: 0; 
+            left: 0; 
+            bottom: 0; 
+            display: flex; 
+            flex-direction: column; 
+            justify-content: space-between; 
+            z-index: 100; 
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
         
+        /* BOTÃO DE RECOLHER / EXPANDIR */
+        .btn-toggle-sidebar {
+            position: absolute;
+            right: -10px;
+            top: 14px;
+            background: #1e293b;
+            border: 2px solid #334155;
+            color: #f97316;
+            border-radius: 50%;
+            width: 26px;
+            height: 26px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.7rem;
+            font-weight: 900;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            z-index: 105;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+        .btn-toggle-sidebar:hover {
+            background: #f97316;
+            color: #ffffff;
+            border-color: #ea580c;
+            transform: scale(1.1);
+        }
+
         /* CABEÇALHO DA SIDEBAR */
-        .sidebar-header { margin-bottom: 32px; padding-bottom: 16px; border-bottom: 1px solid #334155; }
+        .sidebar-header { margin-bottom: 32px; padding-bottom: 16px; border-bottom: 1px solid #334155; position: relative; }
         .sidebar-header h2 { font-size: 1.25rem; font-weight: 600; color: #f8fafc; margin-bottom: 4px; }
         .empresa-destaque { color: #f97316; font-size: 0.85rem; font-weight: 700; text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; letter-spacing: 0.5px; }
 
         .sidebar-menu { list-style: none; width: 100%; padding: 0; }
         .sidebar-menu li { margin-bottom: 8px; }
-        .sidebar-menu .nav-link { display: block; color: #94a3b8; text-decoration: none; padding: 12px; border-radius: 8px; font-weight: 500; transition: all 0.2s; cursor: pointer; }
+        .sidebar-menu .nav-link { display: flex; align-items: center; gap: 10px; color: #94a3b8; text-decoration: none; padding: 12px; border-radius: 8px; font-weight: 500; transition: all 0.2s; cursor: pointer; white-space: nowrap; }
         .sidebar-menu .nav-link:hover { background-color: #1e293b; color: #fff; }
         .sidebar-menu .nav-link.active { background-color: #1e293b; color: #f97316; font-weight: 600; }
         
-        .btn-copiar-link { background-color: #1e293b; border: 1px dashed #f97316; color: #f97316; padding: 12px; border-radius: 8px; text-align: center; font-size: 0.85rem; font-weight: 600; cursor: pointer; margin-top: 20px; transition: all 0.2s; display: flex; align-items: center; justify-content: center; gap: 8px; }
+        .btn-copiar-link { background-color: #1e293b; border: 1px dashed #f97316; color: #f97316; padding: 12px; border-radius: 8px; text-align: center; font-size: 0.85rem; font-weight: 600; cursor: pointer; margin-top: 20px; transition: all 0.2s; display: flex; align-items: center; justify-content: center; gap: 8px; white-space: nowrap; }
         .btn-copiar-link:hover { background-color: #f97316; color: #fff; }
 
-        .btn-sidebar-logout { background: none; border: none; color: #64748b; font-size: 0.85rem; font-weight: 500; display: flex; align-items: center; justify-content: center; gap: 6px; cursor: pointer; padding: 12px; width: 100%; border-radius: 8px; transition: all 0.2s; margin-top: auto; }
+        .btn-sidebar-logout { background: none; border: none; color: #64748b; font-size: 0.85rem; font-weight: 500; display: flex; align-items: center; justify-content: center; gap: 6px; cursor: pointer; padding: 12px; width: 100%; border-radius: 8px; transition: all 0.2s; margin-top: auto; white-space: nowrap; }
         .btn-sidebar-logout:hover { background-color: #1e293b; color: #ef4444; }
 
-        /* ÁREA DE CONTEÚDO PRINCIPAL */
-        .main-content { flex-grow: 1; margin-left: 260px; padding: 32px; min-width: 0; width: calc(100% - 260px); }
-        .card-custom { background: #ffffff; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); padding: 32px; border: 1px solid #e2e8f0; width: 100%; max-width: 1100px; margin-bottom: 24px; }
+        /* ESTADO RECOLHIDO (COLLAPSED) */
+        .sidebar.collapsed {
+            width: 72px;
+            padding: 24px 8px;
+        }
+        .sidebar.collapsed .sidebar-brand-text,
+        .sidebar.collapsed .menu-text,
+        .sidebar.collapsed .empresa-destaque {
+            display: none !important;
+        }
+        .sidebar.collapsed .sidebar-header {
+            text-align: center;
+            margin-bottom: 24px;
+            padding-bottom: 20px;
+        }
+        .sidebar.collapsed .btn-toggle-sidebar {
+            right: 50%;
+            transform: translateX(50%);
+            top: -6px;
+        }
+        .sidebar.collapsed .sidebar-menu .nav-link {
+            justify-content: center;
+            padding: 12px 0;
+            font-size: 1.15rem;
+        }
+        .sidebar.collapsed .btn-copiar-link {
+            padding: 12px 0;
+            justify-content: center;
+            font-size: 1.1rem;
+        }
+        .sidebar.collapsed .btn-sidebar-logout {
+            justify-content: center;
+            padding: 12px 0;
+            font-size: 1.1rem;
+        }
+
+        /* ÁREA DE CONTEÚDO PRINCIPAL COM TRANSIÇÃO */
+        .main-content { 
+            flex-grow: 1; 
+            margin-left: 260px; 
+            padding: 32px; 
+            min-width: 0; 
+            width: calc(100% - 260px); 
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .main-content.expanded {
+            margin-left: 72px;
+            width: calc(100% - 72px);
+        }
+
+        .card-custom { background: #ffffff; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); padding: 32px; border: 1px solid #e2e8f0; width: 100%; max-width: 100%; margin-bottom: 24px; }
         
         .section-title { font-size: 1.15rem; font-weight: 600; color: #0f172a; margin-bottom: 24px; border-left: 4px solid #3b82f6; padding-left: 12px; display: flex; align-items: center; justify-content: space-between; }
         .endereco-box { background-color: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 15px; margin-top: 15px; display: none; }
@@ -40,13 +130,11 @@
         .tab-content-section { display: none; width: 100%; }
         .tab-content-section.active { display: block; }
 
-        /* RECIPIENTE DE SENHA COM OLHO */
         .password-container { position: relative; display: flex; align-items: center; width: 100%; }
         .password-container input { padding-right: 44px; width: 100%; }
         .btn-toggle-eye { position: absolute; right: 12px; background: none; border: none; font-size: 1.1rem; cursor: pointer; color: #94a3b8; transition: color 0.2s; user-select: none; padding: 0; margin: 0; display: flex; align-items: center; justify-content: center; height: 100%; }
         .btn-toggle-eye:hover { color: #f97316; }
 
-        /* TABELAS */
         .table-responsive { width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; border-radius: 8px; border: 1px solid #e2e8f0; }
         .table th, .table td { white-space: nowrap; padding: 14px 16px; text-align: left; }
         
@@ -56,41 +144,47 @@
 
         @media (max-width: 768px) {
             body { flex-direction: column; }
-            .sidebar { width: 100%; position: relative; height: auto; padding: 16px; }
+            .sidebar { width: 100% !important; position: relative; height: auto; padding: 16px; }
+            .sidebar.collapsed { width: 100% !important; padding: 16px; }
             .sidebar-header h2 { margin-bottom: 16px; text-align: center; }
             .sidebar-menu { display: flex; justify-content: space-around; gap: 8px; }
             .btn-copiar-link { display: none; }
-            .main-content { margin-left: 0; width: 100%; padding: 16px; }
+            .btn-toggle-sidebar { display: none; }
+            .main-content { margin-left: 0 !important; width: 100% !important; padding: 16px; }
+            .main-content.expanded { margin-left: 0 !important; width: 100% !important; }
         }
     </style>
 </head>
 <body>
 
-    <aside class="sidebar">
+    <aside class="sidebar" id="sidebarMenu">
         <div style="width: 100%; display: flex; flex-direction: column; height: 100%;">
             
             <div class="sidebar-header">
-                <h2>Ponto Web <span class="badge bg-primary ms-1" style="font-size: 0.5rem; vertical-align: middle;">☁️</span></h2>
-                <div id="sidebarNomeEmpresa" class="empresa-destaque" title="Empresa Ativa">Carregando...</div>
+                <button type="button" id="btnToggleSidebar" class="btn-toggle-sidebar" onclick="toggleSidebarMenu()" title="Recolher / Expandir Menu">◀</button>
+                <div class="sidebar-brand-text">
+                    <h2>Ponto Web <span class="badge bg-primary ms-1" style="font-size: 0.5rem; vertical-align: middle;">☁️</span></h2>
+                    <div id="sidebarNomeEmpresa" class="empresa-destaque" title="Empresa Ativa">Carregando...</div>
+                </div>
             </div>
 
             <ul class="sidebar-menu">
-                <li><a class="nav-link active" id="menu-pessoal" onclick="alternarAba('pessoal')">👥 Pessoal</a></li>
-                <li><a class="nav-link" id="menu-relatorios" onclick="alternarAba('relatorios')">📊 Relatórios</a></li>
-                <li><a class="nav-link" id="menu-configs" onclick="alternarAba('configs')">⚙️ Configs</a></li>
+                <li><a class="nav-link active" id="menu-pessoal" onclick="alternarAba('pessoal')"><span>👥</span> <span class="menu-text">Pessoal</span></a></li>
+                <li><a class="nav-link" id="menu-relatorios" onclick="alternarAba('relatorios')"><span>📊</span> <span class="menu-text">Relatórios</span></a></li>
+                <li><a class="nav-link" id="menu-configs" onclick="alternarAba('configs')"><span>⚙️</span> <span class="menu-text">Configs</span></a></li>
             </ul>
             
             <div class="btn-copiar-link" onclick="copiarLinkColaborador()">
-                🔗 Copiar Link do App
+                <span>🔗</span> <span class="menu-text">Copiar Link do App</span>
             </div>
 
             <button type="button" class="btn-sidebar-logout" onclick="fazerLogout()">
-                ➔ Sair do Sistema
+                <span>➔</span> <span class="menu-text">Sair do Sistema</span>
             </button>
         </div>
     </aside>
 
-    <main class="main-content">
+    <main class="main-content" id="mainContentContainer">
         
         <!-- ABA PESSOAL -->
         <div id="conteudo-pessoal" class="tab-content-section active">

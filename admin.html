@@ -9,7 +9,7 @@
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body { background-color: #f8fafc; font-family: 'Segoe UI', Arial, sans-serif; display: flex; min-height: 100vh; }
         
-        /* MENU LATERAL FIXO À ESQUERDA */
+        /* MENU LATERAL FIXO À ESQUERDA COM TRANSIÇÃO SUAVE */
         .sidebar { 
             width: 260px; 
             background-color: #0f172a; 
@@ -201,7 +201,7 @@
                             <input type="text" id="cadCpf" placeholder="Ex: 000.000.000-00" class="form-control" oninput="mascaraCPF(this)" required>
                         </div>
 
-                        <!-- NOVOS CAMPOS: CARGO, FUNÇÃO E PIS -->
+                        <!-- CARGO, FUNÇÃO E PIS -->
                         <div class="col-md-4">
                             <label class="form-label fw-medium small">Cargo</label>
                             <input type="text" id="cadCargo" placeholder="Ex: Auxiliar Administrativo" class="form-control">
@@ -213,6 +213,26 @@
                         <div class="col-md-4">
                             <label class="form-label fw-medium small">PIS</label>
                             <input type="text" id="cadPis" placeholder="Ex: 000.00000.00-0" class="form-control" oninput="mascaraPIS(this)">
+                        </div>
+
+                        <!-- CTPS Nº SERIE E DATA INICIO -->
+                        <div class="col-md-6">
+                            <label class="form-label fw-medium small">CTPS Nº Série</label>
+                            <input type="text" id="cadCtps" placeholder="Ex: 1234567 Série 001-0" class="form-control">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-medium small">Data Início</label>
+                            <input type="text" id="cadDataInicio" placeholder="Ex: 01/02/2026" class="form-control">
+                        </div>
+
+                        <!-- DESCRITIVOS DE ESCALA DE TRABALHO -->
+                        <div class="col-md-6">
+                            <label class="form-label fw-medium small">Horas de Trabalho Segunda a Sexta-feira</label>
+                            <input type="text" id="cadHorasSegSex" placeholder="Ex: 08:00 às 18:00 com 01:12 de almoço" class="form-control">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-medium small">Horário aos Sábados</label>
+                            <input type="text" id="cadHorasSab" placeholder="Ex: 08:00 às 12:00" class="form-control">
                         </div>
 
                         <div class="col-md-6">
@@ -235,7 +255,7 @@
                             <input type="file" id="cadFotoFile" accept="image/*" class="form-control">
                         </div>
                         
-                        <div class="col-12 mt-3 mb-0"><span class="text-muted small fw-bold text-uppercase">Carga Horária Diária (Esperada)</span></div>
+                        <div class="col-12 mt-3 mb-0"><span class="text-muted small fw-bold text-uppercase">Carga Horária Diária (Esperada para Cálculos)</span></div>
                         <div class="col-md-4 mt-1">
                             <label class="form-label fw-medium small">Segunda a Sexta</label>
                             <input type="time" id="cadCargaSegSex" class="form-control" value="08:00" required>
@@ -276,6 +296,8 @@
                                 <th>Cargo</th>
                                 <th>Função</th>
                                 <th>PIS</th>
+                                <th>CTPS Série</th>
+                                <th>Data Início</th>
                                 <th>Telefone</th>
                                 <th>E-mail</th>
                                 <th>Senha</th>
@@ -451,9 +473,9 @@
       </div>
     </div>
 
-    <!-- MODAL EDITAR FICHA (COM CARGO, FUNÇÃO E PIS) -->
+    <!-- MODAL EDITAR FICHA -->
     <div class="modal fade" id="modalEditarFicha" tabindex="-1" aria-hidden="true">
-      <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-dialog modal-dialog-centered modal-lg">
         <div class="modal-content border-0 shadow-lg" style="border-radius:16px;">
           <div class="modal-header bg-primary text-white py-3" style="border-top-left-radius:16px; border-top-right-radius:16px;">
             <h5 class="modal-title">📝 Editar Ficha do Colaborador</h5>
@@ -461,50 +483,67 @@
           </div>
           <div class="modal-body p-4">
               <div class="row g-3">
-                  <div class="col-12">
+                  <div class="col-md-6">
                       <label class="form-label small fw-medium text-muted">Nome Completo</label>
                       <input type="text" id="editNome" class="form-control">
                   </div>
-                  <div class="col-12">
+                  <div class="col-md-6">
                       <label class="form-label small fw-medium text-muted">CPF</label>
                       <input type="text" id="editCpf" class="form-control" oninput="mascaraCPF(this)">
                   </div>
 
-                  <!-- CAMPOS CARGO, FUNÇÃO E PIS NA EDIÇÃO -->
-                  <div class="col-md-6">
+                  <div class="col-md-4">
                       <label class="form-label small fw-medium text-muted">Cargo</label>
                       <input type="text" id="editCargo" class="form-control">
                   </div>
-                  <div class="col-md-6">
+                  <div class="col-md-4">
                       <label class="form-label small fw-medium text-muted">Função</label>
                       <input type="text" id="editFuncao" class="form-control">
                   </div>
-                  <div class="col-12">
+                  <div class="col-md-4">
                       <label class="form-label small fw-medium text-muted">PIS</label>
                       <input type="text" id="editPis" class="form-control" oninput="mascaraPIS(this)">
                   </div>
 
-                  <div class="col-12">
+                  <div class="col-md-6">
+                      <label class="form-label small fw-medium text-muted">CTPS Nº Série</label>
+                      <input type="text" id="editCtps" class="form-control">
+                  </div>
+                  <div class="col-md-6">
+                      <label class="form-label small fw-medium text-muted">Data Início</label>
+                      <input type="text" id="editDataInicio" class="form-control">
+                  </div>
+
+                  <div class="col-md-6">
+                      <label class="form-label small fw-medium text-muted">Horas de Trabalho Seg a Sex</label>
+                      <input type="text" id="editHorasSegSex" class="form-control">
+                  </div>
+                  <div class="col-md-6">
+                      <label class="form-label small fw-medium text-muted">Horário aos Sábados</label>
+                      <input type="text" id="editHorasSab" class="form-control">
+                  </div>
+
+                  <div class="col-md-6">
                       <label class="form-label small fw-medium text-muted">Telefone</label>
                       <input type="text" id="editTelefone" class="form-control" oninput="mascaraTelefone(this)">
                   </div>
-                  <div class="col-12">
+                  <div class="col-md-6">
                       <label class="form-label small fw-medium text-muted">E-mail</label>
                       <input type="email" id="editEmail" class="form-control">
                   </div>
-                  <div class="col-12">
+                  <div class="col-md-6">
                       <label class="form-label small fw-medium text-muted">Senha de Acesso</label>
                       <div class="password-container">
                           <input type="password" id="editSenha" class="form-control">
                           <button type="button" class="btn-toggle-eye" onclick="toggleInputSenha('editSenha', this)">👁️</button>
                       </div>
                   </div>
-                  <div class="col-12">
+                  <div class="col-md-6">
                       <label class="form-label small fw-medium text-muted">Alterar Foto de Perfil</label>
                       <input type="file" id="editFotoFile" accept="image/*" class="form-control">
                   </div>
                   
-                  <div class="col-12 mt-3 mb-0"><span class="text-muted small fw-bold text-uppercase">Carga Horária Diária (Esperada)</span></div>
+                  <div class="col-12 mt-3 mb-0"><span class="text-muted small fw-bold text-uppercase">Carga Horária Diária (Esperada para Cálculos)</span></div>
                   <div class="col-md-4 mt-1">
                       <label class="form-label small fw-medium text-muted">Seg a Sex</label>
                       <input type="time" id="editCargaSegSex" class="form-control">

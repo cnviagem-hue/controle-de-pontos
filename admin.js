@@ -24,7 +24,6 @@ document.addEventListener("DOMContentLoaded", async () => {
         return;
     }
 
-    // RESTAURA O ESTADO RECOLHIDO DO MENU SE ESTAVA ATIVADO
     if (localStorage.getItem("ponto_web_sidebar_collapsed") === "true") {
         const sidebar = document.getElementById("sidebarMenu");
         const mainContent = document.getElementById("mainContentContainer");
@@ -71,7 +70,6 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
 });
 
-// TOGGLE DO MENU LATERAL (RECOLHER / EXPANDIR)
 function toggleSidebarMenu() {
     const sidebar = document.getElementById("sidebarMenu");
     const mainContent = document.getElementById("mainContentContainer");
@@ -627,8 +625,16 @@ function consolidarLogsBrutos(logsArray) {
                 cargaObrigatoriaDoDia = minCalc !== null ? minCalc : 480;
             }
 
-            if (r.statusDia && r.statusDia !== "NORMAL") {
+            // SE FOR FERIADO, FÉRIAS OU ATESTADO (SEM HORAS TRABALHADAS), ABONA A CARGA
+            // SE FOR ATESTADO PARCIAL (COM HORAS TRABALHADAS), CONTA COMO TRABALHO REAL
+            if (r.statusDia === "FERIADO" || r.statusDia === "FERIAS") {
                 cargaObrigatoriaDoDia = 0;
+            } else if (r.statusDia === "ATESTADO") {
+                if (minutosTrabalhados === 0) {
+                    cargaObrigatoriaDoDia = 0;
+                } else {
+                    cargaObrigatoriaDoDia = minutosTrabalhados;
+                }
             }
 
             r.minutosEsperadosNum = cargaObrigatoriaDoDia;
@@ -748,12 +754,10 @@ window.abrirModalLerObs = function(obsStrBase64) {
 // FUNÇÕES DE EDIÇÃO MANUAL DO DIA PELO GESTOR
 // ==========================================
 window.alternarCamposPorStatus = function() {
-    const st = document.getElementById("ajusteStatusDia").value;
     const container = document.getElementById("containerCamposHorarios");
-    if (st !== "NORMAL") {
-        container.style.opacity = "0.4";
-    } else {
+    if (container) {
         container.style.opacity = "1";
+        container.style.pointerEvents = "auto";
     }
 };
 
@@ -1075,7 +1079,7 @@ async function exportarPontosExcel() {
         } else if (r.statusDia === "FERIADO") {
             textoObsFinal = "Feriado Abonado";
         } else if (r.statusDia === "ATESTADO") {
-            textoObsFinal = "Atestado Médico Abonado";
+            textoObsFinal = "Atestado Médico";
         } else if (r.statusDia === "FERIAS") {
             textoObsFinal = "Férias Abonadas";
         } else if (r.isDomingo) {

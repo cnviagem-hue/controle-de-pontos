@@ -9,7 +9,7 @@
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body { background-color: #f8fafc; font-family: 'Segoe UI', Arial, sans-serif; display: flex; min-height: 100vh; }
         
-        /* MENU LATERAL FIXO À ESQUERDA COM TRANSIÇÃO SUAVE */
+        /* MENU LATERAL FIXO À ESQUERDA */
         .sidebar { 
             width: 260px; 
             background-color: #0f172a; 
@@ -200,6 +200,21 @@
                             <label class="form-label fw-medium small">CPF do Colaborador</label>
                             <input type="text" id="cadCpf" placeholder="Ex: 000.000.000-00" class="form-control" oninput="mascaraCPF(this)" required>
                         </div>
+
+                        <!-- NOVOS CAMPOS: CARGO, FUNÇÃO E PIS -->
+                        <div class="col-md-4">
+                            <label class="form-label fw-medium small">Cargo</label>
+                            <input type="text" id="cadCargo" placeholder="Ex: Auxiliar Administrativo" class="form-control">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-medium small">Função</label>
+                            <input type="text" id="cadFuncao" placeholder="Ex: Atendimento ao Cliente" class="form-control">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-medium small">PIS</label>
+                            <input type="text" id="cadPis" placeholder="Ex: 000.00000.00-0" class="form-control" oninput="mascaraPIS(this)">
+                        </div>
+
                         <div class="col-md-6">
                             <label class="form-label fw-medium small">Telefone / WhatsApp</label>
                             <input type="text" id="cadTelefone" placeholder="Ex: (11) 99999-8888" class="form-control" oninput="mascaraTelefone(this)" required>
@@ -258,6 +273,9 @@
                                 <th>Foto</th>
                                 <th>Nome</th>
                                 <th>CPF</th>
+                                <th>Cargo</th>
+                                <th>Função</th>
+                                <th>PIS</th>
                                 <th>Telefone</th>
                                 <th>E-mail</th>
                                 <th>Senha</th>
@@ -433,7 +451,7 @@
       </div>
     </div>
 
-    <!-- MODAL EDITAR FICHA -->
+    <!-- MODAL EDITAR FICHA (COM CARGO, FUNÇÃO E PIS) -->
     <div class="modal fade" id="modalEditarFicha" tabindex="-1" aria-hidden="true">
       <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content border-0 shadow-lg" style="border-radius:16px;">
@@ -451,6 +469,21 @@
                       <label class="form-label small fw-medium text-muted">CPF</label>
                       <input type="text" id="editCpf" class="form-control" oninput="mascaraCPF(this)">
                   </div>
+
+                  <!-- CAMPOS CARGO, FUNÇÃO E PIS NA EDIÇÃO -->
+                  <div class="col-md-6">
+                      <label class="form-label small fw-medium text-muted">Cargo</label>
+                      <input type="text" id="editCargo" class="form-control">
+                  </div>
+                  <div class="col-md-6">
+                      <label class="form-label small fw-medium text-muted">Função</label>
+                      <input type="text" id="editFuncao" class="form-control">
+                  </div>
+                  <div class="col-12">
+                      <label class="form-label small fw-medium text-muted">PIS</label>
+                      <input type="text" id="editPis" class="form-control" oninput="mascaraPIS(this)">
+                  </div>
+
                   <div class="col-12">
                       <label class="form-label small fw-medium text-muted">Telefone</label>
                       <input type="text" id="editTelefone" class="form-control" oninput="mascaraTelefone(this)">

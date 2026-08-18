@@ -511,6 +511,7 @@ function consolidarLogsBrutos(logsArray) {
                 horasTrabalhadas: "00:00",
                 horasExtras: "00:00",
                 classeCorExtra: "text-muted",
+                isDomingo: false,
                 observacoes: []
             };
         }
@@ -575,6 +576,8 @@ function consolidarLogsBrutos(logsArray) {
             const objetoData = new Date(partesData[2], partesData[1] - 1, partesData[0]);
             const diaDaSemana = objetoData.getDay(); 
 
+            r.isDomingo = (diaDaSemana === 0);
+
             const user = bancoUsuarios.find(u => String(u.id) === String(r.colaboradorId));
             const cargaSegSex = user ? (user.cargaSegSex || "08:00") : "08:00";
             const cargaSab = user ? (user.cargaSab || "04:00") : "04:00";
@@ -594,7 +597,6 @@ function consolidarLogsBrutos(logsArray) {
 
             r.minutosEsperadosNum = cargaObrigatoriaDoDia;
 
-            // CÁLCULO POSITIVO (+) E NEGATIVO (-) DIÁRIO
             const diferencaDia = minutosTrabalhados - cargaObrigatoriaDoDia;
             r.minutosExtrasNum = diferencaDia;
 
@@ -612,6 +614,83 @@ function consolidarLogsBrutos(logsArray) {
     });
 
     return listaFinal;
+}
+
+// GERA O CALENDÁRIO COMPLETO SEM PULAR DIAS (INCLUINDO DOMINGOS E DIAS SEM BATIDA)
+function preencherCalendarioCompleto(dadosConsolidados, dataInicioStr, dataFimStr, colaboradorId) {
+    if (!dataInicioStr || !dataFimStr) return dadosConsolidados;
+
+    const user = bancoUsuarios.find(u => String(u.id) === String(colaboradorId));
+    const nomeColab = user ? user.nome : (dadosConsolidados[0] ? dadosConsolidados[0].nome : "Colaborador");
+    const cargaSegSex = user ? (user.cargaSegSex || "08:00") : "08:00";
+    const cargaSab = user ? (user.cargaSab || "04:00") : "04:00";
+    const cargaDom = user ? (user.cargaDom || "00:00") : "00:00";
+
+    const dInicio = new Date(dataInicioStr + "T00:00:00");
+    const dFim = new Date(dataFimStr + "T00:00:00");
+
+    const mapaExistentes = {};
+    dadosConsolidados.forEach(r => {
+        if (r.data) mapaExistentes[r.data] = r;
+    });
+
+    const listaCompleta = [];
+    let cur = new Date(dInicio);
+
+    while (cur <= dFim) {
+        const diaStr = String(cur.getDate()).padStart(2, '0');
+        const mesStr = String(cur.getMonth() + 1).padStart(2, '0');
+        const anoStr = cur.getFullYear();
+        const dataFormatada = `${diaStr}/${mesStr}/${anoStr}`;
+        const diaDaSemana = cur.getDay();
+
+        if (mapaExistentes[dataFormatada]) {
+            listaCompleta.push(mapaExistentes[dataFormatada]);
+        } else {
+            let cargaObrigatoria = 0;
+            if (diaDaSemana === 6) {
+                const minCalc = bolarTempoParaMinutos(cargaSab);
+                cargaObrigatoria = minCalc !== null ? minCalc : 240;
+            } else if (diaDaSemana === 0) {
+                const minCalc = bolarTempoParaMinutos(cargaDom);
+                cargaObrigatoria = minCalc !== null ? minCalc : 0;
+            } else {
+                const minCalc = bolarTempoParaMinutos(cargaSegSex);
+                cargaObrigatoria = minCalc !== null ? minCalc : 480;
+            }
+
+            let strExtras = "00:00";
+            let corExtras = "text-secondary";
+            let minExtras = 0;
+
+            if (cargaObrigatoria > 0) {
+                minExtras = -cargaObrigatoria;
+                strExtras = `-${formatarMinutosParaString(cargaObrigatoria)}`;
+                corExtras = "text-danger";
+            }
+
+            listaCompleta.push({
+                data: dataFormatada,
+                colaboradorId: String(colaboradorId),
+                nome: nomeColab,
+                entrada: "-",
+                almocoIda: "-",
+                almocoVolta: "-",
+                saida: "-",
+                minutosTrabalhadosNum: 0,
+                minutosEsperadosNum: cargaObrigatoria,
+                minutosExtrasNum: minExtras,
+                horasTrabalhadas: "00:00",
+                horasExtras: strExtras,
+                classeCorExtra: corExtras,
+                isDomingo: (diaDaSemana === 0),
+                observacoes: []
+            });
+        }
+        cur.setDate(cur.getDate() + 1);
+    }
+
+    return listaCompleta;
 }
 
 window.abrirModalLerObs = function(obsStrBase64) {
@@ -645,23 +724,28 @@ async function filtrarRelatorioTela() {
 
     let dadosConsolidados = await puxarLogsEFiltrar();
 
-    if (filtroInicio) {
-        const dInicio = new Date(filtroInicio + "T00:00:00");
-        dadosConsolidados = dadosConsolidados.filter(r => {
-            if(!r.data) return false;
-            const p = r.data.split('/');
-            if(p.length !== 3) return false;
-            return new Date(p[2], p[1]-1, p[0]) >= dInicio;
-        });
-    }
-    if (filtroFim) {
-        const dFim = new Date(filtroFim + "T23:59:59");
-        dadosConsolidados = dadosConsolidados.filter(r => {
-            if(!r.data) return false;
-            const p = r.data.split('/');
-            if(p.length !== 3) return false;
-            return new Date(p[2], p[1]-1, p[0]) <= dFim;
-        });
+    // PREENCHE DIAS DO MÊS/INTERVALO (INCLUINDO DOMINGOS)
+    if (filtroInicio && filtroFim) {
+        dadosConsolidados = preencherCalendarioCompleto(dadosConsolidados, filtroInicio, filtroFim, filtroColab);
+    } else {
+        if (filtroInicio) {
+            const dInicio = new Date(filtroInicio + "T00:00:00");
+            dadosConsolidados = dadosConsolidados.filter(r => {
+                if(!r.data) return false;
+                const p = r.data.split('/');
+                if(p.length !== 3) return false;
+                return new Date(p[2], p[1]-1, p[0]) >= dInicio;
+            });
+        }
+        if (filtroFim) {
+            const dFim = new Date(filtroFim + "T23:59:59");
+            dadosConsolidados = dadosConsolidados.filter(r => {
+                if(!r.data) return false;
+                const p = r.data.split('/');
+                if(p.length !== 3) return false;
+                return new Date(p[2], p[1]-1, p[0]) <= dFim;
+            });
+        }
     }
 
     if (dadosConsolidados.length === 0) {
@@ -690,9 +774,15 @@ async function filtrarRelatorioTela() {
             btnObsHtml = `<button class="btn btn-sm btn-danger fw-bold shadow-sm" style="font-size: 0.7rem; padding: 3px 8px; animation: pulse 2s infinite;" onclick="abrirModalLerObs('${obsStrBase64}')">🔔 Ver Obs.</button>`;
         }
 
+        // DESTAQUE VISUAL SUTIL PARA DOMINGOS / DSR
+        const styleLinha = r.isDomingo ? `style="background-color: #f1f5f9; color: #475569;"` : "";
+        const tagDomingo = r.isDomingo ? ` <span class="badge bg-secondary bg-opacity-25 text-secondary border ms-1" style="font-size:0.65rem;">DOM</span>` : "";
+
         const tr = document.createElement('tr');
+        if (styleLinha) tr.setAttribute('style', 'background-color: #f8fafc;');
+        
         tr.innerHTML = `
-            <td><strong>${r.data}</strong></td>
+            <td><strong>${r.data}</strong>${tagDomingo}</td>
             <td>${r.nome}</td>
             <td><span class="badge bg-light text-dark border">${r.entrada}</span></td>
             <td><span class="badge bg-light text-dark border">${r.almocoIda}</span></td>
@@ -705,7 +795,6 @@ async function filtrarRelatorioTela() {
         tabelaBody.appendChild(tr);
     });
 
-    // CÁLCULO GERAL DO BANCO DE HORAS (SALDO FINAL)
     const saldoFinal = acumuladorTrabalhadas - acumuladorEsperadas;
     const saldoAbsoluto = Math.abs(saldoFinal);
     const strSaldo = formatarMinutosParaString(saldoAbsoluto);
@@ -746,23 +835,27 @@ async function exportarPontosExcel() {
     const filtroInicio = document.getElementById('filtroRelatorioInicio').value;
     const filtroFim = document.getElementById('filtroRelatorioFim').value;
     
-    if (filtroInicio) {
-        const dInicio = new Date(filtroInicio + "T00:00:00");
-        dadosParaPlanilha = dadosParaPlanilha.filter(r => {
-            if(!r.data) return false;
-            const p = r.data.split('/');
-            if(p.length !== 3) return false;
-            return new Date(p[2], p[1]-1, p[0]) >= dInicio;
-        });
-    }
-    if (filtroFim) {
-        const dFim = new Date(filtroFim + "T23:59:59");
-        dadosParaPlanilha = dadosParaPlanilha.filter(r => {
-            if(!r.data) return false;
-            const p = r.data.split('/');
-            if(p.length !== 3) return false;
-            return new Date(p[2], p[1]-1, p[0]) <= dFim;
-        });
+    if (filtroInicio && filtroFim) {
+        dadosParaPlanilha = preencherCalendarioCompleto(dadosParaPlanilha, filtroInicio, filtroFim, filtroColab);
+    } else {
+        if (filtroInicio) {
+            const dInicio = new Date(filtroInicio + "T00:00:00");
+            dadosParaPlanilha = dadosParaPlanilha.filter(r => {
+                if(!r.data) return false;
+                const p = r.data.split('/');
+                if(p.length !== 3) return false;
+                return new Date(p[2], p[1]-1, p[0]) >= dInicio;
+            });
+        }
+        if (filtroFim) {
+            const dFim = new Date(filtroFim + "T23:59:59");
+            dadosParaPlanilha = dadosParaPlanilha.filter(r => {
+                if(!r.data) return false;
+                const p = r.data.split('/');
+                if(p.length !== 3) return false;
+                return new Date(p[2], p[1]-1, p[0]) <= dFim;
+            });
+        }
     }
     
     if (dadosParaPlanilha.length === 0) {
@@ -798,9 +891,12 @@ async function exportarPontosExcel() {
         let textoObsFinal = "Sem observação";
         if (r.observacoes && r.observacoes.length > 0) {
             textoObsFinal = r.observacoes.map(o => `[${o.tipo}] ${o.texto}`).join(" | ");
+        } else if (r.isDomingo) {
+            textoObsFinal = "Descanso Semanal (DSR / Domingo)";
         }
 
-        matrizPlanilha.push([r.data, r.nome, r.entrada, r.almocoIda, r.almocoVolta, r.saida, r.horasTrabalhadas, r.horasExtras, textoObsFinal]);
+        const dataStrExcel = r.isDomingo ? `${r.data} (DOM)` : r.data;
+        matrizPlanilha.push([dataStrExcel, r.nome, r.entrada, r.almocoIda, r.almocoVolta, r.saida, r.horasTrabalhadas, r.horasExtras, textoObsFinal]);
     });
 
     const saldoFinal = somaTrab - somaEsperada;
@@ -812,7 +908,6 @@ async function exportarPontosExcel() {
     else if (saldoFinal < 0) textoSaldo = `- ${strSaldo} (Horas Faltantes)`;
     else textoSaldo = "00:00 (Zerado)";
 
-    const idxEmpty = matrizPlanilha.length;
     matrizPlanilha.push([]);
     
     const idxTitle = matrizPlanilha.length;
@@ -861,7 +956,7 @@ async function exportarPontosExcel() {
     ];
 
     worksheet['!cols'] = [
-        { wch: 12 }, { wch: 40 }, { wch: 10 }, { wch: 12 }, { wch: 14 }, { wch: 10 }, { wch: 14 }, { wch: 14 }, { wch: 45 }
+        { wch: 15 }, { wch: 40 }, { wch: 10 }, { wch: 12 }, { wch: 14 }, { wch: 10 }, { wch: 14 }, { wch: 14 }, { wch: 45 }
     ];
 
     const workbook = XLSX.utils.book_new();

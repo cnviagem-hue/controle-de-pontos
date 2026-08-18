@@ -616,7 +616,6 @@ function consolidarLogsBrutos(logsArray) {
     return listaFinal;
 }
 
-// GERA O CALENDÁRIO COMPLETO SEM PULAR DIAS (INCLUINDO DOMINGOS E DIAS SEM BATIDA)
 function preencherCalendarioCompleto(dadosConsolidados, dataInicioStr, dataFimStr, colaboradorId) {
     if (!dataInicioStr || !dataFimStr) return dadosConsolidados;
 
@@ -708,6 +707,100 @@ window.abrirModalLerObs = function(obsStrBase64) {
     new bootstrap.Modal(document.getElementById('modalLerObservacao')).show();
 };
 
+// ==========================================
+// FUNÇÕES DE EDIÇÃO MANUAL DO DIA PELO GESTOR
+// ==========================================
+window.abrirModalEditarDia = function(diaBase64) {
+    const obj = JSON.parse(decodeURIComponent(escape(atob(diaBase64))));
+    
+    document.getElementById("modalAjusteNome").innerText = obj.nome;
+    document.getElementById("modalAjusteData").innerText = obj.data;
+    document.getElementById("modalAjusteDataVal").value = obj.data;
+    document.getElementById("modalAjusteColabIdVal").value = obj.colaboradorId;
+
+    document.getElementById("ajusteEntrada").value = (obj.entrada && obj.entrada !== "-") ? obj.entrada : "";
+    document.getElementById("ajusteAlmIda").value = (obj.almocoIda && obj.almocoIda !== "-") ? obj.almocoIda : "";
+    document.getElementById("ajusteAlmVolta").value = (obj.almocoVolta && obj.almocoVolta !== "-") ? obj.almocoVolta : "";
+    document.getElementById("ajusteSaida").value = (obj.saida && obj.saida !== "-") ? obj.saida : "";
+
+    new bootstrap.Modal(document.getElementById('modalEditarDiaPonto')).show();
+};
+
+async function salvarAjusteHorariosDia(event) {
+    event.preventDefault();
+    const dataAlvo = document.getElementById("modalAjusteDataVal").value;
+    const colabId = document.getElementById("modalAjusteColabIdVal").value;
+    
+    const hEntrada = document.getElementById("ajusteEntrada").value;
+    const hAlmIda = document.getElementById("ajusteAlmIda").value;
+    const hAlmVolta = document.getElementById("ajusteAlmVolta").value;
+    const hSaida = document.getElementById("ajusteSaida").value;
+
+    const btn = document.getElementById("btnSalvarAjusteDia");
+    btn.disabled = true;
+    btn.innerHTML = "⏳ Gravando Ajuste...";
+
+    try {
+        const snapExistentes = await db.collection("historico_pontos")
+            .where("empresaEmail", "==", PREFIXO_EMPRESA)
+            .where("colaboradorId", "==", String(colabId))
+            .where("data", "==", dataAlvo)
+            .get();
+
+        const mapaDocExistente = {};
+        snapExistentes.forEach(doc => {
+            const d = doc.data();
+            mapaDocExistente[d.tipo] = doc.id;
+        });
+
+        const user = bancoUsuarios.find(u => String(u.id) === String(colabId));
+        const nomeColab = user ? user.nome : "Colaborador";
+
+        const tiposHorarios = [
+            { tipo: "Entrada", hora: hEntrada },
+            { tipo: "Almoço Ida", hora: hAlmIda },
+            { tipo: "Almoço Volta", hora: hAlmVolta },
+            { tipo: "Saída", hora: hSaida }
+        ];
+
+        for (let item of tiposHorarios) {
+            const docId = mapaDocExistente[item.tipo];
+            if (item.hora && item.hora.trim() !== "") {
+                if (docId) {
+                    await db.collection("historico_pontos").doc(docId).update({
+                        hora: item.hora.trim()
+                    });
+                } else {
+                    await db.collection("historico_pontos").add({
+                        colaboradorId: String(colabId),
+                        nome: nomeColab,
+                        data: dataAlvo,
+                        tipo: item.tipo,
+                        hora: item.hora.trim(),
+                        empresaEmail: PREFIXO_EMPRESA,
+                        timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                    });
+                }
+            } else {
+                if (docId) {
+                    await db.collection("historico_pontos").doc(docId).delete();
+                }
+            }
+        }
+
+        bootstrap.Modal.getInstance(document.getElementById('modalEditarDiaPonto')).hide();
+        exibirAlertaTop("Ajuste Realizado", `Os horários do dia <strong>${dataAlvo}</strong> foram atualizados com sucesso.`);
+        await filtrarRelatorioTela();
+
+    } catch (err) {
+        console.error("Erro ao salvar ajuste de ponto:", err);
+        exibirAlertaTop("⚠️ Erro", "Falha ao gravar os novos horários.");
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = "💾 Salvar Ajuste";
+    }
+}
+
 async function filtrarRelatorioTela() {
     const filtroColab = document.getElementById('filtroRelatorioColaborador').value;
     const filtroInicio = document.getElementById('filtroRelatorioInicio').value;
@@ -718,13 +811,12 @@ async function filtrarRelatorioTela() {
     tabelaBody.innerHTML = "";
 
     if (filtroColab === "todos") {
-        tabelaBody.innerHTML = `<tr><td colspan="9" class="text-center text-muted small py-4">⚠️ Por favor, selecione um colaborador específico para carregar o relatório.</td></tr>`;
+        tabelaBody.innerHTML = `<tr><td colspan="10" class="text-center text-muted small py-4">⚠️ Por favor, selecione um colaborador específico para carregar o relatório.</td></tr>`;
         return;
     }
 
     let dadosConsolidados = await puxarLogsEFiltrar();
 
-    // PREENCHE DIAS DO MÊS/INTERVALO (INCLUINDO DOMINGOS)
     if (filtroInicio && filtroFim) {
         dadosConsolidados = preencherCalendarioCompleto(dadosConsolidados, filtroInicio, filtroFim, filtroColab);
     } else {
@@ -749,7 +841,7 @@ async function filtrarRelatorioTela() {
     }
 
     if (dadosConsolidados.length === 0) {
-        tabelaBody.innerHTML = `<tr><td colspan="9" class="text-center text-muted small py-4">Nenhum registro encontrado para este colaborador no período selecionado.</td></tr>`;
+        tabelaBody.innerHTML = `<tr><td colspan="10" class="text-center text-muted small py-4">Nenhum registro encontrado para este colaborador no período selecionado.</td></tr>`;
         return;
     }
 
@@ -774,12 +866,11 @@ async function filtrarRelatorioTela() {
             btnObsHtml = `<button class="btn btn-sm btn-danger fw-bold shadow-sm" style="font-size: 0.7rem; padding: 3px 8px; animation: pulse 2s infinite;" onclick="abrirModalLerObs('${obsStrBase64}')">🔔 Ver Obs.</button>`;
         }
 
-        // DESTAQUE VISUAL SUTIL PARA DOMINGOS / DSR
-        const styleLinha = r.isDomingo ? `style="background-color: #f1f5f9; color: #475569;"` : "";
         const tagDomingo = r.isDomingo ? ` <span class="badge bg-secondary bg-opacity-25 text-secondary border ms-1" style="font-size:0.65rem;">DOM</span>` : "";
+        const objDiaBase64 = btoa(unescape(encodeURIComponent(JSON.stringify(r))));
 
         const tr = document.createElement('tr');
-        if (styleLinha) tr.setAttribute('style', 'background-color: #f8fafc;');
+        if (r.isDomingo) tr.setAttribute('style', 'background-color: #f8fafc;');
         
         tr.innerHTML = `
             <td><strong>${r.data}</strong>${tagDomingo}</td>
@@ -791,6 +882,9 @@ async function filtrarRelatorioTela() {
             <td class="text-success fw-bold">${r.horasTrabalhadas}</td>
             <td class="${r.classeCorExtra} fw-bold">${r.horasExtras}</td>
             <td class="text-center">${btnObsHtml}</td>
+            <td class="text-center">
+                <button class="btn btn-sm btn-outline-primary" style="font-size: 0.75rem; padding: 3px 8px;" title="Ajustar Horários do Dia" onclick="abrirModalEditarDia('${objDiaBase64}')">✏️</button>
+            </td>
         `;
         tabelaBody.appendChild(tr);
     });
@@ -811,7 +905,7 @@ async function filtrarRelatorioTela() {
     const trTotal = document.createElement('tr');
     trTotal.style.backgroundColor = "#f8fafc";
     trTotal.innerHTML = `
-        <td colspan="9" class="text-end pe-4 py-4 border-top">
+        <td colspan="10" class="text-end pe-4 py-4 border-top">
             <div style="font-size: 0.95rem; line-height: 1.8;">
                 <span class="text-secondary fw-bold text-uppercase me-2">Carga Esperada do Período:</span> <span class="fw-bold text-dark fs-6">${formatarMinutosParaString(acumuladorEsperadas)}</span><br>
                 <span class="text-secondary fw-bold text-uppercase me-2">Total Realizado:</span> <span class="fw-bold text-dark fs-6">${formatarMinutosParaString(acumuladorTrabalhadas)}</span><br>

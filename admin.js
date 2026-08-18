@@ -1127,7 +1127,6 @@ async function exportarPontosExcel() {
 
     let somaTrab = 0;
     let somaEsperada = 0;
-    const linhaInicioTabela = 11; // Índice 0-based da linha de dados
 
     dadosParaPlanilha.forEach(r => {
         somaTrab += r.minutosTrabalhadosNum;
@@ -1193,64 +1192,63 @@ async function exportarPontosExcel() {
     const worksheet = XLSX.utils.aoa_to_sheet(matrizPlanilha);
 
     // ==========================================
-    // ESTILOS VISUAIS CLEAN E EXECUTIVOS
+    // ESTILIZAÇÃO COMPLETA NATIVA (XLSX-JS-STYLE)
     // ==========================================
-    const bordaFina = {
-        top: { style: "thin", color: { rgb: "D1D5DB" } },
-        bottom: { style: "thin", color: { rgb: "D1D5DB" } },
-        left: { style: "thin", color: { rgb: "D1D5DB" } },
-        right: { style: "thin", color: { rgb: "D1D5DB" } }
+    const bordaSuave = {
+        top: { style: "thin", color: { rgb: "CBD5E1" } },
+        bottom: { style: "thin", color: { rgb: "CBD5E1" } },
+        left: { style: "thin", color: { rgb: "CBD5E1" } },
+        right: { style: "thin", color: { rgb: "CBD5E1" } }
     };
 
-    const estiloTituloPrincipal = {
+    const estiloTitulo = {
         fill: { fgColor: { rgb: "0F172A" } },
         font: { bold: true, color: { rgb: "F97316" }, size: 16, name: "Calibri" },
         alignment: { horizontal: "center", vertical: "center" }
     };
 
-    const estiloCabecalhoInfo = {
-        fill: { fgColor: { rgb: "F8FAFC" } },
+    const estiloRotuloInfo = {
+        fill: { fgColor: { rgb: "F1F5F9" } },
         font: { bold: true, color: { rgb: "475569" }, size: 9, name: "Calibri" },
         alignment: { horizontal: "left", vertical: "center" },
-        border: bordaFina
+        border: bordaSuave
     };
 
-    const estiloCabecalhoDado = {
+    const estiloValorInfo = {
         fill: { fgColor: { rgb: "FFFFFF" } },
-        font: { bold: true, color: { rgb: "0F172A" }, size: 10, name: "Calibri" },
+        font: { bold: true, color: { rgb: "0F172A" }, size: 9.5, name: "Calibri" },
         alignment: { horizontal: "left", vertical: "center" },
-        border: bordaFina
+        border: bordaSuave
     };
 
     const estiloHeaderTabela = {
-        fill: { fgColor: { rgb: "1E293B" } },
+        fill: { fgColor: { rgb: "0F172A" } },
         font: { bold: true, color: { rgb: "FFFFFF" }, size: 10, name: "Calibri" },
         alignment: { horizontal: "center", vertical: "center" },
-        border: bordaFina
+        border: bordaSuave
     };
 
-    const estiloLinhaNormal = {
+    const estiloLinhaBranca = {
         fill: { fgColor: { rgb: "FFFFFF" } },
-        font: { color: { rgb: "1E293B" }, size: 10, name: "Calibri" },
+        font: { color: { rgb: "334155" }, size: 9.5, name: "Calibri" },
         alignment: { horizontal: "center", vertical: "center" },
-        border: bordaFina
+        border: bordaSuave
     };
 
-    const estiloLinhaZebrada = {
+    const estiloLinhaCinza = {
         fill: { fgColor: { rgb: "F8FAFC" } },
-        font: { color: { rgb: "1E293B" }, size: 10, name: "Calibri" },
+        font: { color: { rgb: "334155" }, size: 9.5, name: "Calibri" },
         alignment: { horizontal: "center", vertical: "center" },
-        border: bordaFina
+        border: bordaSuave
     };
 
-    const estiloDomingo = {
+    const estiloLinhaDSR = {
         fill: { fgColor: { rgb: "F1F5F9" } },
         font: { color: { rgb: "64748B" }, size: 9, italic: true, name: "Calibri" },
         alignment: { horizontal: "center", vertical: "center" },
-        border: bordaFina
+        border: bordaSuave
     };
 
-    // Aplicação dos estilos na grade
     const range = XLSX.utils.decode_range(worksheet['!ref']);
     
     for (let R = range.s.r; R <= range.e.r; ++R) {
@@ -1259,67 +1257,55 @@ async function exportarPontosExcel() {
             if (!worksheet[cellAddress]) worksheet[cellAddress] = { t: 's', v: '' };
             const cell = worksheet[cellAddress];
 
-            // Título Principal
             if (R === 0) {
-                cell.s = estiloTituloPrincipal;
-            }
-            // Bloco de Informações Cadastrais
-            else if (R >= 2 && R <= 8) {
+                cell.s = estiloTitulo;
+            } else if (R >= 2 && R <= 8) {
                 if ([0, 4, 5, 7].includes(C) && cell.v) {
-                    cell.s = estiloCabecalhoInfo;
+                    cell.s = estiloRotuloInfo;
                 } else {
-                    cell.s = estiloCabecalhoDado;
+                    cell.s = estiloValorInfo;
                 }
-            }
-            // Cabeçalho da Tabela
-            else if (R === 10) {
+            } else if (R === 10) {
                 cell.s = estiloHeaderTabela;
-            }
-            // Linhas da Tabela
-            else if (R >= 11 && R < idxTitle - 1) {
-                const isDom = String(matrizPlanilha[R][0] || "").includes("DOM");
+            } else if (R >= 11 && R < idxTitle - 1) {
+                const isDSR = String(matrizPlanilha[R][0] || "").includes("DOM");
                 const isPar = (R % 2 === 0);
 
-                if (isDom) {
-                    cell.s = estiloDomingo;
+                if (isDSR) {
+                    cell.s = JSON.parse(JSON.stringify(estiloLinhaDSR));
                 } else {
-                    cell.s = isPar ? estiloLinhaZebrada : estiloLinhaNormal;
+                    cell.s = isPar ? JSON.parse(JSON.stringify(estiloLinhaCinza)) : JSON.parse(JSON.stringify(estiloLinhaBranca));
                 }
 
-                // Alinhamento à esquerda para Nome e Observações
                 if (C === 1 || C === 8) {
-                    cell.s = { ...cell.s, alignment: { horizontal: "left", vertical: "center" } };
+                    cell.s.alignment = { horizontal: "left", vertical: "center" };
                 }
 
-                // Cores dinâmicas para Horas Trabalhadas e Extras
                 if (C === 6) {
-                    cell.s = { ...cell.s, font: { bold: true, color: { rgb: "059669" } } };
+                    cell.s.font = { bold: true, color: { rgb: "059669" }, size: 9.5 };
                 }
                 if (C === 7) {
                     const vStr = String(cell.v || "");
                     if (vStr.startsWith("+")) {
-                        cell.s = { ...cell.s, font: { bold: true, color: { rgb: "059669" } } };
+                        cell.s.font = { bold: true, color: { rgb: "059669" }, size: 9.5 };
                     } else if (vStr.startsWith("-")) {
-                        cell.s = { ...cell.s, font: { bold: true, color: { rgb: "DC2626" } } };
+                        cell.s.font = { bold: true, color: { rgb: "DC2626" }, size: 9.5 };
                     }
                 }
-            }
-            // Bloco de Resumo Financeiro
-            else if (R === idxTitle) {
+            } else if (R === idxTitle) {
                 cell.s = {
                     fill: { fgColor: { rgb: "0F172A" } },
                     font: { bold: true, color: { rgb: "FFFFFF" }, size: 10 },
                     alignment: { horizontal: "center", vertical: "center" },
-                    border: bordaFina
+                    border: bordaSuave
                 };
-            }
-            else if (R >= idxCarga && R <= idxSaldo) {
+            } else if (R >= idxCarga && R <= idxSaldo) {
                 if (C <= 5) {
                     cell.s = {
                         fill: { fgColor: { rgb: "F8FAFC" } },
-                        font: { bold: true, color: { rgb: "334155" }, size: 10 },
+                        font: { bold: true, color: { rgb: "334155" }, size: 9.5 },
                         alignment: { horizontal: "right", vertical: "center" },
-                        border: bordaFina
+                        border: bordaSuave
                     };
                 } else {
                     let corTexto = "0F172A";
@@ -1328,21 +1314,17 @@ async function exportarPontosExcel() {
                     }
                     cell.s = {
                         fill: { fgColor: { rgb: "FFFFFF" } },
-                        font: { bold: true, color: { rgb: corTexto }, size: 11 },
+                        font: { bold: true, color: { rgb: corTexto }, size: 10.5 },
                         alignment: { horizontal: "center", vertical: "center" },
-                        border: bordaFina
+                        border: bordaSuave
                     };
                 }
-            }
-            // Termo Legal
-            else if (R === idxDeclaracao) {
+            } else if (R === idxDeclaracao) {
                 cell.s = {
-                    font: { italic: true, color: { rgb: "64748B" }, size: 8 },
+                    font: { italic: true, color: { rgb: "64748B" }, size: 8.5 },
                     alignment: { horizontal: "center", vertical: "center" }
                 };
-            }
-            // Linha e Assinatura
-            else if (R === idxLinhaAssinatura) {
+            } else if (R === idxLinhaAssinatura) {
                 cell.s = {
                     font: { bold: true, color: { rgb: "1E293B" }, size: 10 },
                     alignment: { horizontal: "center", vertical: "top" },

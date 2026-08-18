@@ -209,7 +209,7 @@ function otimizarEConverterFoto(fileInputElement) {
 
 async function carregarUsuariosDaNuvem() {
     const tabela = document.getElementById('tabelaEquipe');
-    if(tabela) tabela.innerHTML = `<tr><td colspan="12" class="text-center text-muted small py-3">⏳ Carregando dados da Nuvem...</td></tr>`;
+    if(tabela) tabela.innerHTML = `<tr><td colspan="14" class="text-center text-muted small py-3">⏳ Carregando dados da Nuvem...</td></tr>`;
     
     try {
         const snapshot = await db.collection("usuarios_ponto").where("empresaEmail", "==", PREFIXO_EMPRESA).get();
@@ -220,7 +220,7 @@ async function carregarUsuariosDaNuvem() {
         renderTabelaComAtualizacao();
         sincronizarFiltrosColaboradores();
     } catch (error) {
-        if(tabela) tabela.innerHTML = `<tr><td colspan="12" class="text-center text-danger small py-3">⚠️ Erro ao carregar equipe.</td></tr>`;
+        if(tabela) tabela.innerHTML = `<tr><td colspan="14" class="text-center text-danger small py-3">⚠️ Erro ao carregar equipe.</td></tr>`;
     }
 }
 
@@ -244,6 +244,10 @@ async function cadastrarUsuario(event) {
             cargo: document.getElementById('cadCargo').value.trim() || "-",
             funcao: document.getElementById('cadFuncao').value.trim() || "-",
             pis: document.getElementById('cadPis').value.trim() || "-",
+            ctps: document.getElementById('cadCtps').value.trim() || "-",
+            dataInicio: document.getElementById('cadDataInicio').value.trim() || "-",
+            horasSegSex: document.getElementById('cadHorasSegSex').value.trim() || "-",
+            horasSab: document.getElementById('cadHorasSab').value.trim() || "-",
             telefone: document.getElementById('cadTelefone').value.trim(),
             email: document.getElementById('cadEmail').value.trim().toLowerCase(),
             senha: document.getElementById('cadSenha').value.trim(),
@@ -283,7 +287,7 @@ function renderTabelaComAtualizacao() {
     tabela.innerHTML = "";
     
     if(bancoUsuarios.length === 0) {
-        tabela.innerHTML = `<tr><td colspan="12" class="text-center text-muted small py-3">Nenhum funcionário cadastrado.</td></tr>`;
+        tabela.innerHTML = `<tr><td colspan="14" class="text-center text-muted small py-3">Nenhum funcionário cadastrado.</td></tr>`;
         return;
     }
 
@@ -298,6 +302,8 @@ function renderTabelaComAtualizacao() {
             <td class="text-secondary small">${u.cargo || "-"}</td>
             <td class="text-secondary small">${u.funcao || "-"}</td>
             <td class="text-secondary small font-monospace">${u.pis || "-"}</td>
+            <td class="text-secondary small">${u.ctps || "-"}</td>
+            <td class="text-secondary small">${u.dataInicio || "-"}</td>
             <td class="text-secondary small">${u.telefone}</td>
             <td class="text-muted small">${u.email}</td>
             <td><code class="text-dark font-monospace fw-bold">${u.senha}</code></td>
@@ -325,6 +331,10 @@ function abrirModalEditarFicha(index) {
     document.getElementById('editCargo').value = u.cargo && u.cargo !== "-" ? u.cargo : "";
     document.getElementById('editFuncao').value = u.funcao && u.funcao !== "-" ? u.funcao : "";
     document.getElementById('editPis').value = u.pis && u.pis !== "-" ? u.pis : "";
+    document.getElementById('editCtps').value = u.ctps && u.ctps !== "-" ? u.ctps : "";
+    document.getElementById('editDataInicio').value = u.dataInicio && u.dataInicio !== "-" ? u.dataInicio : "";
+    document.getElementById('editHorasSegSex').value = u.horasSegSex && u.horasSegSex !== "-" ? u.horasSegSex : "";
+    document.getElementById('editHorasSab').value = u.horasSab && u.horasSab !== "-" ? u.horasSab : "";
     document.getElementById('editTelefone').value = u.telefone;
     document.getElementById('editEmail').value = u.email;
     document.getElementById('editSenha').value = u.senha;
@@ -354,6 +364,10 @@ async function confirmarEdicaoFicha() {
             cargo: document.getElementById('editCargo').value.trim() || "-",
             funcao: document.getElementById('editFuncao').value.trim() || "-",
             pis: document.getElementById('editPis').value.trim() || "-",
+            ctps: document.getElementById('editCtps').value.trim() || "-",
+            dataInicio: document.getElementById('editDataInicio').value.trim() || "-",
+            horasSegSex: document.getElementById('editHorasSegSex').value.trim() || "-",
+            horasSab: document.getElementById('editHorasSab').value.trim() || "-",
             telefone: document.getElementById('editTelefone').value.trim(),
             email: document.getElementById('editEmail').value.trim().toLowerCase(),
             senha: document.getElementById('editSenha').value.trim(),

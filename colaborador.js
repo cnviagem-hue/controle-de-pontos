@@ -58,6 +58,42 @@ function exibirAvisoColab(titulo, mensagem) {
     }, 50);
 }
 
+// =========================================================================
+// MOTOR DE DETECÇÃO ROBUSTA DE HARDWARE (ANTIFRAUDE MOBILE / DESKTOP)
+// =========================================================================
+function detectarDispositivoReal() {
+    const ua = navigator.userAgent || navigator.vendor || window.opera || "";
+    const isUAMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini|Mobile|mobile|CriOS/i.test(ua);
+    
+    const temTouch = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0) || (navigator.msMaxTouchPoints > 0);
+    const larguraTela = Math.min(window.screen.width, window.screen.height);
+    const isTouchMobileScreen = temTouch && larguraTela <= 1024;
+    
+    const isIPadOS = navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1;
+
+    return (isUAMobile || isTouchMobileScreen || isIPadOS);
+}
+
+function validarPermissaoDispositivo(permissaoUsuario) {
+    const ehMobile = detectarDispositivoReal();
+
+    if (permissaoUsuario === "Celular" && !ehMobile) {
+        return {
+            permitido: false,
+            mensagem: "Sua conta está autorizada para registrar ponto <strong>apenas pelo celular</strong>."
+        };
+    }
+
+    if (permissaoUsuario === "PC" && ehMobile) {
+        return {
+            permitido: false,
+            mensagem: "Sua conta está autorizada para registrar ponto <strong>apenas pelo computador</strong>. O acesso via celular foi bloqueado."
+        };
+    }
+
+    return { permitido: true };
+}
+
 async function buscarNomeEmpresaNuvem() {
     let nomeFinal = "Empresa Parceira";
     try {
@@ -83,6 +119,14 @@ function verificarSessaoExistente() {
     if (sessaoSalva) {
         usuarioLogado = JSON.parse(sessaoSalva);
         PREFIXO_DB_EMPRESA = localStorage.getItem("ponto_web_email_empresa_colab") || "default";
+
+        // Validação preventiva de hardware na restauração da sessão
+        const checagem = validarPermissaoDispositivo(usuarioLogado.permissao);
+        if (!checagem.permitido) {
+            executarLogoutColaborador();
+            exibirAvisoColab("🚫 Dispositivo Não Autorizado", checagem.mensagem);
+            return;
+        }
 
         renderizarFichaFuncionario();
         renderizarHistoricoHoje(); 
@@ -139,6 +183,15 @@ async function executarLoginColaborador(event) {
             return;
         }
 
+        // Validação Antifraude de Dispositivo no Login
+        const validacaoDisp = validarPermissaoDispositivo(encontrarUser.permissao);
+        if (!validacaoDisp.permitido) {
+            exibirAvisoColab("🚫 Dispositivo Não Autorizado", validacaoDisp.mensagem);
+            btn.disabled = false;
+            btn.innerHTML = "Entrar no Sistema";
+            return;
+        }
+
         if (!navigator.geolocation) {
             exibirAvisoColab("⚠️ GPS Necessário", "Este sistema exige o uso de GPS ativo para validar o acesso ao trabalho.");
             btn.disabled = false;
@@ -166,20 +219,13 @@ async function executarLoginColaborador(event) {
                         return;
                     }
 
-                    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+                    const configEmpresa = configSnapshot.docs[0].data();
                     
-                    if (encontrarUser.permissao === "Celular" && !isMobile) {
-                        exibirAvisoColab("🚫 Acesso Bloqueado", "Sua conta está autorizada apenas pelo celular.");
-                        btn.disabled = false;
-                        btn.innerHTML = "Entrar no Sistema";
-                        return;
-                    }
-                    
-                    if (encontrarUser.permissao === "PC" && isMobile) {
-                        exibirAvisoColab("🚫 Acesso Bloqueado", "Sua conta está autorizada apenas pelo computador.");
-                        btn.disabled = false;
-                        btn.innerHTML = "Entrar no Sistema";
-                        return;
+                    if (configEmpresa.latitude && configEmpresa.longitude) {
+                        const empresaLat = parseFloat(configEmpresa.latitude);
+                        const empresaLng = parseFloat(configEmpresa.longitude);
+                        const raioMaximo = parseInt(configEmpresa.raio, 10) || 50;
+                        const distanciaRealMetros = calcularDistanciaHaversine(usuarioLat, usuarioLng, empresaLat, empresaLng);
                     }
 
                     usuarioLogado = encontrarUser;
@@ -228,6 +274,13 @@ function renderizarFichaFuncionario() {
 }
 
 async function solicitarMarcacaoPonto(tipo) {
+    // Validação Antifraude em Tempo Real
+    const validacaoDisp = validarPermissaoDispositivo(usuarioLogado.permissao);
+    if (!validacaoDisp.permitido) {
+        exibirAvisoColab("🚫 Dispositivo Bloqueado", validacaoDisp.mensagem);
+        return;
+    }
+
     const hojeStr = new Date().toLocaleDateString("pt-BR");
     try {
         const snapshot = await db.collection("historico_pontos")
@@ -251,6 +304,15 @@ async function solicitarMarcacaoPonto(tipo) {
 }
 
 function confirmarEGravarPonto() {
+    // Checagem Antifraude no momento da gravação
+    const validacaoDisp = validarPermissaoDispositivo(usuarioLogado.permissao);
+    if (!validacaoDisp.permitido) {
+        const modalConf = bootstrap.Modal.getInstance(document.getElementById("modalConfirmarPonto"));
+        if(modalConf) modalConf.hide();
+        exibirAvisoColab("🚫 Dispositivo Bloqueado", validacaoDisp.mensagem);
+        return;
+    }
+
     if (!navigator.geolocation) {
         exibirAvisoColab("Erro", "GPS não suportado.");
         return;
@@ -258,7 +320,7 @@ function confirmarEGravarPonto() {
 
     const btn = document.getElementById("btnGravarPonto");
     btn.disabled = true;
-    btn.innerHTML = "⏳ Validando GPS Inteligente...";
+    btn.innerHTML = "⏳ Validando GPS e Dispositivo...";
 
     navigator.geolocation.getCurrentPosition(
         async (position) => {
@@ -280,6 +342,7 @@ function confirmarEGravarPonto() {
                     empresaEmail: PREFIXO_DB_EMPRESA,
                     latitudeGravada: usuarioLat,
                     longitudeGravada: usuarioLng,
+                    dispositivoUsado: detectarDispositivoReal() ? "Celular" : "PC",
                     timestamp: firebase.firestore.FieldValue.serverTimestamp()
                 };
                 
@@ -291,7 +354,6 @@ function confirmarEGravarPonto() {
                 
                 renderizarHistoricoHoje(); 
                 
-                // Abre a tela de justificativa/observação após bater o ponto
                 document.getElementById("obsOpcoes").style.display = "block";
                 document.getElementById("obsCampo").style.display = "none";
                 document.getElementById("txtObservacaoPonto").value = "";
@@ -315,10 +377,6 @@ function confirmarEGravarPonto() {
         { enableHighAccuracy: true, timeout: 8000, maximumAge: 0 }
     );
 }
-
-// ==========================================
-// LÓGICA DE JUSTIFICATIVA/OBSERVAÇÃO
-// ==========================================
 
 function ignorarObservacao() {
     const modalObs = bootstrap.Modal.getInstance(document.getElementById("modalObservacao"));
@@ -376,7 +434,7 @@ async function renderizarHistoricoHoje() {
         let logsDeHoje = [];
         snapshot.forEach(doc => logsDeHoje.push(doc.data()));
         const ordem = { "Entrada": 1, "Almoço Ida": 2, "Almoço Volta": 3, "Saída": 4 };
-        logsDeHoje.sort((a, b) => ordem[a.tipo] - ordem[b.tipo]);
+        logsDeHoje.sort((a, b) => (ordem[a.tipo] || 99) - (ordem[b.tipo] || 99));
         logsDeHoje.forEach(log => {
             const div = document.createElement("div"); div.className = "log-registro";
             div.innerHTML = `<span class="tipo">● ${log.tipo}</span><span class="data-log">(${log.data})</span><span class="hora">${log.hora}</span>`;
@@ -386,14 +444,21 @@ async function renderizarHistoricoHoje() {
 }
 
 function executarLogoutColaborador() {
-    localStorage.removeItem("ponto_web_sessao_colab"); localStorage.removeItem("ponto_web_email_empresa_colab"); localStorage.removeItem("ponto_web_nome_empresa_colab");
-    usuarioLogado = null; PREFIXO_DB_EMPRESA = "default";
-    document.getElementById("loginEmail").value = ""; document.getElementById("loginSenha").value = "";
+    localStorage.removeItem("ponto_web_sessao_colab"); 
+    localStorage.removeItem("ponto_web_email_empresa_colab"); 
+    localStorage.removeItem("ponto_web_nome_empresa_colab");
+    usuarioLogado = null; 
+    PREFIXO_DB_EMPRESA = "default";
+    const elEmail = document.getElementById("loginEmail");
+    const elSenha = document.getElementById("loginSenha");
+    if (elEmail) elEmail.value = ""; 
+    if (elSenha) elSenha.value = "";
     irParaTela("login");
 }
 
 function irParaTela(nomeTela) {
-    document.getElementById("secao-login").classList.remove("active"); document.getElementById("secao-horarios").classList.remove("active");
+    document.getElementById("secao-login").classList.remove("active"); 
+    document.getElementById("secao-horarios").classList.remove("active");
     if (nomeTela === "login") document.getElementById("secao-login").classList.add("active");
     else if (nomeTela === "horarios") document.getElementById("secao-horarios").classList.add("active");
 }

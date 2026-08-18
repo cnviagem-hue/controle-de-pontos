@@ -3,447 +3,276 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gestão de Plataforma - Super Admin</title>
+    <title>Super Admin - Master Control</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
-        body {
-            background-color: #0b0f19;
-            color: #ffffff;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { 
+            background-color: #0b1320; 
+            color: #f8fafc; 
+            font-family: 'Segoe UI', Arial, sans-serif; 
+            display: flex; 
+            min-height: 100vh; 
         }
-        .sidebar {
-            background-color: #111827;
-            min-height: 100vh;
-            padding: 20px;
-            border-right: 1px solid #1f2937;
+
+        /* SIDEBAR SUPER ADMIN */
+        .sidebar { 
+            width: 260px; 
+            background-color: #070d17; 
+            padding: 24px 16px; 
+            position: fixed; 
+            top: 0; 
+            left: 0; 
+            bottom: 0; 
+            display: flex; 
+            flex-direction: column; 
+            justify-content: space-between; 
+            border-right: 1px solid #1e293b; 
+            z-index: 100; 
         }
-        .sidebar h2 {
-            color: #10b981;
-            font-size: 22px;
-            font-weight: 800;
-            margin-bottom: 5px;
+        .sidebar-header h2 { font-size: 1.4rem; font-weight: 800; color: #10b981; margin-bottom: 2px; }
+        .sidebar-header p { font-size: 0.75rem; color: #64748b; font-weight: 600; letter-spacing: 0.5px; }
+
+        .sidebar-menu { list-style: none; width: 100%; padding: 0; margin-top: 24px; }
+        .sidebar-menu li { margin-bottom: 8px; }
+        .sidebar-menu .nav-link { 
+            display: flex; 
+            align-items: center; 
+            gap: 10px; 
+            color: #94a3b8; 
+            text-decoration: none; 
+            padding: 12px; 
+            border-radius: 8px; 
+            font-weight: 600; 
+            transition: all 0.2s; 
+            cursor: pointer; 
         }
-        .sidebar p {
-            color: #4b5563;
-            font-size: 11px;
-            margin-bottom: 30px;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
+        .sidebar-menu .nav-link:hover { background-color: #1e293b; color: #fff; }
+        .sidebar-menu .nav-link.active { background-color: #1e293b; color: #10b981; }
+
+        .btn-sidebar-logout { 
+            background: none; 
+            border: none; 
+            color: #64748b; 
+            font-size: 0.85rem; 
+            font-weight: 600; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            gap: 6px; 
+            cursor: pointer; 
+            padding: 12px; 
+            width: 100%; 
+            border-radius: 8px; 
+            transition: all 0.2s; 
+            margin-top: auto; 
         }
-        .nav-link-custom {
-            background: linear-gradient(135deg, #374151, #1f2937);
-            color: #ffffff;
-            padding: 12px 15px;
-            border-radius: 8px;
-            text-decoration: none;
-            display: block;
-            margin-bottom: 15px;
-            font-weight: bold;
-            border: 1px solid #4b5563;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        .btn-sidebar-logout:hover { background-color: #1e293b; color: #ef4444; }
+
+        /* CONTEÚDO */
+        .main-content { flex-grow: 1; margin-left: 260px; padding: 32px; min-width: 0; width: calc(100% - 260px); }
+        .header-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 32px; }
+        .header-top h1 { font-size: 1.6rem; font-weight: 700; color: #f8fafc; margin: 0; }
+        .badge-status { background-color: #064e3b; color: #34d399; border: 1px solid #059669; padding: 6px 14px; border-radius: 20px; font-size: 0.75rem; font-weight: 700; }
+
+        .card-custom { 
+            background: #111c2e; 
+            border-radius: 12px; 
+            padding: 28px; 
+            border: 1px solid #1e293b; 
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1); 
+            margin-bottom: 28px; 
         }
-        .logout-link {
-            color: #9ca3af;
-            text-decoration: none;
-            display: block;
-            margin-top: 30px;
-            font-size: 14px;
-            font-weight: 500;
+        .card-title { font-size: 1.1rem; font-weight: 700; color: #f8fafc; margin-bottom: 20px; display: flex; align-items: center; gap: 8px; }
+
+        .form-label { color: #34d399; font-size: 0.85rem; font-weight: 600; margin-bottom: 6px; }
+        .form-control { 
+            background-color: #1e293b; 
+            border: 1px solid #334155; 
+            color: #f8fafc; 
+            padding: 10px 14px; 
+            border-radius: 8px; 
+            font-size: 0.9rem; 
         }
-        .logout-link:hover {
-            color: #ef4444;
+        .form-control:focus { 
+            background-color: #1e293b; 
+            border-color: #10b981; 
+            box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.2); 
+            color: #ffffff; 
         }
-        .main-content {
-            padding: 40px;
+        .form-control::placeholder { color: #64748b; }
+
+        .btn-salvar { 
+            background-color: #10b981; 
+            color: #ffffff; 
+            font-weight: 700; 
+            border: none; 
+            padding: 12px 24px; 
+            border-radius: 8px; 
+            transition: all 0.2s; 
         }
-        .header-title {
-            font-size: 26px;
-            font-weight: 700;
-            margin-bottom: 30px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
+        .btn-salvar:hover { background-color: #059669; color: #fff; }
+
+        .table-responsive { border-radius: 8px; border: 1px solid #1e293b; overflow-x: auto; }
+        .table { color: #f8fafc; margin: 0; }
+        .table th { background-color: #0b1320; color: #94a3b8; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 1px solid #1e293b; padding: 14px 16px; }
+        .table td { background-color: #111c2e; border-bottom: 1px solid #1e293b; padding: 14px 16px; font-size: 0.9rem; vertical-align: middle; }
+
+        @media (max-width: 768px) {
+            body { flex-direction: column; }
+            .sidebar { width: 100%; position: relative; height: auto; padding: 16px; }
+            .main-content { margin-left: 0; width: 100%; padding: 16px; }
         }
-        .badge-sync {
-            background-color: #10b981;
-            color: #ffffff;
-            font-size: 13px;
-            font-weight: bold;
-            padding: 6px 16px;
-            border-radius: 20px;
-        }
-        .card-panel {
-            background-color: #111827;
-            border-radius: 12px;
-            padding: 25px;
-            margin-bottom: 30px;
-            border: 1px solid #1f2937;
-        }
-        .card-title {
-            font-size: 18px;
-            font-weight: 700;
-            margin-bottom: 20px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-        .form-group-custom {
-            margin-bottom: 15px;
-        }
-        .form-group-custom label {
-            color: #10b981;
-            font-size: 13px;
-            font-weight: 600;
-            margin-bottom: 6px;
-            display: block;
-        }
-        .form-control-custom {
-            background-color: #1f2937;
-            border: 1px solid #374151;
-            color: #ffffff;
-            padding: 10px 14px;
-            border-radius: 6px;
-            width: 100%;
-            font-size: 14px;
-        }
-        .form-control-custom:focus {
-            border-color: #10b981;
-            box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.2);
-            outline: none;
-        }
-        .btn-submit-custom {
-            background-color: #10b981;
-            color: #ffffff;
-            font-weight: 700;
-            padding: 10px 24px;
-            border-radius: 6px;
-            border: none;
-            transition: background 0.2s;
-        }
-        .btn-submit-custom:hover {
-            background-color: #059669;
-        }
-        .table-custom {
-            width: 100%;
-            color: #e5e7eb;
-        }
-        .table-custom th {
-            color: #9ca3af;
-            font-size: 13px;
-            font-weight: 600;
-            padding: 12px;
-            border-bottom: 2px solid #1f2937;
-        }
-        .table-custom td {
-            padding: 14px 12px;
-            border-bottom: 1px solid #1f2937;
-            vertical-align: middle;
-            font-size: 14px;
-        }
-        .badge-status {
-            background-color: rgba(16, 185, 129, 0.2);
-            color: #10b981;
-            padding: 4px 10px;
-            border-radius: 4px;
-            font-size: 12px;
-            font-weight: bold;
-        }
-        .badge-status.bloqueado {
-            background-color: rgba(239, 68, 68, 0.2);
-            color: #ef4444;
-        }
-        .btn-tbl {
-            font-size: 13px;
-            font-weight: 600;
-            padding: 5px 12px;
-            border-radius: 4px;
-            border: none;
-            transition: opacity 0.2s;
-        }
-        .btn-tbl:hover { opacity: 0.9; }
-        .btn-tbl-block { background-color: #ffffff; color: #111827; }
-        .btn-tbl-link { background-color: #2563eb; color: #ffffff; margin-left: 5px; }
-        .btn-tbl-delete { background-color: #dc2626; color: #ffffff; margin-left: 5px; }
     </style>
 </head>
 <body>
 
-<div class="container-fluid">
-    <div class="row">
-        <div class="col-md-3 col-lg-2 sidebar">
-            <h2>PontoWeb</h2>
-            <p>Master Control</p>
-            <a href="#" class="nav-link-custom">🏢 Empresas Clientes</a>
-            <a href="#" onclick="efetuarLogoutMaster()" class="logout-link">◀ Sair do Sistema</a>
+    <aside class="sidebar">
+        <div style="width: 100%; display: flex; flex-direction: column; height: 100%;">
+            <div class="sidebar-header">
+                <h2>PontoWeb</h2>
+                <p>MASTER CONTROL</p>
+            </div>
+
+            <ul class="sidebar-menu">
+                <li><a class="nav-link active"><span>🏢</span> Empresas Clientes</a></li>
+            </ul>
+
+            <button type="button" class="btn-sidebar-logout" onclick="fazerLogoutSuperAdmin()">
+                ◀ Sair do Sistema
+            </button>
+        </div>
+    </aside>
+
+    <main class="main-content">
+        <div class="header-top">
+            <h1>Gestão de Empresas Parceiras</h1>
+            <span class="badge-status">Nuvem Sincronizada</span>
         </div>
 
-        <div class="col-md-9 col-lg-10 main-content">
-            <div class="header-title">
-                <span>Gestão de Empresas Parceiras</span>
-                <span class="badge-sync">Nuvem Sincronizada</span>
-            </div>
-
-            <div class="card-panel">
-                <div class="card-title">➕ Registrar Empresa / Novo Administrador</div>
-                <form id="formCadastroEmpresa" onsubmit="cadastrarNovaEmpresa(event)">
-                    <div class="row">
-                        <div class="col-md-3 form-group-custom">
-                            <label>Nome Fantasia da Empresa</label>
-                            <input type="text" id="empNome" class="form-control-custom" placeholder="Ex: Caldas Novas Viagens" required>
-                        </div>
-                        <div class="col-md-3 form-group-custom">
-                            <label>CNPJ</label>
-                            <input type="text" id="empCnpj" class="form-control-custom" placeholder="00.000.000/0000-00" maxlength="18" oninput="mascaraCNPJ(this)" required>
-                        </div>
-                        <div class="col-md-3 form-group-custom">
-                            <label>E-mail do Administrador (RH)</label>
-                            <input type="email" id="empEmail" class="form-control-custom" placeholder="rh@empresa.com" required>
-                        </div>
-                        <div class="col-md-3 form-group-custom">
-                            <label>Senha Provisória de Acesso</label>
-                            <input type="text" id="empSenha" class="form-control-custom" value="mudar123" required>
-                        </div>
+        <!-- FORMULÁRIO DE CADASTRO -->
+        <div class="card-custom">
+            <div class="card-title"><span>➕</span> Registrar Empresa / Novo Administrador</div>
+            <form id="formCadEmpresa" onsubmit="cadastrarEmpresaMaster(event)">
+                <div class="row g-3">
+                    <div class="col-md-3">
+                        <label class="form-label">Nome Fantasia da Empresa</label>
+                        <input type="text" id="cadEmpNome" class="form-control" placeholder="Ex: Caldas Novas Viagens" required>
                     </div>
-                    <div class="row mt-3">
-                        <div class="col-12 text-end">
-                            <button type="submit" id="btnSalvarEmpresa" class="btn-submit-custom">Salvar Registro na Nuvem</button>
-                        </div>
+                    <div class="col-md-3">
+                        <label class="form-label">CNPJ</label>
+                        <input type="text" id="cadEmpCnpj" class="form-control" placeholder="00.000.000/0000-00" oninput="mascaraCNPJ(this)" required>
                     </div>
-                </form>
-            </div>
+                    <div class="col-md-3">
+                        <label class="form-label">E-mail do Administrador (RH)</label>
+                        <input type="email" id="cadEmpEmail" class="form-control" placeholder="rh@empresa.com" required>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Senha Provisória de Acesso</label>
+                        <input type="text" id="cadEmpSenha" class="form-control" placeholder="mudar123" required>
+                    </div>
 
-            <div class="card-panel">
-                <div class="card-title">📋 Contas Administrativas Ativas</div>
-                <div class="table-responsive">
-                    <table class="table-custom">
-                        <thead>
-                            <tr>
-                                <th>Empresa</th>
-                                <th>CNPJ</th>
-                                <th>E-mail do Admin</th>
-                                <th>Senha Atual</th>
-                                <th>Status</th>
-                                <th class="text-center">Ações de Controle</th>
-                            </tr>
-                        </thead>
-                        <tbody id="tabelaEmpresasCorpo">
-                            <tr>
-                                <td colspan="6" class="text-center text-muted py-3">⏳ Carregando base de dados...</td>
-                            </tr>
-                        </tbody>
-                    </table>
+                    <!-- CAMPO ÚNICO DE ENDEREÇO -->
+                    <div class="col-12 mt-3">
+                        <label class="form-label">Endereço Completo da Empresa</label>
+                        <input type="text" id="cadEmpEndereco" class="form-control" placeholder="Ex: AV DAS NAÇÕES, QD 09, LT 13 - JARDIM DOS TURISTAS, CALDAS NOVAS, GO, CEP: 75690-000">
+                    </div>
+
+                    <div class="col-12 mt-4 d-flex justify-content-end">
+                        <button type="submit" id="btnSalvarEmpresa" class="btn btn-salvar">Salvar Registro na Nuvem</button>
+                    </div>
                 </div>
+            </form>
+        </div>
+
+        <!-- LISTAGEM DAS CONTAS -->
+        <div class="card-custom">
+            <div class="card-title"><span>📋</span> Contas Administrativas Ativas</div>
+            <div class="table-responsive">
+                <table class="table align-middle">
+                    <thead>
+                        <tr>
+                            <th>Empresa</th>
+                            <th>CNPJ</th>
+                            <th>Endereço</th>
+                            <th>E-mail de Acesso</th>
+                            <th>Senha</th>
+                            <th class="text-center">Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tabelaEmpresasBody">
+                    </tbody>
+                </table>
             </div>
         </div>
-    </div>
-</div>
+    </main>
 
-<div class="modal fade" id="modalAlertaPersonalizado" tabindex="-1" aria-hidden="true">
-  <div class="modal-dialog modal-dialog-centered modal-sm">
-    <div class="modal-content" style="background-color: #1f2937; border: 1px solid #374151; border-radius: 12px;">
-      <div class="modal-header border-0 pb-0">
-        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+    <!-- MODAL EDITAR EMPRESA -->
+    <div class="modal fade" id="modalEditarEmpresa" tabindex="-1" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content" style="background-color: #111c2e; border: 1px solid #1e293b; color: #f8fafc; border-radius: 14px;">
+          <div class="modal-header border-0 pb-0">
+            <h5 class="modal-title fw-bold text-success">📝 Editar Dados da Empresa</h5>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+          </div>
+          <div class="modal-body p-4">
+              <form id="formEditEmpresa" onsubmit="confirmarEdicaoEmpresa(event)">
+                  <input type="hidden" id="editDocId">
+                  <div class="row g-3">
+                      <div class="col-md-6">
+                          <label class="form-label">Nome Fantasia</label>
+                          <input type="text" id="editEmpNome" class="form-control" required>
+                      </div>
+                      <div class="col-md-6">
+                          <label class="form-label">CNPJ</label>
+                          <input type="text" id="editEmpCnpj" class="form-control" oninput="mascaraCNPJ(this)" required>
+                      </div>
+                      <div class="col-12">
+                          <label class="form-label">Endereço Completo</label>
+                          <input type="text" id="editEmpEndereco" class="form-control">
+                      </div>
+                      <div class="col-md-6">
+                          <label class="form-label">E-mail do RH</label>
+                          <input type="email" id="editEmpEmail" class="form-control" required>
+                      </div>
+                      <div class="col-md-6">
+                          <label class="form-label">Senha de Acesso</label>
+                          <input type="text" id="editEmpSenha" class="form-control" required>
+                      </div>
+                  </div>
+                  <div class="mt-4 d-flex justify-content-end gap-2">
+                      <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancelar</button>
+                      <button type="submit" id="btnConfirmarEditEmpresa" class="btn btn-salvar btn-sm">Salvar Alterações</button>
+                  </div>
+              </form>
+          </div>
+        </div>
       </div>
-      <div class="modal-body text-center pt-0 pb-4 px-4">
-         <p id="textoAlertaPersonalizado" class="text-white mb-4 mt-2" style="font-size: 15px; font-weight: 500;"></p>
-         <button type="button" class="btn-submit-custom w-100" data-bs-dismiss="modal">Entendido</button>
+    </div>
+
+    <!-- MODAL CONFIRMAÇÃO EXCLUSÃO -->
+    <div class="modal fade" id="modalExcluirEmpresa" tabindex="-1" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content" style="background-color: #111c2e; border: 1px solid #1e293b; color: #f8fafc; border-radius: 14px;">
+          <div class="modal-header border-0 pb-0">
+            <h5 class="modal-title fw-bold text-danger">⚠️ Confirmar Exclusão</h5>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+          </div>
+          <div class="modal-body p-4 text-center">
+            <p class="mb-2">Tem certeza que deseja remover o acesso da empresa <strong id="txtNomeEmpresaExclusao" class="text-white"></strong>?</p>
+            <p class="text-danger small mb-0">Essa ação removerá o acesso do RH ao sistema.</p>
+          </div>
+          <div class="modal-footer border-0 pt-0 d-flex justify-content-center gap-2">
+            <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancelar</button>
+            <button type="button" id="btnConfirmarDeleteEmpresa" class="btn btn-danger btn-sm px-3" onclick="executarExclusaoEmpresa()">Sim, Remover</button>
+          </div>
+        </div>
       </div>
     </div>
-  </div>
-</div>
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore-compat.js"></script>
-
-<script>
-    const firebaseConfig = {
-      apiKey: "AIzaSyAY8VH8f3SKpDvKdm0fzG-9X7gAm-yUEF4",
-      authDomain: "ld-controle-de-ponto.firebaseapp.com",
-      projectId: "ld-controle-de-ponto",
-      storageBucket: "ld-controle-de-ponto.firebasestorage.app",
-      messagingSenderId: "825252476177",
-      appId: "1:825252476177:web:042610ab02abe5e964c8b0"
-    };
-    firebase.initializeApp(firebaseConfig);
-    const db = firebase.firestore();
-
-    // ==========================================
-    // NOVA FUNÇÃO: MÁSCARA AUTOMÁTICA DE CNPJ
-    // ==========================================
-    function mascaraCNPJ(input) {
-        let value = input.value.replace(/\D/g, ''); // Remove tudo o que não for número
-        if (value.length > 14) value = value.slice(0, 14); // Trava em 14 dígitos reais
-        
-        // Aplica a formatação 00.000.000/0000-00
-        value = value.replace(/^(\d{2})(\d)/, '$1.$2');
-        value = value.replace(/^(\d{2})\.(\d{3})(\d)/, '$1.$2.$3');
-        value = value.replace(/\.(\d{3})(\d)/, '.$1/$2');
-        value = value.replace(/(\d{4})(\d)/, '$1-$2');
-        
-        input.value = value;
-    }
-
-    // Função auxiliar para exibir o pop-up customizado
-    function mostrarAlerta(mensagem) {
-        document.getElementById('textoAlertaPersonalizado').innerHTML = mensagem.replace(/\n/g, '<br>');
-        new bootstrap.Modal(document.getElementById('modalAlertaPersonalizado')).show();
-    }
-
-    document.addEventListener("DOMContentLoaded", () => {
-        if (!sessionStorage.getItem("super_admin_autenticado")) {
-            window.location.href = "index.html";
-            return;
-        }
-        carregarEmpresasDaNuvem();
-    });
-
-    async function carregarEmpresasDaNuvem() {
-        const corpo = document.getElementById("tabelaEmpresasCorpo");
-        try {
-            const snapshot = await db.collection("empresas_clientes").get();
-            corpo.innerHTML = "";
-
-            if(snapshot.empty) {
-                corpo.innerHTML = `<tr><td colspan="6" class="text-center text-muted py-3">Nenhuma empresa registrada.</td></tr>`;
-                return;
-            }
-
-            snapshot.forEach(doc => {
-                const emp = doc.data();
-                const statusClasse = emp.status === "ATIVO" ? "" : "bloqueado";
-                const txtBotao = emp.status === "ATIVO" ? "Bloquear" : "Ativar";
-
-                const tr = document.createElement("tr");
-                tr.innerHTML = `
-                    <td class="fw-bold text-white">${emp.nome}</td>
-                    <td>${emp.cnpj}</td>
-                    <td class="text-info">${emp.email}</td>
-                    <td>
-                        <input type="text" class="bg-dark text-white border-0 px-2 py-1 rounded text-center" style="width:110px; font-size:13px; font-family:monospace;" value="${emp.senhaAtual}" onchange="atualizarSenhaDireto('${doc.id}', this.value)">
-                    </td>
-                    <td><span class="badge-status ${statusClasse}">${emp.status}</span></td>
-                    <td class="text-center">
-                        <button class="btn-tbl btn-tbl-block" onclick="alternarStatusEmpresa('${doc.id}', '${emp.status}')">${txtBotao}</button>
-                        <button class="btn-tbl btn-tbl-link" onclick="copiarLinkAcesso('${emp.email}')">🔗 Link</button>
-                        <button class="btn-tbl btn-tbl-delete" onclick="excluirContaAdmin('${doc.id}')">Eliminar</button>
-                    </td>
-                `;
-                corpo.appendChild(tr);
-            });
-        } catch (error) {
-            console.error(error);
-            corpo.innerHTML = `<tr><td colspan="6" class="text-center text-danger py-3">Erro ao ler dados da nuvem.</td></tr>`;
-        }
-    }
-
-    async function cadastrarNovaEmpresa(event) {
-        event.preventDefault();
-        const btn = document.getElementById("btnSalvarEmpresa");
-        
-        const nome = document.getElementById("empNome").value.trim();
-        const cnpj = document.getElementById("empCnpj").value.trim();
-        const email = document.getElementById("empEmail").value.trim().toLowerCase();
-        const senha = document.getElementById("empSenha").value.trim();
-
-        // Validação extra caso o usuário copie e cole um CNPJ incompleto
-        if (cnpj.length < 18) {
-            mostrarAlerta("❌ O CNPJ informado está incompleto. Digite os 14 números.");
-            return;
-        }
-
-        btn.disabled = true;
-        btn.innerHTML = "⏳ Gravando na Nuvem...";
-
-        try {
-            const checkEmail = await db.collection("empresas_clientes").where("email", "==", email).get();
-            
-            if (!checkEmail.empty) {
-                mostrarAlerta("❌ Erro: Este e-mail de Administrador já está cadastrado!");
-                btn.disabled = false;
-                btn.innerHTML = "Salvar Registro na Nuvem";
-                return;
-            }
-
-            const novaEmpresa = {
-                nome: nome,
-                cnpj: cnpj,
-                email: email,
-                senhaAtual: senha,
-                status: "ATIVO",
-                primeiroAcesso: true,
-                timestamp: firebase.firestore.FieldValue.serverTimestamp()
-            };
-
-            await db.collection("empresas_clientes").add(novaEmpresa);
-            
-            const configCheck = await db.collection("configuracoes_empresa").where("empresaEmail", "==", email).get();
-            if(configCheck.empty) {
-                await db.collection("configuracoes_empresa").add({
-                    empresaEmail: email,
-                    nomeEmpresa: nome,
-                    cep: "", numero: "", latitude: "", longitude: "", raio: "200", endereco: ""
-                });
-            }
-
-            document.getElementById("formCadastroEmpresa").reset();
-            document.getElementById("empSenha").value = "mudar123";
-            
-            mostrarAlerta("✅ Sucesso! Novo Administrador vinculado à empresa.");
-            await carregarEmpresasDaNuvem();
-
-        } catch (error) {
-            mostrarAlerta("⚠️ Falha ao salvar no banco de dados.");
-        } finally {
-            btn.disabled = false;
-            btn.innerHTML = "Salvar Registro na Nuvem";
-        }
-    }
-
-    async function atualizarSenhaDireto(id, novaSenha) {
-        if(!novaSenha.trim()) return;
-        try {
-            await db.collection("empresas_clientes").doc(id).update({ senhaAtual: novaSenha.trim() });
-            mostrarAlerta("🔑 Senha do Admin atualizada com sucesso!");
-        } catch (error) {
-            mostrarAlerta("❌ Erro ao atualizar senha.");
-        }
-    }
-
-    // LINK 100% LIMPO E DIRETO COMO APROVADO
-    function copiarLinkAcesso(emailAdmin) {
-        const link = `https://ponto.ldsite.com.br/login-admin.html`;
-        navigator.clipboard.writeText(link).then(() => {
-            mostrarAlerta("🔗 Link de acesso copiado com sucesso!");
-        }).catch(() => {
-            mostrarAlerta("Erro ao copiar link. Tente manualmente: " + link);
-        });
-    }
-
-    async function alternarStatusEmpresa(id, statusAtual) {
-        const novoStatus = statusAtual === "ATIVO" ? "BLOQUEADO" : "ATIVO";
-        try {
-            await db.collection("empresas_clientes").doc(id).update({ status: novoStatus });
-            await carregarEmpresasDaNuvem();
-        } catch (error) {
-            mostrarAlerta("❌ Erro ao mudar status.");
-        }
-    }
-
-    async function excluirContaAdmin(id) {
-        if(!confirm("Tem certeza que deseja remover esta conta permanentemente?")) return;
-        try {
-            await db.collection("empresas_clientes").doc(id).delete();
-            await carregarEmpresasDaNuvem();
-        } catch (error) {
-            mostrarAlerta("❌ Erro ao remover conta.");
-        }
-    }
-
-    function efetuarLogoutMaster() {
-        sessionStorage.clear();
-        window.location.href = "index.html";
-    }
-</script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore-compat.js"></script>
+    <script src="super-admin.js"></script>
 </body>
 </html>

@@ -507,9 +507,10 @@ function consolidarLogsBrutos(logsArray) {
                 saida: "-",
                 minutosTrabalhadosNum: 0,
                 minutosExtrasNum: 0,
-                minutosEsperadosNum: 0, // NOVO: Armazena a carga horária que a empresa espera
+                minutosEsperadosNum: 0,
                 horasTrabalhadas: "00:00",
                 horasExtras: "00:00",
+                classeCorExtra: "text-muted",
                 observacoes: []
             };
         }
@@ -591,16 +592,21 @@ function consolidarLogsBrutos(logsArray) {
                 cargaObrigatoriaDoDia = minCalc !== null ? minCalc : 480;
             }
 
-            // NOVO: Guarda o valor exato que o sistema espera do funcionário
             r.minutosEsperadosNum = cargaObrigatoriaDoDia;
 
-            if(minutosTrabalhados > cargaObrigatoriaDoDia) {
-                const extra = minutosTrabalhados - cargaObrigatoriaDoDia;
-                r.minutosExtrasNum = extra;
-                r.horasExtras = formatarMinutosParaString(extra);
+            // CÁLCULO POSITIVO (+) E NEGATIVO (-) DIÁRIO
+            const diferencaDia = minutosTrabalhados - cargaObrigatoriaDoDia;
+            r.minutosExtrasNum = diferencaDia;
+
+            if (diferencaDia > 0) {
+                r.horasExtras = `+${formatarMinutosParaString(diferencaDia)}`;
+                r.classeCorExtra = "text-success";
+            } else if (diferencaDia < 0) {
+                r.horasExtras = `-${formatarMinutosParaString(Math.abs(diferencaDia))}`;
+                r.classeCorExtra = "text-danger";
             } else {
-                r.minutosExtrasNum = 0;
                 r.horasExtras = "00:00";
+                r.classeCorExtra = "text-secondary";
             }
         }
     });
@@ -693,13 +699,13 @@ async function filtrarRelatorioTela() {
             <td><span class="badge bg-light text-dark border">${r.almocoVolta}</span></td>
             <td><span class="badge bg-light text-dark border">${r.saida}</span></td>
             <td class="text-success fw-bold">${r.horasTrabalhadas}</td>
-            <td class="text-danger fw-bold">${r.horasExtras}</td>
+            <td class="${r.classeCorExtra} fw-bold">${r.horasExtras}</td>
             <td class="text-center">${btnObsHtml}</td>
         `;
         tabelaBody.appendChild(tr);
     });
 
-    // NOVO: Cálculo real e matemático de banco de horas (Saldo Final)
+    // CÁLCULO GERAL DO BANCO DE HORAS (SALDO FINAL)
     const saldoFinal = acumuladorTrabalhadas - acumuladorEsperadas;
     const saldoAbsoluto = Math.abs(saldoFinal);
     const strSaldo = formatarMinutosParaString(saldoAbsoluto);
@@ -797,7 +803,6 @@ async function exportarPontosExcel() {
         matrizPlanilha.push([r.data, r.nome, r.entrada, r.almocoIda, r.almocoVolta, r.saida, r.horasTrabalhadas, r.horasExtras, textoObsFinal]);
     });
 
-    // NOVO: Cálculo matemático de banco de horas (Saldo Final para o Excel)
     const saldoFinal = somaTrab - somaEsperada;
     const saldoAbs = Math.abs(saldoFinal);
     const strSaldo = formatarMinutosParaString(saldoAbs);

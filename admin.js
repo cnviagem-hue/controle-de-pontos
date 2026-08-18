@@ -669,11 +669,21 @@ function consolidarLogsBrutos(logsArray) {
                 }
             }
 
+            // =========================================================
+            // REGRA DE TOLERÂNCIA TRABALHISTA (15 MINUTOS ANTES/DEPOIS)
+            // =========================================================
+            let diferencaDia = minutosTrabalhados - cargaObrigatoriaDoDia;
+
+            if (minutosTrabalhados > 0 && cargaObrigatoriaDoDia > 0) {
+                if (Math.abs(diferencaDia) <= 15) {
+                    minutosTrabalhados = cargaObrigatoriaDoDia;
+                    diferencaDia = 0;
+                }
+            }
+
             r.minutosTrabalhadosNum = minutosTrabalhados;
             r.horasTrabalhadas = formatarMinutosParaString(minutosTrabalhados);
             r.minutosEsperadosNum = cargaObrigatoriaDoDia;
-
-            const diferencaDia = minutosTrabalhados - cargaObrigatoriaDoDia;
             r.minutosExtrasNum = diferencaDia;
 
             if (diferencaDia > 0) {

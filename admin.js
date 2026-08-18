@@ -1039,7 +1039,7 @@ async function filtrarRelatorioTela() {
 }
 
 // =========================================================================
-// EXPORTAÇÃO EXECUTIVA EXCEL COM CABEÇALHO COMPLETO, TÍTULO E TERMO LEGAL
+// EXPORTAÇÃO EXECUTIVA EXCEL COM DESIGN CLEAN E FORMATAÇÃO PROFISSIONAL
 // =========================================================================
 async function exportarPontosExcel() {
     const filtroColab = document.getElementById('filtroRelatorioColaborador').value;
@@ -1127,6 +1127,7 @@ async function exportarPontosExcel() {
 
     let somaTrab = 0;
     let somaEsperada = 0;
+    const linhaInicioTabela = 11; // Índice 0-based da linha de dados
 
     dadosParaPlanilha.forEach(r => {
         somaTrab += r.minutosTrabalhadosNum;
@@ -1176,7 +1177,6 @@ async function exportarPontosExcel() {
     const idxSaldo = matrizPlanilha.length;
     matrizPlanilha.push(["SALDO FINAL:", "", "", "", "", "", textoSaldo, "", ""]);
 
-    // TERMO LEGAL E LINHA DE ASSINATURA
     matrizPlanilha.push([]);
     matrizPlanilha.push([]);
     
@@ -1185,40 +1185,174 @@ async function exportarPontosExcel() {
     
     matrizPlanilha.push([]);
     matrizPlanilha.push([]);
+    matrizPlanilha.push([]);
     
     const idxLinhaAssinatura = matrizPlanilha.length;
-    matrizPlanilha.push(["____________________________________________________________________", "", "", "", "", "", "", "", ""]);
-    
-    const idxNomeAssinatura = matrizPlanilha.length;
-    matrizPlanilha.push([`Assinatura do Colaborador: ${colabNome}`, "", "", "", "", "", "", "", ""]);
+    matrizPlanilha.push(["", "", "Assinatura do Colaborador", "", "", "", "", "", ""]);
 
     const worksheet = XLSX.utils.aoa_to_sheet(matrizPlanilha);
 
-    // ESTILO COM TÍTULO DESTACADO (FONTE MAIOR E NEGRITO)
-    const orangeFill = { fill: { fgColor: { rgb: "F97316" } }, font: { bold: true, color: { rgb: "FFFFFF" }, size: 16 }, alignment: { horizontal: "center", vertical: "center" } };
-    const greyHeader = { fill: { fgColor: { rgb: "0F172A" } }, font: { bold: true, color: { rgb: "FFFFFF" } }, alignment: { horizontal: "center", vertical: "center" } };
-    const greyTotalAlignRight = { fill: { fgColor: { rgb: "E5E7EB" } }, font: { bold: true, color: { rgb: "000000" } }, alignment: { horizontal: "right", vertical: "center" } };
-    const greyTotalCenter = { fill: { fgColor: { rgb: "E5E7EB" } }, font: { bold: true, color: { rgb: "000000" } }, alignment: { horizontal: "center", vertical: "center" } };
-    const greenStyle = { font: { bold: true, color: { rgb: "16A34A" } }, alignment: { horizontal: "center", vertical: "center" } };
-    const redStyle = { font: { bold: true, color: { rgb: "EF4444" } }, alignment: { horizontal: "center", vertical: "center" } };
-    const defaultBold = { font: { bold: true, color: { rgb: "000000" } }, alignment: { horizontal: "center", vertical: "center" } };
+    // ==========================================
+    // ESTILOS VISUAIS CLEAN E EXECUTIVOS
+    // ==========================================
+    const bordaFina = {
+        top: { style: "thin", color: { rgb: "D1D5DB" } },
+        bottom: { style: "thin", color: { rgb: "D1D5DB" } },
+        left: { style: "thin", color: { rgb: "D1D5DB" } },
+        right: { style: "thin", color: { rgb: "D1D5DB" } }
+    };
 
-    if(worksheet['A1']) worksheet['A1'].s = orangeFill;
-    if(worksheet['A11']) worksheet['A11'].s = greyHeader;
+    const estiloTituloPrincipal = {
+        fill: { fgColor: { rgb: "0F172A" } },
+        font: { bold: true, color: { rgb: "F97316" }, size: 16, name: "Calibri" },
+        alignment: { horizontal: "center", vertical: "center" }
+    };
+
+    const estiloCabecalhoInfo = {
+        fill: { fgColor: { rgb: "F8FAFC" } },
+        font: { bold: true, color: { rgb: "475569" }, size: 9, name: "Calibri" },
+        alignment: { horizontal: "left", vertical: "center" },
+        border: bordaFina
+    };
+
+    const estiloCabecalhoDado = {
+        fill: { fgColor: { rgb: "FFFFFF" } },
+        font: { bold: true, color: { rgb: "0F172A" }, size: 10, name: "Calibri" },
+        alignment: { horizontal: "left", vertical: "center" },
+        border: bordaFina
+    };
+
+    const estiloHeaderTabela = {
+        fill: { fgColor: { rgb: "1E293B" } },
+        font: { bold: true, color: { rgb: "FFFFFF" }, size: 10, name: "Calibri" },
+        alignment: { horizontal: "center", vertical: "center" },
+        border: bordaFina
+    };
+
+    const estiloLinhaNormal = {
+        fill: { fgColor: { rgb: "FFFFFF" } },
+        font: { color: { rgb: "1E293B" }, size: 10, name: "Calibri" },
+        alignment: { horizontal: "center", vertical: "center" },
+        border: bordaFina
+    };
+
+    const estiloLinhaZebrada = {
+        fill: { fgColor: { rgb: "F8FAFC" } },
+        font: { color: { rgb: "1E293B" }, size: 10, name: "Calibri" },
+        alignment: { horizontal: "center", vertical: "center" },
+        border: bordaFina
+    };
+
+    const estiloDomingo = {
+        fill: { fgColor: { rgb: "F1F5F9" } },
+        font: { color: { rgb: "64748B" }, size: 9, italic: true, name: "Calibri" },
+        alignment: { horizontal: "center", vertical: "center" },
+        border: bordaFina
+    };
+
+    // Aplicação dos estilos na grade
+    const range = XLSX.utils.decode_range(worksheet['!ref']);
     
-    if(worksheet[`A${idxTitle + 1}`]) worksheet[`A${idxTitle + 1}`].s = greyTotalCenter;
-    if(worksheet[`A${idxCarga + 1}`]) worksheet[`A${idxCarga + 1}`].s = greyTotalAlignRight;
-    if(worksheet[`G${idxCarga + 1}`]) worksheet[`G${idxCarga + 1}`].s = greyTotalCenter;
-    if(worksheet[`A${idxTrab + 1}`]) worksheet[`A${idxTrab + 1}`].s = greyTotalAlignRight;
-    if(worksheet[`G${idxTrab + 1}`]) worksheet[`G${idxTrab + 1}`].s = greyTotalCenter;
-    if(worksheet[`A${idxSaldo + 1}`]) worksheet[`A${idxSaldo + 1}`].s = greyTotalAlignRight;
+    for (let R = range.s.r; R <= range.e.r; ++R) {
+        for (let C = range.s.c; C <= range.e.c; ++C) {
+            const cellAddress = XLSX.utils.encode_cell({ r: R, c: C });
+            if (!worksheet[cellAddress]) worksheet[cellAddress] = { t: 's', v: '' };
+            const cell = worksheet[cellAddress];
 
-    if(worksheet[`G${idxSaldo + 1}`]) {
-        if(saldoFinal > 0) worksheet[`G${idxSaldo + 1}`].s = greenStyle;
-        else if(saldoFinal < 0) worksheet[`G${idxSaldo + 1}`].s = redStyle;
-        else worksheet[`G${idxSaldo + 1}`].s = defaultBold;
+            // Título Principal
+            if (R === 0) {
+                cell.s = estiloTituloPrincipal;
+            }
+            // Bloco de Informações Cadastrais
+            else if (R >= 2 && R <= 8) {
+                if ([0, 4, 5, 7].includes(C) && cell.v) {
+                    cell.s = estiloCabecalhoInfo;
+                } else {
+                    cell.s = estiloCabecalhoDado;
+                }
+            }
+            // Cabeçalho da Tabela
+            else if (R === 10) {
+                cell.s = estiloHeaderTabela;
+            }
+            // Linhas da Tabela
+            else if (R >= 11 && R < idxTitle - 1) {
+                const isDom = String(matrizPlanilha[R][0] || "").includes("DOM");
+                const isPar = (R % 2 === 0);
+
+                if (isDom) {
+                    cell.s = estiloDomingo;
+                } else {
+                    cell.s = isPar ? estiloLinhaZebrada : estiloLinhaNormal;
+                }
+
+                // Alinhamento à esquerda para Nome e Observações
+                if (C === 1 || C === 8) {
+                    cell.s = { ...cell.s, alignment: { horizontal: "left", vertical: "center" } };
+                }
+
+                // Cores dinâmicas para Horas Trabalhadas e Extras
+                if (C === 6) {
+                    cell.s = { ...cell.s, font: { bold: true, color: { rgb: "059669" } } };
+                }
+                if (C === 7) {
+                    const vStr = String(cell.v || "");
+                    if (vStr.startsWith("+")) {
+                        cell.s = { ...cell.s, font: { bold: true, color: { rgb: "059669" } } };
+                    } else if (vStr.startsWith("-")) {
+                        cell.s = { ...cell.s, font: { bold: true, color: { rgb: "DC2626" } } };
+                    }
+                }
+            }
+            // Bloco de Resumo Financeiro
+            else if (R === idxTitle) {
+                cell.s = {
+                    fill: { fgColor: { rgb: "0F172A" } },
+                    font: { bold: true, color: { rgb: "FFFFFF" }, size: 10 },
+                    alignment: { horizontal: "center", vertical: "center" },
+                    border: bordaFina
+                };
+            }
+            else if (R >= idxCarga && R <= idxSaldo) {
+                if (C <= 5) {
+                    cell.s = {
+                        fill: { fgColor: { rgb: "F8FAFC" } },
+                        font: { bold: true, color: { rgb: "334155" }, size: 10 },
+                        alignment: { horizontal: "right", vertical: "center" },
+                        border: bordaFina
+                    };
+                } else {
+                    let corTexto = "0F172A";
+                    if (R === idxSaldo) {
+                        corTexto = saldoFinal > 0 ? "059669" : (saldoFinal < 0 ? "DC2626" : "0F172A");
+                    }
+                    cell.s = {
+                        fill: { fgColor: { rgb: "FFFFFF" } },
+                        font: { bold: true, color: { rgb: corTexto }, size: 11 },
+                        alignment: { horizontal: "center", vertical: "center" },
+                        border: bordaFina
+                    };
+                }
+            }
+            // Termo Legal
+            else if (R === idxDeclaracao) {
+                cell.s = {
+                    font: { italic: true, color: { rgb: "64748B" }, size: 8 },
+                    alignment: { horizontal: "center", vertical: "center" }
+                };
+            }
+            // Linha e Assinatura
+            else if (R === idxLinhaAssinatura) {
+                cell.s = {
+                    font: { bold: true, color: { rgb: "1E293B" }, size: 10 },
+                    alignment: { horizontal: "center", vertical: "top" },
+                    border: { top: { style: "medium", color: { rgb: "0F172A" } } }
+                };
+            }
+        }
     }
 
+    // Mesclagens Estruturais
     worksheet['!merges'] = [
         { s: { r: 0, c: 0 }, e: { r: 0, c: 8 } }, 
         
@@ -1241,21 +1375,32 @@ async function exportarPontosExcel() {
 
         { s: { r: idxTitle, c: 0 }, e: { r: idxTitle, c: 8 } }, 
         { s: { r: idxCarga, c: 0 }, e: { r: idxCarga, c: 5 } }, 
+        { s: { r: idxCarga, c: 6 }, e: { r: idxCarga, c: 8 } }, 
         { s: { r: idxTrab, c: 0 }, e: { r: idxTrab, c: 5 } }, 
-        { s: { r: idxSaldo, c: 0 }, e: { r: idxSaldo, c: 5 } },
+        { s: { r: idxTrab, c: 6 }, e: { r: idxTrab, c: 8 } }, 
+        { s: { r: idxSaldo, c: 0 }, e: { r: idxSaldo, c: 5 } }, 
+        { s: { r: idxSaldo, c: 6 }, e: { r: idxSaldo, c: 8 } }, 
 
         { s: { r: idxDeclaracao, c: 0 }, e: { r: idxDeclaracao, c: 8 } },
-        { s: { r: idxLinhaAssinatura, c: 0 }, e: { r: idxLinhaAssinatura, c: 8 } },
-        { s: { r: idxNomeAssinatura, c: 0 }, e: { r: idxNomeAssinatura, c: 8 } }
+        { s: { r: idxLinhaAssinatura, c: 2 }, e: { r: idxLinhaAssinatura, c: 6 } }
     ];
 
+    // Largura das Colunas
     worksheet['!cols'] = [
-        { wch: 18 }, { wch: 38 }, { wch: 10 }, { wch: 12 }, { wch: 14 }, { wch: 12 }, { wch: 14 }, { wch: 14 }, { wch: 45 }
+        { wch: 18 }, // Data
+        { wch: 36 }, // Colaborador
+        { wch: 10 }, // Entrada
+        { wch: 12 }, // Almoço Ida
+        { wch: 14 }, // Almoço Volta
+        { wch: 10 }, // Saída
+        { wch: 13 }, // Horas Trab.
+        { wch: 13 }, // Horas Extras
+        { wch: 40 }  // Observações
     ];
 
     const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, "Espelho_Executivo");
-    XLSX.writeFile(workbook, `Espelho_Ponto_${colabNome.replace(/ /g, "_")}.xlsx`);
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Folha_de_Ponto");
+    XLSX.writeFile(workbook, `Folha_Ponto_${colabNome.replace(/ /g, "_")}.xlsx`);
 }
 
 let idConfigNuvemAtual = null;

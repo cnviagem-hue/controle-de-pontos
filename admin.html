@@ -425,12 +425,12 @@
       </div>
     </div>
 
-    <!-- MODAL EDITAR HORÁRIOS DO DIA -->
+    <!-- MODAL EDITAR HORÁRIOS E STATUS DO DIA -->
     <div class="modal fade" id="modalEditarDiaPonto" tabindex="-1" aria-hidden="true">
       <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content border-0 shadow-lg" style="border-radius:16px;">
           <div class="modal-header bg-primary text-white py-3" style="border-top-left-radius:16px; border-top-right-radius:16px;">
-            <h5 class="modal-title d-flex align-items-center gap-2">✏️ Ajustar Horários do Dia</h5>
+            <h5 class="modal-title d-flex align-items-center gap-2">✏️ Ajustar Dia e Horários</h5>
             <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
           </div>
           <div class="modal-body p-4">
@@ -441,7 +441,18 @@
               <form id="formAjusteHorarios" onsubmit="salvarAjusteHorariosDia(event)">
                   <input type="hidden" id="modalAjusteDataVal">
                   <input type="hidden" id="modalAjusteColabIdVal">
-                  <div class="row g-3">
+                  
+                  <div class="mb-3">
+                      <label class="form-label small fw-bold text-dark">Status / Motivo do Dia</label>
+                      <select id="ajusteStatusDia" class="form-select border-primary" onchange="alternarCamposPorStatus()">
+                          <option value="NORMAL">Normal (Calcula Horas Padrão)</option>
+                          <option value="FERIADO">Feriado</option>
+                          <option value="ATESTADO">Atestado Médico</option>
+                          <option value="FERIAS">Férias</option>
+                      </select>
+                  </div>
+
+                  <div id="containerCamposHorarios" class="row g-3">
                       <div class="col-6">
                           <label class="form-label small fw-medium text-muted">Entrada</label>
                           <input type="time" id="ajusteEntrada" class="form-control">

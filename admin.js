@@ -143,6 +143,18 @@ function mascaraCPF(input) {
     input.value = v;
 }
 
+function mascaraPIS(input) {
+    let v = input.value.replace(/\D/g, '');
+    if (v.length > 10) {
+        v = v.replace(/^(\d{3})(\d{5})(\d{2})(\d{1})$/, '$1.$2.$3-$4');
+    } else if (v.length > 8) {
+        v = v.replace(/^(\d{3})(\d{5})(\d{0,2})$/, '$1.$2.$3');
+    } else if (v.length > 3) {
+        v = v.replace(/^(\d{3})(\d{0,5})$/, '$1.$2');
+    }
+    input.value = v;
+}
+
 function mascaraCEPHtml(input) {
     let valor = input.value.replace(/\D/g, '');
     if (valor.length > 5) valor = valor.replace(/^(\d{5})(\d)/, '$1-$2');
@@ -197,7 +209,7 @@ function otimizarEConverterFoto(fileInputElement) {
 
 async function carregarUsuariosDaNuvem() {
     const tabela = document.getElementById('tabelaEquipe');
-    if(tabela) tabela.innerHTML = `<tr><td colspan="10" class="text-center text-muted small py-3">⏳ Carregando dados da Nuvem...</td></tr>`;
+    if(tabela) tabela.innerHTML = `<tr><td colspan="12" class="text-center text-muted small py-3">⏳ Carregando dados da Nuvem...</td></tr>`;
     
     try {
         const snapshot = await db.collection("usuarios_ponto").where("empresaEmail", "==", PREFIXO_EMPRESA).get();
@@ -208,7 +220,7 @@ async function carregarUsuariosDaNuvem() {
         renderTabelaComAtualizacao();
         sincronizarFiltrosColaboradores();
     } catch (error) {
-        if(tabela) tabela.innerHTML = `<tr><td colspan="10" class="text-center text-danger small py-3">⚠️ Erro ao carregar equipe.</td></tr>`;
+        if(tabela) tabela.innerHTML = `<tr><td colspan="12" class="text-center text-danger small py-3">⚠️ Erro ao carregar equipe.</td></tr>`;
     }
 }
 
@@ -229,6 +241,9 @@ async function cadastrarUsuario(event) {
             empresaEmail: PREFIXO_EMPRESA, 
             nome: document.getElementById('cadNome').value.trim(),
             cpf: document.getElementById('cadCpf').value.trim(),
+            cargo: document.getElementById('cadCargo').value.trim() || "-",
+            funcao: document.getElementById('cadFuncao').value.trim() || "-",
+            pis: document.getElementById('cadPis').value.trim() || "-",
             telefone: document.getElementById('cadTelefone').value.trim(),
             email: document.getElementById('cadEmail').value.trim().toLowerCase(),
             senha: document.getElementById('cadSenha').value.trim(),
@@ -268,7 +283,7 @@ function renderTabelaComAtualizacao() {
     tabela.innerHTML = "";
     
     if(bancoUsuarios.length === 0) {
-        tabela.innerHTML = `<tr><td colspan="10" class="text-center text-muted small py-3">Nenhum funcionário cadastrado.</td></tr>`;
+        tabela.innerHTML = `<tr><td colspan="12" class="text-center text-muted small py-3">Nenhum funcionário cadastrado.</td></tr>`;
         return;
     }
 
@@ -280,6 +295,9 @@ function renderTabelaComAtualizacao() {
             <td><img src="${u.foto}" class="avatar-table" onerror="this.src='https://ui-avatars.com/api/?name=User&background=cbd5e1'"></td>
             <td class="fw-medium">${u.nome}</td>
             <td class="text-dark small">${u.cpf}</td>
+            <td class="text-secondary small">${u.cargo || "-"}</td>
+            <td class="text-secondary small">${u.funcao || "-"}</td>
+            <td class="text-secondary small font-monospace">${u.pis || "-"}</td>
             <td class="text-secondary small">${u.telefone}</td>
             <td class="text-muted small">${u.email}</td>
             <td><code class="text-dark font-monospace fw-bold">${u.senha}</code></td>
@@ -304,6 +322,9 @@ function abrirModalEditarFicha(index) {
 
     document.getElementById('editNome').value = u.nome;
     document.getElementById('editCpf').value = u.cpf;
+    document.getElementById('editCargo').value = u.cargo && u.cargo !== "-" ? u.cargo : "";
+    document.getElementById('editFuncao').value = u.funcao && u.funcao !== "-" ? u.funcao : "";
+    document.getElementById('editPis').value = u.pis && u.pis !== "-" ? u.pis : "";
     document.getElementById('editTelefone').value = u.telefone;
     document.getElementById('editEmail').value = u.email;
     document.getElementById('editSenha').value = u.senha;
@@ -330,6 +351,9 @@ async function confirmarEdicaoFicha() {
         const dadosAtualizados = {
             nome: document.getElementById('editNome').value.trim(),
             cpf: document.getElementById('editCpf').value.trim(),
+            cargo: document.getElementById('editCargo').value.trim() || "-",
+            funcao: document.getElementById('editFuncao').value.trim() || "-",
+            pis: document.getElementById('editPis').value.trim() || "-",
             telefone: document.getElementById('editTelefone').value.trim(),
             email: document.getElementById('editEmail').value.trim().toLowerCase(),
             senha: document.getElementById('editSenha').value.trim(),
@@ -622,8 +646,6 @@ function consolidarLogsBrutos(logsArray) {
                 cargaObrigatoriaDoDia = minCalc !== null ? minCalc : 480;
             }
 
-            // FOLGAS REMUNERADAS (FERIADO, FÉRIAS, ATESTADO):
-            // Considera a carga horária padrão cumprida para não gerar débito
             if (r.statusDia === "FERIADO" || r.statusDia === "FERIAS" || r.statusDia === "ATESTADO") {
                 if (minutosTrabalhados < cargaObrigatoriaDoDia) {
                     minutosTrabalhados = cargaObrigatoriaDoDia;

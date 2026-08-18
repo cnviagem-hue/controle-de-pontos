@@ -24,6 +24,18 @@ document.addEventListener("DOMContentLoaded", async () => {
         return;
     }
 
+    // RESTAURA O ESTADO RECOLHIDO DO MENU SE ESTAVA ATIVADO
+    if (localStorage.getItem("ponto_web_sidebar_collapsed") === "true") {
+        const sidebar = document.getElementById("sidebarMenu");
+        const mainContent = document.getElementById("mainContentContainer");
+        const btn = document.getElementById("btnToggleSidebar");
+        if (sidebar && mainContent) {
+            sidebar.classList.add("collapsed");
+            mainContent.classList.add("expanded");
+            if (btn) btn.innerText = "▶";
+        }
+    }
+
     try {
         try {
             const snapAtual = await db.collection("empresas_clientes").where("email", "==", PREFIXO_EMPRESA).get();
@@ -58,6 +70,21 @@ document.addEventListener("DOMContentLoaded", async () => {
         document.getElementById("sidebarNomeEmpresa").innerText = "Modo de Segurança";
     }
 });
+
+// TOGGLE DO MENU LATERAL (RECOLHER / EXPANDIR)
+function toggleSidebarMenu() {
+    const sidebar = document.getElementById("sidebarMenu");
+    const mainContent = document.getElementById("mainContentContainer");
+    const btn = document.getElementById("btnToggleSidebar");
+    if (!sidebar || !mainContent) return;
+
+    sidebar.classList.toggle("collapsed");
+    mainContent.classList.toggle("expanded");
+
+    const isCollapsed = sidebar.classList.contains("collapsed");
+    if (btn) btn.innerText = isCollapsed ? "▶" : "◀";
+    localStorage.setItem("ponto_web_sidebar_collapsed", isCollapsed ? "true" : "false");
+}
 
 function alternarAba(nomeAba) {
     document.getElementById('menu-pessoal').classList.remove('active');
@@ -600,7 +627,6 @@ function consolidarLogsBrutos(logsArray) {
                 cargaObrigatoriaDoDia = minCalc !== null ? minCalc : 480;
             }
 
-            // SE FOR FERIADO, ATESTADO OU FÉRIAS, A CARGA ESPERADA DO DIA É ABONADA (0)
             if (r.statusDia && r.statusDia !== "NORMAL") {
                 cargaObrigatoriaDoDia = 0;
             }
@@ -818,7 +844,6 @@ async function salvarAjusteHorariosDia(event) {
             }
         }
 
-        // SE O DIA NÃO TIVER HORÁRIOS MAS TIVER STATUS ESPECIAL (FERIADO/ATESTADO/FÉRIAS)
         if (!salvouAlgumPonto && statusDiaEscolhido !== "NORMAL") {
             const docGenerico = snapExistentes.docs[0];
             if (docGenerico) {
@@ -917,10 +942,9 @@ async function filtrarRelatorioTela() {
             btnObsHtml = `<button class="btn btn-sm btn-danger fw-bold shadow-sm" style="font-size: 0.7rem; padding: 3px 8px; animation: pulse 2s infinite;" onclick="abrirModalLerObs('${obsStrBase64}')">🔔 Ver Obs.</button>`;
         }
 
-        // BADGES COLORIDOS DE STATUS DE ACORDO COM A LEGENDA DO RH
         let tagStatusHtml = "";
         if (r.statusDia === "FERIADO") {
-            tagStatusHtml = ` <span class="badge bg-dark bg-opacity-75 text-white border ms-1" style="font-size:0.65rem; background-color: #6f42c1 !important;">FERIADO</span>`;
+            tagStatusHtml = ` <span class="badge text-white border ms-1" style="font-size:0.65rem; background-color: #6f42c1 !important;">FERIADO</span>`;
         } else if (r.statusDia === "ATESTADO") {
             tagStatusHtml = ` <span class="badge bg-warning text-dark border ms-1" style="font-size:0.65rem;">ATESTADO</span>`;
         } else if (r.statusDia === "FERIAS") {

@@ -598,9 +598,6 @@ function consolidarLogsBrutos(logsArray) {
             }
         }
 
-        r.minutosTrabalhadosNum = minutosTrabalhados;
-        r.horasTrabalhadas = formatarMinutosParaString(minutosTrabalhados);
-
         const partesData = r.data.split('/');
         if (partesData.length === 3) {
             const objetoData = new Date(partesData[2], partesData[1] - 1, partesData[0]);
@@ -625,18 +622,16 @@ function consolidarLogsBrutos(logsArray) {
                 cargaObrigatoriaDoDia = minCalc !== null ? minCalc : 480;
             }
 
-            // SE FOR FERIADO, FÉRIAS OU ATESTADO (SEM HORAS TRABALHADAS), ABONA A CARGA
-            // SE FOR ATESTADO PARCIAL (COM HORAS TRABALHADAS), CONTA COMO TRABALHO REAL
-            if (r.statusDia === "FERIADO" || r.statusDia === "FERIAS") {
-                cargaObrigatoriaDoDia = 0;
-            } else if (r.statusDia === "ATESTADO") {
-                if (minutosTrabalhados === 0) {
-                    cargaObrigatoriaDoDia = 0;
-                } else {
-                    cargaObrigatoriaDoDia = minutosTrabalhados;
+            // FOLGAS REMUNERADAS (FERIADO, FÉRIAS, ATESTADO):
+            // Considera a carga horária padrão cumprida para não gerar débito
+            if (r.statusDia === "FERIADO" || r.statusDia === "FERIAS" || r.statusDia === "ATESTADO") {
+                if (minutosTrabalhados < cargaObrigatoriaDoDia) {
+                    minutosTrabalhados = cargaObrigatoriaDoDia;
                 }
             }
 
+            r.minutosTrabalhadosNum = minutosTrabalhados;
+            r.horasTrabalhadas = formatarMinutosParaString(minutosTrabalhados);
             r.minutosEsperadosNum = cargaObrigatoriaDoDia;
 
             const diferencaDia = minutosTrabalhados - cargaObrigatoriaDoDia;
@@ -750,9 +745,6 @@ window.abrirModalLerObs = function(obsStrBase64) {
     new bootstrap.Modal(document.getElementById('modalLerObservacao')).show();
 };
 
-// ==========================================
-// FUNÇÕES DE EDIÇÃO MANUAL DO DIA PELO GESTOR
-// ==========================================
 window.alternarCamposPorStatus = function() {
     const container = document.getElementById("containerCamposHorarios");
     if (container) {

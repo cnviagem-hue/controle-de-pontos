@@ -1039,7 +1039,7 @@ async function filtrarRelatorioTela() {
 }
 
 // =========================================================================
-// EXPORTAÇÃO EXECUTIVA EXCEL COM CABEÇALHO COMPLETO E TERMO DE DECLARAÇÃO
+// EXPORTAÇÃO EXECUTIVA EXCEL COM CABEÇALHO COMPLETO, TÍTULO E TERMO LEGAL
 // =========================================================================
 async function exportarPontosExcel() {
     const filtroColab = document.getElementById('filtroRelatorioColaborador').value;
@@ -1094,7 +1094,6 @@ async function exportarPontosExcel() {
     const colabNome = user.nome || dadosParaPlanilha[0].nome;
     const dataEmissao = new Date().toLocaleDateString('pt-BR');
 
-    // APURAÇÃO DE MÊS E ANO DO RELATÓRIO
     const mesesExtenso = ["JANEIRO", "FEVEREIRO", "MARÇO", "ABRIL", "MAIO", "JUNHO", "JULHO", "AGOSTO", "SETEMBRO", "OUTUBRO", "NOVEMBRO", "DEZEMBRO"];
     let mesRelatorio = "MÊS ATUAL";
     let anoLetivo = new Date().getFullYear();
@@ -1113,7 +1112,7 @@ async function exportarPontosExcel() {
     const enderecoEmpresaTopo = dadosEmpresaAtiva.endereco || "-";
 
     const matrizPlanilha = [
-        ["FOLHA DE PONTO INDIVIDUAL DE TRABALHO"],
+        ["FOLHA DE PONTO"],
         [],
         ["EMPRESA:", nomeEmpresaTopo, "", "", "", "CNPJ:", cnpjEmpresaTopo, "", ""],
         ["ENDEREÇO:", enderecoEmpresaTopo, "", "", "", "", "", "", ""],
@@ -1195,7 +1194,8 @@ async function exportarPontosExcel() {
 
     const worksheet = XLSX.utils.aoa_to_sheet(matrizPlanilha);
 
-    const orangeFill = { fill: { fgColor: { rgb: "F97316" } }, font: { bold: true, color: { rgb: "FFFFFF" }, size: 12 }, alignment: { horizontal: "center", vertical: "center" } };
+    // ESTILO COM TÍTULO DESTACADO (FONTE MAIOR E NEGRITO)
+    const orangeFill = { fill: { fgColor: { rgb: "F97316" } }, font: { bold: true, color: { rgb: "FFFFFF" }, size: 16 }, alignment: { horizontal: "center", vertical: "center" } };
     const greyHeader = { fill: { fgColor: { rgb: "0F172A" } }, font: { bold: true, color: { rgb: "FFFFFF" } }, alignment: { horizontal: "center", vertical: "center" } };
     const greyTotalAlignRight = { fill: { fgColor: { rgb: "E5E7EB" } }, font: { bold: true, color: { rgb: "000000" } }, alignment: { horizontal: "right", vertical: "center" } };
     const greyTotalCenter = { fill: { fgColor: { rgb: "E5E7EB" } }, font: { bold: true, color: { rgb: "000000" } }, alignment: { horizontal: "center", vertical: "center" } };

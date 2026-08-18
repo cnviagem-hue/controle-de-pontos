@@ -512,6 +512,7 @@ function consolidarLogsBrutos(logsArray) {
                 horasExtras: "00:00",
                 classeCorExtra: "text-muted",
                 isDomingo: false,
+                statusDia: "NORMAL",
                 observacoes: []
             };
         }
@@ -520,6 +521,10 @@ function consolidarLogsBrutos(logsArray) {
         if (log.tipo === "Almoço Ida") espelhosAgrupados[chaveChave].almocoIda = log.hora;
         if (log.tipo === "Almoço Volta") espelhosAgrupados[chaveChave].almocoVolta = log.hora;
         if (log.tipo === "Saída") espelhosAgrupados[chaveChave].saida = log.hora;
+
+        if (log.statusDia && log.statusDia !== "NORMAL") {
+            espelhosAgrupados[chaveChave].statusDia = log.statusDia;
+        }
 
         if (log.observacao && log.observacao.trim() !== "") {
             espelhosAgrupados[chaveChave].observacoes.push({
@@ -593,6 +598,11 @@ function consolidarLogsBrutos(logsArray) {
             } else { 
                 const minCalc = bolarTempoParaMinutos(cargaSegSex);
                 cargaObrigatoriaDoDia = minCalc !== null ? minCalc : 480;
+            }
+
+            // SE FOR FERIADO, ATESTADO OU FÉRIAS, A CARGA ESPERADA DO DIA É ABONADA (0)
+            if (r.statusDia && r.statusDia !== "NORMAL") {
+                cargaObrigatoriaDoDia = 0;
             }
 
             r.minutosEsperadosNum = cargaObrigatoriaDoDia;
@@ -683,6 +693,7 @@ function preencherCalendarioCompleto(dadosConsolidados, dataInicioStr, dataFimSt
                 horasExtras: strExtras,
                 classeCorExtra: corExtras,
                 isDomingo: (diaDaSemana === 0),
+                statusDia: "NORMAL",
                 observacoes: []
             });
         }
@@ -710,6 +721,16 @@ window.abrirModalLerObs = function(obsStrBase64) {
 // ==========================================
 // FUNÇÕES DE EDIÇÃO MANUAL DO DIA PELO GESTOR
 // ==========================================
+window.alternarCamposPorStatus = function() {
+    const st = document.getElementById("ajusteStatusDia").value;
+    const container = document.getElementById("containerCamposHorarios");
+    if (st !== "NORMAL") {
+        container.style.opacity = "0.4";
+    } else {
+        container.style.opacity = "1";
+    }
+};
+
 window.abrirModalEditarDia = function(diaBase64) {
     const obj = JSON.parse(decodeURIComponent(escape(atob(diaBase64))));
     
@@ -717,6 +738,9 @@ window.abrirModalEditarDia = function(diaBase64) {
     document.getElementById("modalAjusteData").innerText = obj.data;
     document.getElementById("modalAjusteDataVal").value = obj.data;
     document.getElementById("modalAjusteColabIdVal").value = obj.colaboradorId;
+
+    document.getElementById("ajusteStatusDia").value = obj.statusDia || "NORMAL";
+    alternarCamposPorStatus();
 
     document.getElementById("ajusteEntrada").value = (obj.entrada && obj.entrada !== "-") ? obj.entrada : "";
     document.getElementById("ajusteAlmIda").value = (obj.almocoIda && obj.almocoIda !== "-") ? obj.almocoIda : "";
@@ -730,6 +754,7 @@ async function salvarAjusteHorariosDia(event) {
     event.preventDefault();
     const dataAlvo = document.getElementById("modalAjusteDataVal").value;
     const colabId = document.getElementById("modalAjusteColabIdVal").value;
+    const statusDiaEscolhido = document.getElementById("ajusteStatusDia").value;
     
     const hEntrada = document.getElementById("ajusteEntrada").value;
     const hAlmIda = document.getElementById("ajusteAlmIda").value;
@@ -763,12 +788,16 @@ async function salvarAjusteHorariosDia(event) {
             { tipo: "Saída", hora: hSaida }
         ];
 
+        let salvouAlgumPonto = false;
+
         for (let item of tiposHorarios) {
             const docId = mapaDocExistente[item.tipo];
             if (item.hora && item.hora.trim() !== "") {
+                salvouAlgumPonto = true;
                 if (docId) {
                     await db.collection("historico_pontos").doc(docId).update({
-                        hora: item.hora.trim()
+                        hora: item.hora.trim(),
+                        statusDia: statusDiaEscolhido
                     });
                 } else {
                     await db.collection("historico_pontos").add({
@@ -777,6 +806,7 @@ async function salvarAjusteHorariosDia(event) {
                         data: dataAlvo,
                         tipo: item.tipo,
                         hora: item.hora.trim(),
+                        statusDia: statusDiaEscolhido,
                         empresaEmail: PREFIXO_EMPRESA,
                         timestamp: firebase.firestore.FieldValue.serverTimestamp()
                     });
@@ -788,8 +818,29 @@ async function salvarAjusteHorariosDia(event) {
             }
         }
 
+        // SE O DIA NÃO TIVER HORÁRIOS MAS TIVER STATUS ESPECIAL (FERIADO/ATESTADO/FÉRIAS)
+        if (!salvouAlgumPonto && statusDiaEscolhido !== "NORMAL") {
+            const docGenerico = snapExistentes.docs[0];
+            if (docGenerico) {
+                await db.collection("historico_pontos").doc(docGenerico.id).update({
+                    statusDia: statusDiaEscolhido
+                });
+            } else {
+                await db.collection("historico_pontos").add({
+                    colaboradorId: String(colabId),
+                    nome: nomeColab,
+                    data: dataAlvo,
+                    tipo: "Registro Especial",
+                    hora: "-",
+                    statusDia: statusDiaEscolhido,
+                    empresaEmail: PREFIXO_EMPRESA,
+                    timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                });
+            }
+        }
+
         bootstrap.Modal.getInstance(document.getElementById('modalEditarDiaPonto')).hide();
-        exibirAlertaTop("Ajuste Realizado", `Os horários do dia <strong>${dataAlvo}</strong> foram atualizados com sucesso.`);
+        exibirAlertaTop("Ajuste Realizado", `O dia <strong>${dataAlvo}</strong> foi atualizado com status <strong>${statusDiaEscolhido}</strong>.`);
         await filtrarRelatorioTela();
 
     } catch (err) {
@@ -866,14 +917,26 @@ async function filtrarRelatorioTela() {
             btnObsHtml = `<button class="btn btn-sm btn-danger fw-bold shadow-sm" style="font-size: 0.7rem; padding: 3px 8px; animation: pulse 2s infinite;" onclick="abrirModalLerObs('${obsStrBase64}')">🔔 Ver Obs.</button>`;
         }
 
-        const tagDomingo = r.isDomingo ? ` <span class="badge bg-secondary bg-opacity-25 text-secondary border ms-1" style="font-size:0.65rem;">DOM</span>` : "";
-        const objDiaBase64 = btoa(unescape(encodeURIComponent(JSON.stringify(r))));
+        // BADGES COLORIDOS DE STATUS DE ACORDO COM A LEGENDA DO RH
+        let tagStatusHtml = "";
+        if (r.statusDia === "FERIADO") {
+            tagStatusHtml = ` <span class="badge bg-dark bg-opacity-75 text-white border ms-1" style="font-size:0.65rem; background-color: #6f42c1 !important;">FERIADO</span>`;
+        } else if (r.statusDia === "ATESTADO") {
+            tagStatusHtml = ` <span class="badge bg-warning text-dark border ms-1" style="font-size:0.65rem;">ATESTADO</span>`;
+        } else if (r.statusDia === "FERIAS") {
+            tagStatusHtml = ` <span class="badge bg-info text-dark border ms-1" style="font-size:0.65rem;">FÉRIAS</span>`;
+        } else if (r.isDomingo) {
+            tagStatusHtml = ` <span class="badge bg-secondary bg-opacity-25 text-secondary border ms-1" style="font-size:0.65rem;">DOM</span>`;
+        }
 
+        const objDiaBase64 = btoa(unescape(encodeURIComponent(JSON.stringify(r))));
         const tr = document.createElement('tr');
-        if (r.isDomingo) tr.setAttribute('style', 'background-color: #f8fafc;');
+        if (r.isDomingo || (r.statusDia && r.statusDia !== "NORMAL")) {
+            tr.setAttribute('style', 'background-color: #f8fafc;');
+        }
         
         tr.innerHTML = `
-            <td><strong>${r.data}</strong>${tagDomingo}</td>
+            <td><strong>${r.data}</strong>${tagStatusHtml}</td>
             <td>${r.nome}</td>
             <td><span class="badge bg-light text-dark border">${r.entrada}</span></td>
             <td><span class="badge bg-light text-dark border">${r.almocoIda}</span></td>
@@ -883,7 +946,7 @@ async function filtrarRelatorioTela() {
             <td class="${r.classeCorExtra} fw-bold">${r.horasExtras}</td>
             <td class="text-center">${btnObsHtml}</td>
             <td class="text-center">
-                <button class="btn btn-sm btn-outline-primary" style="font-size: 0.75rem; padding: 3px 8px;" title="Ajustar Horários do Dia" onclick="abrirModalEditarDia('${objDiaBase64}')">✏️</button>
+                <button class="btn btn-sm btn-outline-primary" style="font-size: 0.75rem; padding: 3px 8px;" title="Ajustar Horários / Motivo" onclick="abrirModalEditarDia('${objDiaBase64}')">✏️</button>
             </td>
         `;
         tabelaBody.appendChild(tr);
@@ -985,11 +1048,21 @@ async function exportarPontosExcel() {
         let textoObsFinal = "Sem observação";
         if (r.observacoes && r.observacoes.length > 0) {
             textoObsFinal = r.observacoes.map(o => `[${o.tipo}] ${o.texto}`).join(" | ");
+        } else if (r.statusDia === "FERIADO") {
+            textoObsFinal = "Feriado Abonado";
+        } else if (r.statusDia === "ATESTADO") {
+            textoObsFinal = "Atestado Médico Abonado";
+        } else if (r.statusDia === "FERIAS") {
+            textoObsFinal = "Férias Abonadas";
         } else if (r.isDomingo) {
             textoObsFinal = "Descanso Semanal (DSR / Domingo)";
         }
 
-        const dataStrExcel = r.isDomingo ? `${r.data} (DOM)` : r.data;
+        let tagExcel = "";
+        if (r.statusDia && r.statusDia !== "NORMAL") tagExcel = ` (${r.statusDia})`;
+        else if (r.isDomingo) tagExcel = " (DOM)";
+
+        const dataStrExcel = `${r.data}${tagExcel}`;
         matrizPlanilha.push([dataStrExcel, r.nome, r.entrada, r.almocoIda, r.almocoVolta, r.saida, r.horasTrabalhadas, r.horasExtras, textoObsFinal]);
     });
 
@@ -1050,7 +1123,7 @@ async function exportarPontosExcel() {
     ];
 
     worksheet['!cols'] = [
-        { wch: 15 }, { wch: 40 }, { wch: 10 }, { wch: 12 }, { wch: 14 }, { wch: 10 }, { wch: 14 }, { wch: 14 }, { wch: 45 }
+        { wch: 18 }, { wch: 40 }, { wch: 10 }, { wch: 12 }, { wch: 14 }, { wch: 10 }, { wch: 14 }, { wch: 14 }, { wch: 45 }
     ];
 
     const workbook = XLSX.utils.book_new();

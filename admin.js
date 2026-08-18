@@ -17,6 +17,7 @@ let PREFIXO_EMPRESA = sessionStorage.getItem("email_empresa_ativa");
 
 let usuarioSelecionadoId = null;
 let bancoUsuarios = [];
+let dadosEmpresaAtiva = {};
 
 document.addEventListener("DOMContentLoaded", async () => {
     if (!sessionStorage.getItem("admin_autenticado") || !PREFIXO_EMPRESA) {
@@ -39,7 +40,8 @@ document.addEventListener("DOMContentLoaded", async () => {
         try {
             const snapAtual = await db.collection("empresas_clientes").where("email", "==", PREFIXO_EMPRESA).get();
             if (!snapAtual.empty) {
-                const cnpjAtual = snapAtual.docs[0].data().cnpj;
+                dadosEmpresaAtiva = snapAtual.docs[0].data();
+                const cnpjAtual = dadosEmpresaAtiva.cnpj;
                 const snapTodos = await db.collection("empresas_clientes").where("cnpj", "==", cnpjAtual).get();
                 let contasVinculadas = [];
                 snapTodos.forEach(doc => contasVinculadas.push(doc.data()));
@@ -52,6 +54,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
                 if (contasVinculadas.length > 0) {
                     PREFIXO_EMPRESA = contasVinculadas[0].email;
+                    dadosEmpresaAtiva = contasVinculadas[0];
                 }
             }
         } catch(error) {
@@ -59,7 +62,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         }
 
         const nomeEmpresaSalvo = sessionStorage.getItem("nome_empresa_ativa");
-        document.getElementById("sidebarNomeEmpresa").innerText = nomeEmpresaSalvo ? nomeEmpresaSalvo : "Empresa Parceira";
+        document.getElementById("sidebarNomeEmpresa").innerText = nomeEmpresaSalvo ? nomeEmpresaSalvo : (dadosEmpresaAtiva.nome || "Empresa Parceira");
         
         await carregarConfigsNuvem();
         await carregarUsuariosDaNuvem();
@@ -1035,6 +1038,9 @@ async function filtrarRelatorioTela() {
     tabelaBody.appendChild(trTotal);
 }
 
+// =========================================================================
+// EXPORTAÇÃO EXECUTIVA EXCEL COM CABEÇALHO COMPLETO E TERMO DE DECLARAÇÃO
+// =========================================================================
 async function exportarPontosExcel() {
     const filtroColab = document.getElementById('filtroRelatorioColaborador').value;
     
@@ -1084,12 +1090,38 @@ async function exportarPontosExcel() {
         return new Date(pa[2], pa[1]-1, pa[0]) - new Date(pb[2], pb[1]-1, pb[0]);
     });
 
-    const colabNome = dadosParaPlanilha[0].nome;
+    const user = bancoUsuarios.find(u => String(u.id) === String(filtroColab)) || {};
+    const colabNome = user.nome || dadosParaPlanilha[0].nome;
     const dataEmissao = new Date().toLocaleDateString('pt-BR');
-    
+
+    // APURAÇÃO DE MÊS E ANO DO RELATÓRIO
+    const mesesExtenso = ["JANEIRO", "FEVEREIRO", "MARÇO", "ABRIL", "MAIO", "JUNHO", "JULHO", "AGOSTO", "SETEMBRO", "OUTUBRO", "NOVEMBRO", "DEZEMBRO"];
+    let mesRelatorio = "MÊS ATUAL";
+    let anoLetivo = new Date().getFullYear();
+
+    if (dadosParaPlanilha[0] && dadosParaPlanilha[0].data) {
+        const partesP = dadosParaPlanilha[0].data.split('/');
+        if (partesP.length === 3) {
+            const mNum = parseInt(partesP[1], 10) - 1;
+            mesRelatorio = mesesExtenso[mNum] || mesRelatorio;
+            anoLetivo = partesP[2];
+        }
+    }
+
+    const nomeEmpresaTopo = dadosEmpresaAtiva.nome || sessionStorage.getItem("nome_empresa_ativa") || "Empresa Parceira";
+    const cnpjEmpresaTopo = dadosEmpresaAtiva.cnpj || "-";
+    const enderecoEmpresaTopo = dadosEmpresaAtiva.endereco || "-";
+
     const matrizPlanilha = [
-        ["DRE - ESPELHO DE PONTO EXECUTIVO"],
-        [`Colaborador: ${colabNome} | Emissão: ${dataEmissao}`],
+        ["FOLHA DE PONTO INDIVIDUAL DE TRABALHO"],
+        [],
+        ["EMPRESA:", nomeEmpresaTopo, "", "", "", "CNPJ:", cnpjEmpresaTopo, "", ""],
+        ["ENDEREÇO:", enderecoEmpresaTopo, "", "", "", "", "", "", ""],
+        [],
+        ["COLABORADOR:", colabNome, "", "", "CTPS Nº SÉRIE:", user.ctps || "-", "", "DATA INÍCIO:", user.dataInicio || "-"],
+        ["FUNÇÃO / CARGO:", `${user.funcao || "-"} / ${user.cargo || "-"}`, "", "", "PIS:", user.pis || "-", "", "EMISSÃO:", dataEmissao],
+        ["HORÁRIO SEG A SEX:", user.horasSegSex || user.cargaSegSex || "08:00", "", "", "HORÁRIO SÁBADOS:", user.horasSab || user.cargaSab || "04:00", "", "DESCANSO:", "DOMINGO"],
+        ["MÊS REFERÊNCIA:", mesRelatorio, "", "", "ANO LETIVO:", anoLetivo, "", "", ""],
         [],
         ["Data", "Colaborador", "Entrada", "Almoço Ida", "Almoço Volta", "Saída", "Horas Trab.", "Horas Extras", "Observações/Justificativas"]
     ];
@@ -1145,9 +1177,26 @@ async function exportarPontosExcel() {
     const idxSaldo = matrizPlanilha.length;
     matrizPlanilha.push(["SALDO FINAL:", "", "", "", "", "", textoSaldo, "", ""]);
 
+    // TERMO LEGAL E LINHA DE ASSINATURA
+    matrizPlanilha.push([]);
+    matrizPlanilha.push([]);
+    
+    const idxDeclaracao = matrizPlanilha.length;
+    matrizPlanilha.push(["Declaro ainda estar ciente de que a apresentação de informações falsas e rasuras, sujeitando-me às penalidades previstas no Art. 299 do Decreto Lei nº 2848 de 07/12/1940.", "", "", "", "", "", "", "", ""]);
+    
+    matrizPlanilha.push([]);
+    matrizPlanilha.push([]);
+    
+    const idxLinhaAssinatura = matrizPlanilha.length;
+    matrizPlanilha.push(["____________________________________________________________________", "", "", "", "", "", "", "", ""]);
+    
+    const idxNomeAssinatura = matrizPlanilha.length;
+    matrizPlanilha.push([`Assinatura do Colaborador: ${colabNome}`, "", "", "", "", "", "", "", ""]);
+
     const worksheet = XLSX.utils.aoa_to_sheet(matrizPlanilha);
 
     const orangeFill = { fill: { fgColor: { rgb: "F97316" } }, font: { bold: true, color: { rgb: "FFFFFF" }, size: 12 }, alignment: { horizontal: "center", vertical: "center" } };
+    const greyHeader = { fill: { fgColor: { rgb: "0F172A" } }, font: { bold: true, color: { rgb: "FFFFFF" } }, alignment: { horizontal: "center", vertical: "center" } };
     const greyTotalAlignRight = { fill: { fgColor: { rgb: "E5E7EB" } }, font: { bold: true, color: { rgb: "000000" } }, alignment: { horizontal: "right", vertical: "center" } };
     const greyTotalCenter = { fill: { fgColor: { rgb: "E5E7EB" } }, font: { bold: true, color: { rgb: "000000" } }, alignment: { horizontal: "center", vertical: "center" } };
     const greenStyle = { font: { bold: true, color: { rgb: "16A34A" } }, alignment: { horizontal: "center", vertical: "center" } };
@@ -1155,6 +1204,7 @@ async function exportarPontosExcel() {
     const defaultBold = { font: { bold: true, color: { rgb: "000000" } }, alignment: { horizontal: "center", vertical: "center" } };
 
     if(worksheet['A1']) worksheet['A1'].s = orangeFill;
+    if(worksheet['A11']) worksheet['A11'].s = greyHeader;
     
     if(worksheet[`A${idxTitle + 1}`]) worksheet[`A${idxTitle + 1}`].s = greyTotalCenter;
     if(worksheet[`A${idxCarga + 1}`]) worksheet[`A${idxCarga + 1}`].s = greyTotalAlignRight;
@@ -1171,15 +1221,36 @@ async function exportarPontosExcel() {
 
     worksheet['!merges'] = [
         { s: { r: 0, c: 0 }, e: { r: 0, c: 8 } }, 
-        { s: { r: 1, c: 0 }, e: { r: 1, c: 8 } }, 
+        
+        { s: { r: 2, c: 1 }, e: { r: 2, c: 4 } }, 
+        { s: { r: 2, c: 6 }, e: { r: 2, c: 8 } }, 
+        { s: { r: 3, c: 1 }, e: { r: 3, c: 8 } }, 
+        
+        { s: { r: 5, c: 1 }, e: { r: 5, c: 3 } }, 
+        { s: { r: 5, c: 5 }, e: { r: 5, c: 6 } }, 
+        { s: { r: 5, c: 8 }, e: { r: 5, c: 8 } }, 
+
+        { s: { r: 6, c: 1 }, e: { r: 6, c: 3 } }, 
+        { s: { r: 6, c: 5 }, e: { r: 6, c: 6 } }, 
+
+        { s: { r: 7, c: 1 }, e: { r: 7, c: 3 } }, 
+        { s: { r: 7, c: 5 }, e: { r: 7, c: 6 } }, 
+
+        { s: { r: 8, c: 1 }, e: { r: 8, c: 3 } }, 
+        { s: { r: 8, c: 5 }, e: { r: 8, c: 6 } }, 
+
         { s: { r: idxTitle, c: 0 }, e: { r: idxTitle, c: 8 } }, 
         { s: { r: idxCarga, c: 0 }, e: { r: idxCarga, c: 5 } }, 
         { s: { r: idxTrab, c: 0 }, e: { r: idxTrab, c: 5 } }, 
-        { s: { r: idxSaldo, c: 0 }, e: { r: idxSaldo, c: 5 } } 
+        { s: { r: idxSaldo, c: 0 }, e: { r: idxSaldo, c: 5 } },
+
+        { s: { r: idxDeclaracao, c: 0 }, e: { r: idxDeclaracao, c: 8 } },
+        { s: { r: idxLinhaAssinatura, c: 0 }, e: { r: idxLinhaAssinatura, c: 8 } },
+        { s: { r: idxNomeAssinatura, c: 0 }, e: { r: idxNomeAssinatura, c: 8 } }
     ];
 
     worksheet['!cols'] = [
-        { wch: 18 }, { wch: 40 }, { wch: 10 }, { wch: 12 }, { wch: 14 }, { wch: 10 }, { wch: 14 }, { wch: 14 }, { wch: 45 }
+        { wch: 18 }, { wch: 38 }, { wch: 10 }, { wch: 12 }, { wch: 14 }, { wch: 12 }, { wch: 14 }, { wch: 14 }, { wch: 45 }
     ];
 
     const workbook = XLSX.utils.book_new();

@@ -12,7 +12,7 @@
         /* MENU LATERAL FIXO À ESQUERDA */
         .sidebar { width: 260px; background-color: #0f172a; color: #94a3b8; padding: 24px 16px; position: fixed; top: 0; left: 0; bottom: 0; display: flex; flex-direction: column; justify-content: space-between; z-index: 100; }
         
-        /* AJUSTE DO CABEÇALHO PARA RECEBER O NOME DA EMPRESA */
+        /* CABEÇALHO DA SIDEBAR */
         .sidebar-header { margin-bottom: 32px; padding-bottom: 16px; border-bottom: 1px solid #334155; }
         .sidebar-header h2 { font-size: 1.25rem; font-weight: 600; color: #f8fafc; margin-bottom: 4px; }
         .empresa-destaque { color: #f97316; font-size: 0.85rem; font-weight: 700; text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; letter-spacing: 0.5px; }
@@ -40,13 +40,13 @@
         .tab-content-section { display: none; width: 100%; }
         .tab-content-section.active { display: block; }
 
-        /* RECIPIENTE DO OLHINHO */
+        /* RECIPIENTE DE SENHA COM OLHO */
         .password-container { position: relative; display: flex; align-items: center; width: 100%; }
         .password-container input { padding-right: 44px; width: 100%; }
         .btn-toggle-eye { position: absolute; right: 12px; background: none; border: none; font-size: 1.1rem; cursor: pointer; color: #94a3b8; transition: color 0.2s; user-select: none; padding: 0; margin: 0; display: flex; align-items: center; justify-content: center; height: 100%; }
         .btn-toggle-eye:hover { color: #f97316; }
 
-        /* BARRA DE ROLAGEM LATERAL DA TABELA */
+        /* TABELAS */
         .table-responsive { width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; border-radius: 8px; border: 1px solid #e2e8f0; }
         .table th, .table td { white-space: nowrap; padding: 14px 16px; text-align: left; }
         
@@ -92,6 +92,7 @@
 
     <main class="main-content">
         
+        <!-- ABA PESSOAL -->
         <div id="conteudo-pessoal" class="tab-content-section active">
             <div class="card-custom">
                 <div class="section-title">Gestão de Pessoal - Novo Usuário</div>
@@ -172,12 +173,13 @@
                             </tr>
                         </thead>
                         <tbody id="tabelaEquipe">
-                            </tbody>
+                        </tbody>
                     </table>
                 </div>
             </div>
         </div>
 
+        <!-- ABA RELATÓRIOS -->
         <div id="conteudo-relatorios" class="tab-content-section">
             <div class="card-custom">
                 <div class="section-title">Espelhos de Ponto e Relatórios</div>
@@ -228,6 +230,7 @@
                                 <th>Horas Trab.</th>
                                 <th>Horas Extras</th>
                                 <th class="text-center">Obs.</th>
+                                <th class="text-center">Ações</th>
                             </tr>
                         </thead>
                         <tbody id="tabelaRelatoriosBody">
@@ -237,6 +240,7 @@
             </div>
         </div>
 
+        <!-- ABA CONFIGS -->
         <div id="conteudo-configs" class="tab-content-section">
             <div class="card-custom">
                 <div class="section-title">
@@ -299,6 +303,7 @@
 
     </main>
 
+    <!-- MODAL FEEDBACK -->
     <div class="modal fade" id="modalFeedback" tabindex="-1" aria-hidden="true">
       <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content border-0 shadow-lg" style="border-radius:16px;">
@@ -314,6 +319,7 @@
       </div>
     </div>
 
+    <!-- MODAL EXCLUSÃO FUNCIONÁRIO -->
     <div class="modal fade" id="modalExclusao" tabindex="-1" aria-hidden="true">
       <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content border-0 shadow-lg" style="border-radius:16px;">
@@ -333,6 +339,7 @@
       </div>
     </div>
 
+    <!-- MODAL EDITAR FICHA -->
     <div class="modal fade" id="modalEditarFicha" tabindex="-1" aria-hidden="true">
       <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content border-0 shadow-lg" style="border-radius:16px;">
@@ -402,6 +409,7 @@
       </div>
     </div>
 
+    <!-- MODAL LER OBSERVAÇÃO -->
     <div class="modal fade" id="modalLerObservacao" tabindex="-1" aria-hidden="true">
       <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content border-0 shadow-lg" style="border-radius:16px;">
@@ -409,10 +417,53 @@
             <h5 class="modal-title d-flex align-items-center gap-2">🔔 Justificativas do Dia</h5>
             <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
           </div>
-          <div class="modal-body p-4" id="conteudoLerObservacao">
-             </div>
+          <div class="modal-body p-4" id="conteudoLerObservacao"></div>
           <div class="modal-footer border-0 pt-0 d-flex justify-content-center">
             <button type="button" class="btn btn-secondary px-4 btn-sm" data-bs-dismiss="modal">Fechar Visualização</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- MODAL EDITAR HORÁRIOS DO DIA -->
+    <div class="modal fade" id="modalEditarDiaPonto" tabindex="-1" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg" style="border-radius:16px;">
+          <div class="modal-header bg-primary text-white py-3" style="border-top-left-radius:16px; border-top-right-radius:16px;">
+            <h5 class="modal-title d-flex align-items-center gap-2">✏️ Ajustar Horários do Dia</h5>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+          </div>
+          <div class="modal-body p-4">
+              <div class="alert alert-info py-2 px-3 small mb-3">
+                  <strong>Colaborador:</strong> <span id="modalAjusteNome"></span><br>
+                  <strong>Data:</strong> <span id="modalAjusteData"></span>
+              </div>
+              <form id="formAjusteHorarios" onsubmit="salvarAjusteHorariosDia(event)">
+                  <input type="hidden" id="modalAjusteDataVal">
+                  <input type="hidden" id="modalAjusteColabIdVal">
+                  <div class="row g-3">
+                      <div class="col-6">
+                          <label class="form-label small fw-medium text-muted">Entrada</label>
+                          <input type="time" id="ajusteEntrada" class="form-control">
+                      </div>
+                      <div class="col-6">
+                          <label class="form-label small fw-medium text-muted">Almoço Ida</label>
+                          <input type="time" id="ajusteAlmIda" class="form-control">
+                      </div>
+                      <div class="col-6">
+                          <label class="form-label small fw-medium text-muted">Almoço Volta</label>
+                          <input type="time" id="ajusteAlmVolta" class="form-control">
+                      </div>
+                      <div class="col-6">
+                          <label class="form-label small fw-medium text-muted">Saída</label>
+                          <input type="time" id="ajusteSaida" class="form-control">
+                      </div>
+                  </div>
+                  <div class="mt-4 d-flex justify-content-end gap-2">
+                      <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancelar</button>
+                      <button type="submit" id="btnSalvarAjusteDia" class="btn btn-success btn-sm px-3 fw-bold">💾 Salvar Ajuste</button>
+                  </div>
+              </form>
           </div>
         </div>
       </div>

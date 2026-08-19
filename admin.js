@@ -1092,7 +1092,7 @@ async function filtrarRelatorioTela() {
         } else if (r.statusDia === "FERIAS") {
             tagStatusHtml = ` <span class="badge bg-info text-dark border ms-1" style="font-size:0.65rem;">FÉRIAS</span>`;
         } else if (r.statusDia === "EDITADO") {
-            tagStatusHtml = ` <span class="badge bg-primary text-white border ms-1" style="font-size:0.65rem;">EDITADO</span>`;
+            tagStatusHtml = ` <span class="badge bg-danger text-white border ms-1" style="font-size:0.65rem;">EDITADO</span>`;
         } else if (r.isDomingo) {
             tagStatusHtml = ` <span class="badge bg-secondary bg-opacity-25 text-secondary border ms-1" style="font-size:0.65rem;">DOM</span>`;
         }

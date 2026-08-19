@@ -591,7 +591,7 @@
       </div>
     </div>
 
-    <!-- MODAL EDITAR HORÁRIOS E STATUS DO DIA -->
+    <!-- MODAL EDITAR HORÁRIOS E STATUS DO DIA (COM SUPORTE A INTERVALO PARA FÉRIAS E ATESTADO) -->
     <div class="modal fade" id="modalEditarDiaPonto" tabindex="-1" aria-hidden="true">
       <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content border-0 shadow-lg" style="border-radius:16px;">
@@ -602,7 +602,7 @@
           <div class="modal-body p-4">
               <div class="alert alert-info py-2 px-3 small mb-3">
                   <strong>Colaborador:</strong> <span id="modalAjusteNome"></span><br>
-                  <strong>Data:</strong> <span id="modalAjusteData"></span>
+                  <strong>Data Selecionada:</strong> <span id="modalAjusteData"></span>
               </div>
               <form id="formAjusteHorarios" onsubmit="salvarAjusteHorariosDia(event)">
                   <input type="hidden" id="modalAjusteDataVal">
@@ -616,6 +616,24 @@
                           <option value="ATESTADO">Atestado Médico</option>
                           <option value="FERIAS">Férias</option>
                       </select>
+                  </div>
+
+                  <!-- SELETOR DE PERÍODO (EXIBIDO AUTOMATICAMENTE PARA FÉRIAS OU ATESTADO) -->
+                  <div id="containerPeriodoStatus" class="p-3 bg-light border border-primary-subtle rounded mb-3" style="display: none;">
+                      <span class="text-primary small fw-bold d-block mb-2">📅 Selecione o Período Completo:</span>
+                      <div class="row g-2">
+                          <div class="col-6">
+                              <label class="form-label small fw-medium text-muted">Data Início</label>
+                              <input type="date" id="ajusteDataInicioPeriodo" class="form-control form-control-sm">
+                          </div>
+                          <div class="col-6">
+                              <label class="form-label small fw-medium text-muted">Data Fim</label>
+                              <input type="date" id="ajusteDataFimPeriodo" class="form-control form-control-sm">
+                          </div>
+                      </div>
+                      <small class="text-muted d-block mt-2" style="font-size: 0.75rem;">
+                          * Todos os dias compreendidos entre o início e o fim serão marcados de uma só vez.
+                      </small>
                   </div>
 
                   <div id="containerCamposHorarios" class="row g-3">

@@ -836,7 +836,9 @@ window.abrirModalEditarDia = function(diaBase64) {
     if (inputInicio) inputInicio.value = dataIsoDia;
     if (inputFim) inputFim.value = dataIsoDia;
 
-    document.getElementById("ajusteStatusDia").value = obj.statusDia || "NORMAL";
+    // Se no banco estiver como EDITADO, exibe como NORMAL na caixinha de seleção
+    const statusAtual = (obj.statusDia === "EDITADO") ? "NORMAL" : (obj.statusDia || "NORMAL");
+    document.getElementById("ajusteStatusDia").value = statusAtual;
     alternarCamposPorStatus();
 
     document.getElementById("ajusteEntrada").value = (obj.entrada && obj.entrada !== "-") ? obj.entrada : "";
@@ -851,7 +853,7 @@ async function salvarAjusteHorariosDia(event) {
     event.preventDefault();
     const dataAlvoOriginal = document.getElementById("modalAjusteDataVal").value;
     const colabId = document.getElementById("modalAjusteColabIdVal").value;
-    const statusDiaEscolhido = document.getElementById("ajusteStatusDia").value;
+    let statusDiaEscolhido = document.getElementById("ajusteStatusDia").value;
     
     const hEntrada = document.getElementById("ajusteEntrada").value;
     const hAlmIda = document.getElementById("ajusteAlmIda").value;
@@ -929,6 +931,11 @@ async function salvarAjusteHorariosDia(event) {
             return;
         }
 
+        // SE O USUÁRIO SALVOU COMO NORMAL VIA MODAL, MARCA COMO "EDITADO" PARA MOSTRAR NA TELA
+        if (statusDiaEscolhido === "NORMAL") {
+            statusDiaEscolhido = "EDITADO";
+        }
+
         // AJUSTE NORMAL / FERIADO (DIA PONTUAL)
         const snapExistentes = await db.collection("historico_pontos")
             .where("empresaEmail", "==", PREFIXO_EMPRESA)
@@ -1000,7 +1007,7 @@ async function salvarAjusteHorariosDia(event) {
         }
 
         bootstrap.Modal.getInstance(document.getElementById('modalEditarDiaPonto')).hide();
-        exibirAlertaTop("Ajuste Realizado", `O dia <strong>${dataAlvoOriginal}</strong> foi atualizado com status <strong>${statusDiaEscolhido}</strong>.`);
+        exibirAlertaTop("Ajuste Realizado", `O dia <strong>${dataAlvoOriginal}</strong> foi atualizado com sucesso.`);
         await filtrarRelatorioTela();
 
     } catch (err) {
@@ -1084,6 +1091,8 @@ async function filtrarRelatorioTela() {
             tagStatusHtml = ` <span class="badge bg-warning text-dark border ms-1" style="font-size:0.65rem;">ATESTADO</span>`;
         } else if (r.statusDia === "FERIAS") {
             tagStatusHtml = ` <span class="badge bg-info text-dark border ms-1" style="font-size:0.65rem;">FÉRIAS</span>`;
+        } else if (r.statusDia === "EDITADO") {
+            tagStatusHtml = ` <span class="badge bg-primary text-white border ms-1" style="font-size:0.65rem;">EDITADO</span>`;
         } else if (r.isDomingo) {
             tagStatusHtml = ` <span class="badge bg-secondary bg-opacity-25 text-secondary border ms-1" style="font-size:0.65rem;">DOM</span>`;
         }
@@ -1245,9 +1254,13 @@ async function exportarPontosExcel() {
             textoObsFinal = "Descanso Semanal (DSR / Domingo)";
         }
 
+        // NO EXCEL: NÃO MOSTRA (EDITADO), APENAS OS DEMAIS STATUS
         let tagExcel = "";
-        if (r.statusDia && r.statusDia !== "NORMAL") tagExcel = ` (${r.statusDia})`;
-        else if (r.isDomingo) tagExcel = " (DOM)";
+        if (r.statusDia && r.statusDia !== "NORMAL" && r.statusDia !== "EDITADO") {
+            tagExcel = ` (${r.statusDia})`;
+        } else if (r.isDomingo) {
+            tagExcel = " (DOM)";
+        }
 
         const dataStrExcel = `${r.data}${tagExcel}`;
         matrizPlanilha.push([dataStrExcel, r.nome, r.entrada, r.almocoIda, r.almocoVolta, r.saida, r.horasTrabalhadas, r.horasExtras, textoObsFinal]);

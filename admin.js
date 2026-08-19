@@ -485,6 +485,20 @@ function formatarMinutosParaString(minutosTotais) {
     return `${hrs.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}`;
 }
 
+function converterDataBrParaIso(dataBr) {
+    if (!dataBr || !dataBr.includes('/')) return "";
+    const p = dataBr.split('/');
+    if (p.length !== 3) return "";
+    return `${p[2]}-${p[1].padStart(2, '0')}-${p[0].padStart(2, '0')}`;
+}
+
+function converterDataIsoParaBr(dataIso) {
+    if (!dataIso || !dataIso.includes('-')) return "";
+    const p = dataIso.split('-');
+    if (p.length !== 3) return "";
+    return `${p[2].padStart(2, '0')}/${p[1].padStart(2, '0')}/${p[0]}`;
+}
+
 function aplicarFiltroRapido(tipo) {
     const inputInicio = document.getElementById('filtroRelatorioInicio');
     const inputFim = document.getElementById('filtroRelatorioFim');
@@ -795,10 +809,16 @@ window.abrirModalLerObs = function(obsStrBase64) {
 };
 
 window.alternarCamposPorStatus = function() {
-    const container = document.getElementById("containerCamposHorarios");
-    if (container) {
-        container.style.opacity = "1";
-        container.style.pointerEvents = "auto";
+    const status = document.getElementById("ajusteStatusDia").value;
+    const containerPeriodo = document.getElementById("containerPeriodoStatus");
+    const containerCamposHorarios = document.getElementById("containerCamposHorarios");
+
+    if (status === "FERIAS" || status === "ATESTADO") {
+        if (containerPeriodo) containerPeriodo.style.display = "block";
+        if (containerCamposHorarios) containerCamposHorarios.style.display = "none";
+    } else {
+        if (containerPeriodo) containerPeriodo.style.display = "none";
+        if (containerCamposHorarios) containerCamposHorarios.style.display = "flex";
     }
 };
 
@@ -809,6 +829,12 @@ window.abrirModalEditarDia = function(diaBase64) {
     document.getElementById("modalAjusteData").innerText = obj.data;
     document.getElementById("modalAjusteDataVal").value = obj.data;
     document.getElementById("modalAjusteColabIdVal").value = obj.colaboradorId;
+
+    const dataIsoDia = converterDataBrParaIso(obj.data);
+    const inputInicio = document.getElementById("ajusteDataInicioPeriodo");
+    const inputFim = document.getElementById("ajusteDataFimPeriodo");
+    if (inputInicio) inputInicio.value = dataIsoDia;
+    if (inputFim) inputFim.value = dataIsoDia;
 
     document.getElementById("ajusteStatusDia").value = obj.statusDia || "NORMAL";
     alternarCamposPorStatus();
@@ -823,7 +849,7 @@ window.abrirModalEditarDia = function(diaBase64) {
 
 async function salvarAjusteHorariosDia(event) {
     event.preventDefault();
-    const dataAlvo = document.getElementById("modalAjusteDataVal").value;
+    const dataAlvoOriginal = document.getElementById("modalAjusteDataVal").value;
     const colabId = document.getElementById("modalAjusteColabIdVal").value;
     const statusDiaEscolhido = document.getElementById("ajusteStatusDia").value;
     
@@ -837,10 +863,77 @@ async function salvarAjusteHorariosDia(event) {
     btn.innerHTML = "⏳ Gravando Ajuste...";
 
     try {
+        const user = bancoUsuarios.find(u => String(u.id) === String(colabId));
+        const nomeColab = user ? user.nome : "Colaborador";
+
+        // SE FOR FÉRIAS OU ATESTADO: GRAVA NO INTERVALO SELECIONADO DE UMA ÚNICA VEZ
+        if (statusDiaEscolhido === "FERIAS" || statusDiaEscolhido === "ATESTADO") {
+            const dataInicioIso = document.getElementById("ajusteDataInicioPeriodo").value;
+            const dataFimIso = document.getElementById("ajusteDataFimPeriodo").value;
+
+            if (!dataInicioIso || !dataFimIso) {
+                exibirAlertaTop("⚠️ Datas Inválidas", "Por favor, selecione as datas de início e término do período.");
+                btn.disabled = false;
+                btn.innerHTML = "💾 Salvar Ajuste";
+                return;
+            }
+
+            const dInicio = new Date(dataInicioIso + "T00:00:00");
+            const dFim = new Date(dataFimIso + "T00:00:00");
+
+            if (dInicio > dFim) {
+                exibirAlertaTop("⚠️ Período Incoerente", "A data de início não pode ser maior que a data de término.");
+                btn.disabled = false;
+                btn.innerHTML = "💾 Salvar Ajuste";
+                return;
+            }
+
+            let cur = new Date(dInicio);
+            while (cur <= dFim) {
+                const diaStr = String(cur.getDate()).padStart(2, '0');
+                const mesStr = String(cur.getMonth() + 1).padStart(2, '0');
+                const anoStr = cur.getFullYear();
+                const dataFormatada = `${diaStr}/${mesStr}/${anoStr}`;
+
+                const snapExistentes = await db.collection("historico_pontos")
+                    .where("empresaEmail", "==", PREFIXO_EMPRESA)
+                    .where("colaboradorId", "==", String(colabId))
+                    .where("data", "==", dataFormatada)
+                    .get();
+
+                if (!snapExistentes.empty) {
+                    for (let doc of snapExistentes.docs) {
+                        await db.collection("historico_pontos").doc(doc.id).update({
+                            statusDia: statusDiaEscolhido
+                        });
+                    }
+                } else {
+                    await db.collection("historico_pontos").add({
+                        colaboradorId: String(colabId),
+                        nome: nomeColab,
+                        data: dataFormatada,
+                        tipo: "Registro Especial",
+                        hora: "-",
+                        statusDia: statusDiaEscolhido,
+                        empresaEmail: PREFIXO_EMPRESA,
+                        timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                    });
+                }
+
+                cur.setDate(cur.getDate() + 1);
+            }
+
+            bootstrap.Modal.getInstance(document.getElementById('modalEditarDiaPonto')).hide();
+            exibirAlertaTop("Período Atualizado", `O período de <strong>${converterDataIsoParaBr(dataInicioIso)} até ${converterDataIsoParaBr(dataFimIso)}</strong> foi registrado como <strong>${statusDiaEscolhido}</strong> com sucesso!`);
+            await filtrarRelatorioTela();
+            return;
+        }
+
+        // AJUSTE NORMAL / FERIADO (DIA PONTUAL)
         const snapExistentes = await db.collection("historico_pontos")
             .where("empresaEmail", "==", PREFIXO_EMPRESA)
             .where("colaboradorId", "==", String(colabId))
-            .where("data", "==", dataAlvo)
+            .where("data", "==", dataAlvoOriginal)
             .get();
 
         const mapaDocExistente = {};
@@ -848,9 +941,6 @@ async function salvarAjusteHorariosDia(event) {
             const d = doc.data();
             mapaDocExistente[d.tipo] = doc.id;
         });
-
-        const user = bancoUsuarios.find(u => String(u.id) === String(colabId));
-        const nomeColab = user ? user.nome : "Colaborador";
 
         const tiposHorarios = [
             { tipo: "Entrada", hora: hEntrada },
@@ -874,7 +964,7 @@ async function salvarAjusteHorariosDia(event) {
                     await db.collection("historico_pontos").add({
                         colaboradorId: String(colabId),
                         nome: nomeColab,
-                        data: dataAlvo,
+                        data: dataAlvoOriginal,
                         tipo: item.tipo,
                         hora: item.hora.trim(),
                         statusDia: statusDiaEscolhido,
@@ -899,7 +989,7 @@ async function salvarAjusteHorariosDia(event) {
                 await db.collection("historico_pontos").add({
                     colaboradorId: String(colabId),
                     nome: nomeColab,
-                    data: dataAlvo,
+                    data: dataAlvoOriginal,
                     tipo: "Registro Especial",
                     hora: "-",
                     statusDia: statusDiaEscolhido,
@@ -910,7 +1000,7 @@ async function salvarAjusteHorariosDia(event) {
         }
 
         bootstrap.Modal.getInstance(document.getElementById('modalEditarDiaPonto')).hide();
-        exibirAlertaTop("Ajuste Realizado", `O dia <strong>${dataAlvo}</strong> foi atualizado com status <strong>${statusDiaEscolhido}</strong>.`);
+        exibirAlertaTop("Ajuste Realizado", `O dia <strong>${dataAlvoOriginal}</strong> foi atualizado com status <strong>${statusDiaEscolhido}</strong>.`);
         await filtrarRelatorioTela();
 
     } catch (err) {

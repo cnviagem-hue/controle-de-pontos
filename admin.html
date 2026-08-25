@@ -591,7 +591,7 @@
       </div>
     </div>
 
-    <!-- MODAL EDITAR HORÁRIOS E STATUS DO DIA (COM SUPORTE A INTERVALO PARA FÉRIAS E ATESTADO) -->
+    <!-- MODAL EDITAR HORÁRIOS E STATUS DO DIA (COM OPÇÃO DE FOLGA, FÉRIAS E ATESTADO POR PERÍODO) -->
     <div class="modal fade" id="modalEditarDiaPonto" tabindex="-1" aria-hidden="true">
       <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content border-0 shadow-lg" style="border-radius:16px;">
@@ -615,10 +615,11 @@
                           <option value="FERIADO">Feriado</option>
                           <option value="ATESTADO">Atestado Médico</option>
                           <option value="FERIAS">Férias</option>
+                          <option value="FOLGA">Folga</option>
                       </select>
                   </div>
 
-                  <!-- SELETOR DE PERÍODO (EXIBIDO AUTOMATICAMENTE PARA FÉRIAS OU ATESTADO) -->
+                  <!-- SELETOR DE PERÍODO (EXIBIDO AUTOMATICAMENTE PARA FOLGA, FÉRIAS OU ATESTADO) -->
                   <div id="containerPeriodoStatus" class="p-3 bg-light border border-primary-subtle rounded mb-3" style="display: none;">
                       <span class="text-primary small fw-bold d-block mb-2">📅 Selecione o Período Completo:</span>
                       <div class="row g-2">

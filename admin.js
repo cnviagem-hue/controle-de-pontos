@@ -677,7 +677,8 @@ function consolidarLogsBrutos(logsArray) {
                 cargaObrigatoriaDoDia = minCalc !== null ? minCalc : 480;
             }
 
-            if (r.statusDia === "FERIADO" || r.statusDia === "FERIAS" || r.statusDia === "ATESTADO") {
+            // ABONO DE HORAS: FERIADO, FÉRIAS, ATESTADO E FOLGA
+            if (r.statusDia === "FERIADO" || r.statusDia === "FERIAS" || r.statusDia === "ATESTADO" || r.statusDia === "FOLGA") {
                 if (minutosTrabalhados < cargaObrigatoriaDoDia) {
                     minutosTrabalhados = cargaObrigatoriaDoDia;
                 }
@@ -813,7 +814,7 @@ window.alternarCamposPorStatus = function() {
     const containerPeriodo = document.getElementById("containerPeriodoStatus");
     const containerCamposHorarios = document.getElementById("containerCamposHorarios");
 
-    if (status === "FERIAS" || status === "ATESTADO") {
+    if (status === "FERIAS" || status === "ATESTADO" || status === "FOLGA") {
         if (containerPeriodo) containerPeriodo.style.display = "block";
         if (containerCamposHorarios) containerCamposHorarios.style.display = "none";
     } else {
@@ -836,7 +837,6 @@ window.abrirModalEditarDia = function(diaBase64) {
     if (inputInicio) inputInicio.value = dataIsoDia;
     if (inputFim) inputFim.value = dataIsoDia;
 
-    // Se no banco estiver como EDITADO, exibe como NORMAL na caixinha de seleção
     const statusAtual = (obj.statusDia === "EDITADO") ? "NORMAL" : (obj.statusDia || "NORMAL");
     document.getElementById("ajusteStatusDia").value = statusAtual;
     alternarCamposPorStatus();
@@ -868,8 +868,8 @@ async function salvarAjusteHorariosDia(event) {
         const user = bancoUsuarios.find(u => String(u.id) === String(colabId));
         const nomeColab = user ? user.nome : "Colaborador";
 
-        // SE FOR FÉRIAS OU ATESTADO: GRAVA NO INTERVALO SELECIONADO DE UMA ÚNICA VEZ
-        if (statusDiaEscolhido === "FERIAS" || statusDiaEscolhido === "ATESTADO") {
+        // SE FOR FÉRIAS, ATESTADO OU FOLGA: GRAVA NO INTERVALO SELECIONADO DE UMA ÚNICA VEZ
+        if (statusDiaEscolhido === "FERIAS" || statusDiaEscolhido === "ATESTADO" || statusDiaEscolhido === "FOLGA") {
             const dataInicioIso = document.getElementById("ajusteDataInicioPeriodo").value;
             const dataFimIso = document.getElementById("ajusteDataFimPeriodo").value;
 
@@ -931,7 +931,7 @@ async function salvarAjusteHorariosDia(event) {
             return;
         }
 
-        // SE O USUÁRIO SALVOU COMO NORMAL VIA MODAL, MARCA COMO "EDITADO" PARA MOSTRAR NA TELA
+        // SE O USUÁRIO SALVOU COMO NORMAL VIA MODAL, MARCA COMO "EDITADO" PARA MOSTRAR NA TELA EM VERMELHO
         if (statusDiaEscolhido === "NORMAL") {
             statusDiaEscolhido = "EDITADO";
         }
@@ -1091,6 +1091,8 @@ async function filtrarRelatorioTela() {
             tagStatusHtml = ` <span class="badge bg-warning text-dark border ms-1" style="font-size:0.65rem;">ATESTADO</span>`;
         } else if (r.statusDia === "FERIAS") {
             tagStatusHtml = ` <span class="badge bg-info text-dark border ms-1" style="font-size:0.65rem;">FÉRIAS</span>`;
+        } else if (r.statusDia === "FOLGA") {
+            tagStatusHtml = ` <span class="badge text-white border ms-1" style="font-size:0.65rem; background-color: #0d9488 !important;">FOLGA</span>`;
         } else if (r.statusDia === "EDITADO") {
             tagStatusHtml = ` <span class="badge bg-danger text-white border ms-1" style="font-size:0.65rem;">EDITADO</span>`;
         } else if (r.isDomingo) {
@@ -1250,6 +1252,8 @@ async function exportarPontosExcel() {
             textoObsFinal = "Atestado Médico";
         } else if (r.statusDia === "FERIAS") {
             textoObsFinal = "Férias Abonadas";
+        } else if (r.statusDia === "FOLGA") {
+            textoObsFinal = "Folga Abonada / Compensatória";
         } else if (r.isDomingo) {
             textoObsFinal = "Descanso Semanal (DSR / Domingo)";
         }

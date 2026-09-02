@@ -744,9 +744,37 @@ function preencherCalendarioCompleto(dadosConsolidados, dataInicioStr, dataFimSt
         const dataFormatada = `${diaStr}/${mesStr}/${anoStr}`;
         const diaDaSemana = cur.getDay();
 
-        if (mapaExistentes[dataFormatada]) {
-            listaCompleta.push(mapaExistentes[dataFormatada]);
-        } else {
+     if (mapaExistentes[dataFormatada]) {
+            const reg = mapaExistentes[dataFormatada];
+            if (reg.horaInicioAtestado && reg.horaFimAtestado) {
+                const minInicio = bolarTempoParaMinutos(reg.horaInicioAtestado) || 0;
+                const minFim = bolarTempoParaMinutos(reg.horaFimAtestado) || 0;
+                const minAtestado = Math.max(0, minFim - minInicio);
+
+                if (minAtestado > 0) {
+                    const minPonto = reg.minutosTrabalhadosNum || 0;
+                    const totalMin = minPonto + minAtestado;
+                    
+                    reg.minutosTrabalhadosNum = totalMin;
+                    reg.horasTrabalhadas = formatarMinutosParaString(totalMin);
+
+                    const saldo = totalMin - (reg.minutosEsperadosNum || 0);
+                    reg.minutosExtrasNum = saldo;
+                    if (saldo < 0) {
+                        reg.horasExtras = `-${formatarMinutosParaString(Math.abs(saldo))}`;
+                        reg.classeCorExtra = "text-danger";
+                    } else if (saldo > 0) {
+                        reg.horasExtras = formatarMinutosParaString(saldo);
+                        reg.classeCorExtra = "text-success";
+                    } else {
+                        reg.horasExtras = "00:00";
+                        reg.classeCorExtra = "text-secondary";
+                    }
+                }
+            }
+            listaCompleta.push(reg);
+        }
+        else {
             let cargaObrigatoria = 0;
             if (diaDaSemana === 6) {
                 const minCalc = bolarTempoParaMinutos(cargaSab);

@@ -609,15 +609,31 @@
                   <input type="hidden" id="modalAjusteColabIdVal">
                   
                   <div class="mb-3">
-                      <label class="form-label small fw-bold text-dark">Status / Motivo do Dia</label>
-                      <select id="ajusteStatusDia" class="form-select border-primary" onchange="alternarCamposPorStatus()">
-                          <option value="NORMAL">Normal (Calcula Horas Padrão)</option>
-                          <option value="FERIADO">Feriado</option>
-                          <option value="ATESTADO">Atestado Médico</option>
-                          <option value="FERIAS">Férias</option>
-                          <option value="FOLGA">Folga</option>
-                      </select>
-                  </div>
+    <label class="form-label small fw-bold text-dark">Status / Motivo do Dia</label>
+    <select id="ajusteStatusDia" class="form-select border-primary" onchange="alternarCamposPorStatus()">
+        <option value="NORMAL">Normal (Calcula Horas Padrão)</option>
+        <option value="FERIADO">Feriado</option>
+        <option value="ATESTADO">Atestado Médico (Dia Integral)</option>
+        <option value="ATESTADO_PARCIAL">Atestado Parcial (Horas)</option>
+        <option value="FERIAS">Férias</option>
+        <option value="FOLGA">Folga</option>
+    </select>
+</div>
+
+<!-- CAMPOS PARA ATESTADO PARCIAL (HORÁRIOS DO ATESTADO) -->
+<div id="containerAtestadoParcial" class="p-3 bg-light border border-primary-subtle rounded mb-3" style="display: none;">
+    <span class="text-primary small fw-bold d-block mb-2">⏱️ Período do Atestado Parcial:</span>
+    <div class="row g-2">
+        <div class="col-6">
+            <label for="horaInicioAtestado" class="form-label small fw-medium text-muted">Hora Início</label>
+            <input type="time" id="horaInicioAtestado" class="form-control">
+        </div>
+        <div class="col-6">
+            <label for="horaFimAtestado" class="form-label small fw-medium text-muted">Hora Fim</label>
+            <input type="time" id="horaFimAtestado" class="form-control">
+        </div>
+    </div>
+</div>
 
                   <!-- SELETOR DE PERÍODO (EXIBIDO AUTOMATICAMENTE PARA FOLGA, FÉRIAS OU ATESTADO) -->
                   <div id="containerPeriodoStatus" class="p-3 bg-light border border-primary-subtle rounded mb-3" style="display: none;">
@@ -674,5 +690,36 @@
     <script src="https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore-compat.js"></script>
     
     <script src="admin.js"></script>
+<script>
+function alternarCamposPorStatus() {
+    const statusEl = document.getElementById('ajusteStatusDia');
+    const boxParcial = document.getElementById('containerAtestadoParcial');
+    const boxPeriodo = document.getElementById('containerPeriodoStatus');
+
+    if (!statusEl) return;
+
+    const status = statusEl.value;
+
+    if (boxParcial) {
+        if (status === 'ATESTADO_PARCIAL') {
+            boxParcial.style.display = 'block';
+        } else {
+            boxParcial.style.display = 'none';
+            const hInicio = document.getElementById('horaInicioAtestado');
+            const hFim = document.getElementById('horaFimAtestado');
+            if (hInicio) hInicio.value = '';
+            if (hFim) hFim.value = '';
+        }
+    }
+
+    if (boxPeriodo) {
+        if (['FERIAS', 'FOLGA', 'ATESTADO'].includes(status)) {
+            boxPeriodo.style.display = 'block';
+        } else {
+            boxPeriodo.style.display = 'none';
+        }
+    }
+}
+</script>
 </body>
 </html>

@@ -951,9 +951,9 @@ const horaFimAtestado = document.getElementById("horaFimAtestado") ? document.ge
                         tipo: "Registro Especial",
                         hora: "-",
                         statusDia: statusDiaEscolhido,
-                             horaInicioAtestado: horaInicioAtestado,
-            horaFimAtestado: horaFimAtestado,
-            empresaEmail: PREFIXO_EMPRESA,
+                        horaInicioAtestado: horaInicioAtestado,
+                        horaFimAtestado: horaFimAtestado,
+                        empresaEmail: PREFIXO_EMPRESA,
                     timestamp: firebase.firestore.FieldValue.serverTimestamp()
                     });
                 }

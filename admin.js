@@ -1136,7 +1136,7 @@ async function filtrarRelatorioTela() {
             tagStatusHtml = ` <span class="badge text-white border ms-1" style="font-size:0.65rem; background-color: #6f42c1 !important;">FERIADO</span>`;
         } else if (r.statusDia === "ATESTADO") {
             tagStatusHtml = ` <span class="badge bg-warning text-dark border ms-1" style="font-size:0.65rem;">ATESTADO</span>`;
-         } else if (r.statusDia === "ATESTADO_PARCIAL" || r.statusDia === "Atestado Parcial (Horas)" || (r.horaInicioAtestado && r.horaFimAtestado)) {
+         } else if (r.statusDia === "ATESTADO PARCIAL" || r.statusDia === "ATESTADO_PARCIAL" || r.statusDia === "Atestado Parcial (Horas)" || (r.horaInicioAtestado && r.horaFimAtestado)) {
             tagStatusHtml = `<span class="badge bg-warning text-dark border ms-1" style="font-size:0.65rem;">ATESTADO PARCIAL (${r.horaInicioAtestado || ''} - ${r.horaFimAtestado || ''})</span>`;
         } else if (r.statusDia === "FERIAS") {
             tagStatusHtml = ` <span class="badge bg-info text-dark border ms-1" style="font-size:0.65rem;">FÉRIAS</span>`;

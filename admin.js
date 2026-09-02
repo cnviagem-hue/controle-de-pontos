@@ -966,7 +966,7 @@ const horaFimAtestado = document.getElementById("horaFimAtestado") ? document.ge
 
         for (let item of tiposHorarios) {
             const docId = mapaDocExistente[item.tipo];
-            if (item.hora && item.hora.trim() !== "") {
+         if ((item.hora && item.hora.trim() !== "") || (horaInicioAtestado !== "" || horaFimAtestado !== "")) {
                 salvouAlgumPonto = true;
                 if (docId) {
                     await db.collection("historico_pontos").doc(docId).update({

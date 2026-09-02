@@ -903,7 +903,7 @@ const horaFimAtestado = document.getElementById("horaFimAtestado") ? document.ge
         const nomeColab = user ? user.nome : "Colaborador";
 
         // SE FOR FÉRIAS, ATESTADO OU FOLGA: GRAVA NO INTERVALO SELECIONADO DE UMA ÚNICA VEZ
-        if (statusDiaEscolhido === "FERIAS" || statusDiaEscolhido === "ATESTADO" || statusDiaEscolhido === "ATESTADO PARCIAL" || statusDiaEscolhido === "Atestado Parcial (Horas)" || statusDiaEscolhido === "FOLGA") {
+        if (statusDiaEscolhido === "FERIAS" || statusDiaEscolhido === "ATESTADO" || statusDiaEscolhido === "FOLGA") {
             const dataInicioIso = document.getElementById("ajusteDataInicioPeriodo").value;
             const dataFimIso = document.getElementById("ajusteDataFimPeriodo").value;
 
@@ -1008,17 +1008,19 @@ const horaFimAtestado = document.getElementById("horaFimAtestado") ? document.ge
     horaFimAtestado: horaFimAtestado
 });
                 } else {
-                    await db.collection("historico_pontos").add({
-                        colaboradorId: String(colabId),
-                        nome: nomeColab,
-                        data: dataAlvoOriginal,
-                        tipo: item.tipo,
-                        hora: item.hora.trim(),
-                        statusDia: statusDiaEscolhido,
-                        empresaEmail: PREFIXO_EMPRESA,
-                        timestamp: firebase.firestore.FieldValue.serverTimestamp()
-                    });
-                }
+        await db.collection("historico_pontos").add({
+            colaboradorId: String(colabId),
+            nome: nomeColab,
+            data: dataAlvoOriginal,
+            tipo: item.tipo,
+            hora: item.hora.trim(),
+            statusDia: statusDiaEscolhido,
+            horaInicioAtestado: horaInicioAtestado,
+            horaFimAtestado: horaFimAtestado,
+            empresaEmail: PREFIXO_EMPRESA,
+            timestamp: firebase.firestore.FieldValue.serverTimestamp()
+        });
+    }
             } else {
                 if (docId) {
                     await db.collection("historico_pontos").doc(docId).delete();
@@ -1030,7 +1032,9 @@ const horaFimAtestado = document.getElementById("horaFimAtestado") ? document.ge
             const docGenerico = snapExistentes.docs[0];
             if (docGenerico) {
                 await db.collection("historico_pontos").doc(docGenerico.id).update({
-                    statusDia: statusDiaEscolhido
+                    statusDia: statusDiaEscolhido,
+            horaInicioAtestado: horaInicioAtestado,
+            horaFimAtestado: horaFimAtestado
                 });
             } else {
                 await db.collection("historico_pontos").add({
@@ -1039,9 +1043,11 @@ const horaFimAtestado = document.getElementById("horaFimAtestado") ? document.ge
                     data: dataAlvoOriginal,
                     tipo: "Registro Especial",
                     hora: "-",
-                    statusDia: statusDiaEscolhido,
-                    empresaEmail: PREFIXO_EMPRESA,
-                    timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                   statusDia: statusDiaEscolhido,
+            horaInicioAtestado: horaInicioAtestado,
+            horaFimAtestado: horaFimAtestado,
+            empresaEmail: PREFIXO_EMPRESA,
+                   timestamp: firebase.firestore.FieldValue.serverTimestamp()
                 });
             }
         }

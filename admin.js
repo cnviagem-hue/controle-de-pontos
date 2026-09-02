@@ -783,9 +783,12 @@ function preencherCalendarioCompleto(dadosConsolidados, dataInicioStr, dataFimSt
                 horasTrabalhadas: "00:00",
                 horasExtras: strExtras,
                 classeCorExtra: corExtras,
-                isDomingo: (diaDaSemana === 0),
-                statusDia: "NORMAL",
-                observacoes: []
+            isDomingo: (diaDaSemana === 0),
+            statusDia: (mapaExistentes[dataFormatada] ? mapaExistentes[dataFormatada].statusDia : "NORMAL"),
+            observacoes: (mapaExistentes[dataFormatada] ? mapaExistentes[dataFormatada].observacoes : []),
+            horaInicioAtestado: (mapaExistentes[dataFormatada] ? mapaExistentes[dataFormatada].horaInicioAtestado : "") || "",
+            horaFimAtestado: (mapaExistentes[dataFormatada] ? mapaExistentes[dataFormatada].horaFimAtestado : "") || ""
+        });
             });
         }
         cur.setDate(cur.getDate() + 1);

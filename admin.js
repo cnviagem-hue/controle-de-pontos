@@ -766,13 +766,12 @@ function preencherCalendarioCompleto(dadosConsolidados, dataInicioStr, dataFimSt
                         reg.horasExtras = formatarMinutosParaString(saldo);
                         reg.classeCorExtra = "text-success";
                     } else {
-                        reg.horasExtras = "00:00";
-                        reg.classeCorExtra = "text-secondary";
-                    }
-                }
-            }
-            listaCompleta.push(reg);
-        }
+        reg.horasExtras = "00:00";
+        reg.classeCorExtra = "text-secondary";
+    }
+    
+    listaCompleta.push(reg);
+}
         else {
             let cargaObrigatoria = 0;
             if (diaDaSemana === 6) {

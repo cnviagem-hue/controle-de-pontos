@@ -786,8 +786,8 @@ function preencherCalendarioCompleto(dadosConsolidados, dataInicioStr, dataFimSt
             isDomingo: (diaDaSemana === 0),
             statusDia: (mapaExistentes[dataFormatada] ? mapaExistentes[dataFormatada].statusDia : "NORMAL"),
             observacoes: (mapaExistentes[dataFormatada] ? mapaExistentes[dataFormatada].observacoes : []),
-            horaInicioAtestado: (mapaExistentes[dataFormatada] ? mapaExistentes[dataFormatada].horaInicioAtestado : "") || "",
-            horaFimAtestado: (mapaExistentes[dataFormatada] ? mapaExistentes[dataFormatada].horaFimAtestado : "") || ""
+            horaInicioAtestado: mapaExistentes[dataFormatada] ? mapaExistentes[dataFormatada].horaInicioAtestado : "",
+            horaFimAtestado: mapaExistentes[dataFormatada] ? mapaExistentes[dataFormatada].horaFimAtestado : ""
         });
             });
         }

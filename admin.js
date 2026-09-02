@@ -839,9 +839,10 @@ window.abrirModalEditarDia = function(diaBase64) {
 
     const statusAtual = (obj.statusDia === "EDITADO") ? "NORMAL" : (obj.statusDia || "NORMAL");
     document.getElementById("ajusteStatusDia").value = statusAtual;
-    alternarCamposPorStatus();
-
-    document.getElementById("ajusteEntrada").value = (obj.entrada && obj.entrada !== "-") ? obj.entrada : "";
+document.getElementById("horaInicioAtestado").value = obj.horaInicioAtestado || "";
+document.getElementById("horaFimAtestado").value = obj.horaFimAtestado || "";
+alternarCamposPorStatus();
+  document.getElementById("ajusteEntrada").value = (obj.entrada && obj.entrada !== "-") ? obj.entrada : "";
     document.getElementById("ajusteAlmIda").value = (obj.almocoIda && obj.almocoIda !== "-") ? obj.almocoIda : "";
     document.getElementById("ajusteAlmVolta").value = (obj.almocoVolta && obj.almocoVolta !== "-") ? obj.almocoVolta : "";
     document.getElementById("ajusteSaida").value = (obj.saida && obj.saida !== "-") ? obj.saida : "";
@@ -859,7 +860,8 @@ async function salvarAjusteHorariosDia(event) {
     const hAlmIda = document.getElementById("ajusteAlmIda").value;
     const hAlmVolta = document.getElementById("ajusteAlmVolta").value;
     const hSaida = document.getElementById("ajusteSaida").value;
-
+const horaInicioAtestado = document.getElementById("horaInicioAtestado") ? document.getElementById("horaInicioAtestado").value : "";
+const horaFimAtestado = document.getElementById("horaFimAtestado") ? document.getElementById("horaFimAtestado").value : "";
     const btn = document.getElementById("btnSalvarAjusteDia");
     btn.disabled = true;
     btn.innerHTML = "⏳ Gravando Ajuste...";
@@ -905,20 +907,23 @@ async function salvarAjusteHorariosDia(event) {
 
                 if (!snapExistentes.empty) {
                     for (let doc of snapExistentes.docs) {
-                        await db.collection("historico_pontos").doc(doc.id).update({
-                            statusDia: statusDiaEscolhido
-                        });
-                    }
+                    await db.collection("historico_pontos").doc(doc.id).update({
+    statusDia: statusDiaEscolhido,
+    horaInicioAtestado: horaInicioAtestado,
+    horaFimAtestado: horaFimAtestado
+});
                 } else {
-                    await db.collection("historico_pontos").add({
+                  await db.collection("historico_pontos").add({
                         colaboradorId: String(colabId),
                         nome: nomeColab,
                         data: dataFormatada,
                         tipo: "Registro Especial",
                         hora: "-",
                         statusDia: statusDiaEscolhido,
-                        empresaEmail: PREFIXO_EMPRESA,
-                        timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                             horaInicioAtestado: horaInicioAtestado,
+            horaFimAtestado: horaFimAtestado,
+            empresaEmail: PREFIXO_EMPRESA,
+                    timestamp: firebase.firestore.FieldValue.serverTimestamp()
                     });
                 }
 
@@ -964,9 +969,11 @@ async function salvarAjusteHorariosDia(event) {
                 salvouAlgumPonto = true;
                 if (docId) {
                     await db.collection("historico_pontos").doc(docId).update({
-                        hora: item.hora.trim(),
-                        statusDia: statusDiaEscolhido
-                    });
+    hora: item.hora.trim(),
+    statusDia: statusDiaEscolhido,
+    horaInicioAtestado: horaInicioAtestado,
+    horaFimAtestado: horaFimAtestado
+});
                 } else {
                     await db.collection("historico_pontos").add({
                         colaboradorId: String(colabId),

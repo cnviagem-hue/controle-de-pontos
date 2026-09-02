@@ -746,19 +746,18 @@ function preencherCalendarioCompleto(dadosConsolidados, dataInicioStr, dataFimSt
 
      if (mapaExistentes[dataFormatada]) {
             const reg = mapaExistentes[dataFormatada];
-            if (reg.horaInicioAtestado && reg.horaFimAtestado) {
-                const minInicio = bolarTempoParaMinutos(reg.horaInicioAtestado) || 0;
-                const minFim = bolarTempoParaMinutos(reg.horaFimAtestado) || 0;
-                const minAtestado = Math.max(0, minFim - minInicio);
+           if (reg.horaInicioAtestado && reg.horaFimAtestado) {
+            const minInicio = bolarTempoParaMinutos(reg.horaInicioAtestado) || 0;
+            const minFim = bolarTempoParaMinutos(reg.horaFimAtestado) || 0;
+            const minAtestado = Math.max(0, minFim - minInicio);
 
-                if (minAtestado > 0) {
-                    const minPonto = reg.minutosTrabalhadosNum || 0;
-                    const totalMin = minPonto + minAtestado;
-                    
-                    reg.minutosTrabalhadosNum = totalMin;
-                    reg.horasTrabalhadas = formatarMinutosParaString(totalMin);
-
-                    const saldo = totalMin - (reg.minutosEsperadosNum || 0);
+            if (minAtestado > 0) {
+                const minPonto = reg.minutosTrabalhadosNum || 0;
+                reg.minutosTrabalhadosNum = minPonto + minAtestado;
+                reg.horasTrabalhadas = formatarMinutosParaString(reg.minutosTrabalhadosNum);
+            }
+        }
+                    const saldo = (reg.minutosTrabalhadosNum || 0) - (reg.minutosEsperadosNum || 0);
                     reg.minutosExtrasNum = saldo;
                     if (saldo < 0) {
                         reg.horasExtras = `-${formatarMinutosParaString(Math.abs(saldo))}`;

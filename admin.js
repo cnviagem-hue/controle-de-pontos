@@ -901,7 +901,7 @@ const horaFimAtestado = document.getElementById("horaFimAtestado") ? document.ge
         const nomeColab = user ? user.nome : "Colaborador";
 
         // SE FOR FÉRIAS, ATESTADO OU FOLGA: GRAVA NO INTERVALO SELECIONADO DE UMA ÚNICA VEZ
-        if (statusDiaEscolhido === "FERIAS" || statusDiaEscolhido === "ATESTADO" || statusDiaEscolhido === "FOLGA") {
+        if (statusDiaEscolhido === "FERIAS" || statusDiaEscolhido === "ATESTADO" || statusDiaEscolhido === "ATESTADO PARCIAL" || statusDiaEscolhido === "FOLGA") {
             const dataInicioIso = document.getElementById("ajusteDataInicioPeriodo").value;
             const dataFimIso = document.getElementById("ajusteDataFimPeriodo").value;
 

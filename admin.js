@@ -745,10 +745,14 @@ function preencherCalendarioCompleto(dadosConsolidados, dataInicioStr, dataFimSt
         const diaDaSemana = cur.getDay();
 
      if (mapaExistentes[dataFormatada]) {
-            const reg = mapaExistentes[dataFormatada];
-           if (reg.horaInicioAtestado && reg.horaFimAtestado) {
-            const minInicio = bolarTempoParaMinutos(reg.horaInicioAtestado) || 0;
-            const minFim = bolarTempoParaMinutos(reg.horaFimAtestado) || 0;
+        const reg = mapaExistentes[dataFormatada];
+        
+        const inicioAtestado = reg.horaInicioAtestado || "";
+        const fimAtestado = reg.horaFimAtestado || "";
+
+        if (inicioAtestado && fimAtestado) {
+            const minInicio = bolarTempoParaMinutos(inicioAtestado) || 0;
+            const minFim = bolarTempoParaMinutos(fimAtestado) || 0;
             const minAtestado = Math.max(0, minFim - minInicio);
 
             if (minAtestado > 0) {

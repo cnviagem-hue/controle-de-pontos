@@ -1712,3 +1712,4 @@ function controlarCamposConfiguracao(bloquear) {
     if(document.getElementById("btnGpsConfigs")) document.getElementById("btnGpsConfigs").disabled = bloquear;
     if(document.getElementById("btnBuscarCep")) document.getElementById("btnBuscarCep").disabled = bloquear;
 }
+

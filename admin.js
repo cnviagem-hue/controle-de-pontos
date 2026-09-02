@@ -890,8 +890,8 @@ async function salvarAjusteHorariosDia(event) {
     const hAlmIda = document.getElementById("ajusteAlmIda").value;
     const hAlmVolta = document.getElementById("ajusteAlmVolta").value;
     const hSaida = document.getElementById("ajusteSaida").value;
-const horaInicioAtestado = document.getElementById("ajusteHoraInicioAtestado") ? document.getElementById("ajusteHoraInicioAtestado").value : (document.getElementById("horaInicioAtestado")?.value || "");
-const horaFimAtestado = document.getElementById("ajusteHoraFimAtestado") ? document.getElementById("ajusteHoraFimAtestado").value : (document.getElementById("horaFimAtestado")?.value || "");
+const horaInicioAtestado = document.getElementById("horaInicioAtestado") ? document.getElementById("horaInicioAtestado").value : "";
+const horaFimAtestado = document.getElementById("horaFimAtestado") ? document.getElementById("horaFimAtestado").value : "";
     const btn = document.getElementById("btnSalvarAjusteDia");
     btn.disabled = true;
     btn.innerHTML = "⏳ Gravando Ajuste...";

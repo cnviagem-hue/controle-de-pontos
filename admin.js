@@ -1083,6 +1083,15 @@ async function filtrarRelatorioTela() {
     });
 
     dadosConsolidados.forEach(r => {
+       if (r.horaInicioAtestado && r.horaFimAtestado) {
+            const [hIni, mIni] = r.horaInicioAtestado.split(':').map(Number);
+            const [hFim, mFim] = r.horaFimAtestado.split(':').map(Number);
+            const minutosAtestado = (hFim * 60 + mFim) - (hIni * 60 + mIni);
+            if (minutosAtestado > 0) {
+                r.minutosTrabalhadosNum += minutosAtestado;
+            }
+        }
+
         acumuladorTrabalhadas += r.minutosTrabalhadosNum;
         acumuladorEsperadas += r.minutosEsperadosNum;
 
@@ -1097,6 +1106,8 @@ async function filtrarRelatorioTela() {
             tagStatusHtml = ` <span class="badge text-white border ms-1" style="font-size:0.65rem; background-color: #6f42c1 !important;">FERIADO</span>`;
         } else if (r.statusDia === "ATESTADO") {
             tagStatusHtml = ` <span class="badge bg-warning text-dark border ms-1" style="font-size:0.65rem;">ATESTADO</span>`;
+          } else if (r.statusDia === "Atestado Parcial (Horas)") {
+            tagStatusHtml = `<span class="badge bg-warning text-dark border ms-1" style="font-size:0.65rem;">ATESTADO PARCIAL (${r.horaInicioAtestado || ''} - ${r.horaFimAtestado || ''})</span>`;
         } else if (r.statusDia === "FERIAS") {
             tagStatusHtml = ` <span class="badge bg-info text-dark border ms-1" style="font-size:0.65rem;">FÉRIAS</span>`;
         } else if (r.statusDia === "FOLGA") {

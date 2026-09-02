@@ -906,13 +906,14 @@ const horaFimAtestado = document.getElementById("horaFimAtestado") ? document.ge
                     .get();
 
                 if (!snapExistentes.empty) {
-                    for (let doc of snapExistentes.docs) {
-                    await db.collection("historico_pontos").doc(doc.id).update({
-    statusDia: statusDiaEscolhido,
-    horaInicioAtestado: horaInicioAtestado,
-    horaFimAtestado: horaFimAtestado
-});
-                } else {
+    for (let doc of snapExistentes.docs) {
+        await db.collection("historico_pontos").doc(doc.id).update({
+            statusDia: statusDiaEscolhido,
+            horaInicioAtestado: horaInicioAtestado,
+            horaFimAtestado: horaFimAtestado
+        });
+    }
+} else {
                   await db.collection("historico_pontos").add({
                         colaboradorId: String(colabId),
                         nome: nomeColab,

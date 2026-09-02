@@ -749,7 +749,7 @@ function preencherCalendarioCompleto(dadosConsolidados, dataInicioStr, dataFimSt
         
         const inicioAtestado = reg.horaInicioAtestado || "";
         const fimAtestado = reg.horaFimAtestado || "";
-
+console.log("Dia:", dataFormatada, "Início:", reg.horaInicioAtestado, "Fim:", reg.horaFimAtestado);
         if (inicioAtestado && fimAtestado) {
             const minInicio = bolarTempoParaMinutos(inicioAtestado) || 0;
             const minFim = bolarTempoParaMinutos(fimAtestado) || 0;

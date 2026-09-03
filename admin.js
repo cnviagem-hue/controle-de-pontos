@@ -71,8 +71,6 @@ document.addEventListener("DOMContentLoaded", async () => {
         console.error("Erro critico de carregamento da tela:", e);
         document.getElementById("sidebarNomeEmpresa").innerText = "Modo de Segurança";
     }
-});
-
 function toggleSidebarMenu() {
     const sidebar = document.getElementById("sidebarMenu");
     const mainContent = document.getElementById("mainContentContainer");
@@ -1736,7 +1734,7 @@ function focarEdicaoConfigs() {
     const inputNome = document.getElementById("nomeEmpresa");
     if(inputNome) inputNome.focus();
 }
-}
+
 function controlarCamposConfiguracao(bloquear) {
     if(document.getElementById("nomeEmpresa")) document.getElementById("nomeEmpresa").disabled = bloquear;
     if(document.getElementById("cepBusca")) document.getElementById("cepBusca").disabled = bloquear;

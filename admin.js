@@ -1727,7 +1727,6 @@ async function carregarConfigsNuvem() {
     } catch (error) {
         console.error("Erro ao carregar configs:", error);
     }
-}
 
 function focarEdicaoConfigs() {
     controlarCamposConfiguracao(false);

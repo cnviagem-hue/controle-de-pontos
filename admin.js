@@ -1163,19 +1163,26 @@ async function filtrarRelatorioTela() {
         }
         
         tr.innerHTML = `
-            <td><strong>${r.data}</strong>${tagStatusHtml}</td>
-            <td>${r.nome}</td>
-            <td><span class="badge bg-light text-dark border">${r.entrada}</span></td>
-            <td><span class="badge bg-light text-dark border">${r.almocoIda}</span></td>
-            <td><span class="badge bg-light text-dark border">${r.almocoVolta}</span></td>
-            <td><span class="badge bg-light text-dark border">${r.saida}</span></td>
-            <td class="text-success fw-bold">${r.horasTrabalhadas}</td>
-            <td class="${r.classeCorExtra} fw-bold">${r.horasExtras}</td>
-            <td class="text-center">${btnObsHtml}</td>
-            <td class="text-center">
-                <button class="btn btn-sm btn-outline-primary" style="font-size: 0.75rem; padding: 3px 8px;" title="Ajustar Horários / Motivo" onclick="abrirModalEditarDia('${objDiaBase64}')">✏️</button>
-            </td>
-        `;
+        <td><strong>${r.data}</strong>${tagStatusHtml}</td>
+        <td>${r.nome}</td>
+        <td colspan="4" class="text-center">
+            ${(r.statusDia === "ATESTADO PARCIAL" || r.statusDia === "Atestado Parcial (Horas)" || (r.horaInicioAtestado && r.horaFimAtestado)) ? 
+                `<span class="badge bg-warning text-dark border">Início: ${r.horaInicioAtestado || '-'} | Fim: ${r.horaFimAtestado || '-'}</span>` : 
+                `
+                <span class="badge bg-light text-dark border">${r.entrada || '-'}</span>
+                <span class="badge bg-light text-dark border">${r.almocoIda || '-'}</span>
+                <span class="badge bg-light text-dark border">${r.almocoVolta || '-'}</span>
+                <span class="badge bg-light text-dark border">${r.saida || '-'}</span>
+                `
+            }
+        </td>
+        <td class="text-success fw-bold">${r.horasTrabalhadas || '00:00'}</td>
+        <td class="${r.classeCorExtra || ''} fw-bold">${r.horasExtras || '00:00'}</td>
+        <td class="text-center">${btnObsHtml}</td>
+        <td class="text-center">
+            <button class="btn btn-sm btn-outline-primary" style="font-size: 0.75rem; padding: 3px 8px;" title="Ajustar Horários / Motivo" onclick="abrirModalEditarDia('${objDiaBase64}')">✏️</button>
+        </td>
+    `;
         tabelaBody.appendChild(tr);
     });
 

@@ -1181,9 +1181,7 @@ async function filtrarRelatorioTela() {
         </td>
     `;
         tabelaBody.appendChild(tr);
-    });
-
-    const saldoFinal = acumuladorTrabalhadas - acumuladorEsperadas;
+     const saldoFinal = acumuladorTrabalhadas - acumuladorEsperadas;
     const saldoAbsoluto = Math.abs(saldoFinal);
     const strSaldo = formatarMinutosParaString(saldoAbsoluto);
     

@@ -1122,18 +1122,19 @@ async function filtrarRelatorioTela() {
     });
 
     if (r.horaInicioAtestado && r.horaFimAtestado) {
-            const minInicio = bolarTempoParaMinutos(r.horaInicioAtestado) || 0;
-            const minFim = bolarTempoParaMinutos(r.horaFimAtestado) || 0;
-            const minutosAtestado = Math.max(0, minFim - minInicio);
-            
-            if (minutosAtestado > 0 && !r._atestadoSomado) {
-                r.minutosTrabalhadosNum = (r.minutosTrabalhadosNum || 0) + minutosAtestado;
-                r.horasTrabalhadas = formatarMinutosParaString(r.minutosTrabalhadosNum);
-                r._atestadoSomado = true;
-            }
+        const minInicio = bolarTempoParaMinutos(r.horaInicioAtestado) || 0;
+        const minFim = bolarTempoParaMinutos(r.horaFimAtestado) || 0; // <- corrigido aqui para FimAtestado
+        const minutosAtestado = Math.max(0, minFim - minInicio);
+
+        if (minutosAtestado > 0 && !r._atestadoSomado) {
+            r.minutosTrabalhadosNum = (r.minutosTrabalhadosNum || 0) + minutosAtestado;
+            r.horasTrabalhadas = formatarMinutosParaString(r.minutosTrabalhadosNum);
+            r._atestadoSomado = true;
         }
-        acumuladorTrabalhadas += r.minutosTrabalhadosNum;
-        acumuladorEsperadas += r.minutosEsperadosNum;
+    }
+
+    acumuladorTrabalhadas += r.minutosTrabalhadosNum;
+  acumuladorEsperadas += r.minutosEsperadosNum;
 
         let btnObsHtml = `<span class="badge bg-success bg-opacity-25 text-success border border-success-subtle px-2" style="font-size:0.75rem;">● Sem Obs.</span>`;
         if (r.observacoes && r.observacoes.length > 0) {

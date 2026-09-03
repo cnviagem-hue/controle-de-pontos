@@ -749,16 +749,17 @@ function preencherCalendarioCompleto(dadosConsolidados, dataInicioStr, dataFimSt
         
         const inicioAtestado = reg.horaInicioAtestado || "";
         const fimAtestado = reg.horaFimAtestado || "";
-console.log("Dia:", dataFormatada, "Início:", reg.horaInicioAtestado, "Fim:", reg.horaFimAtestado);
+        
         if (inicioAtestado && fimAtestado) {
             const minInicio = bolarTempoParaMinutos(inicioAtestado) || 0;
             const minFim = bolarTempoParaMinutos(fimAtestado) || 0;
             const minAtestado = Math.max(0, minFim - minInicio);
-
-            if (minAtestado > 0) {
+            
+            if (minAtestado > 0 && !reg._atestadoSomado) {
                 const minPonto = reg.minutosTrabalhadosNum || 0;
                 reg.minutosTrabalhadosNum = minPonto + minAtestado;
                 reg.horasTrabalhadas = formatarMinutosParaString(reg.minutosTrabalhadosNum);
+                reg._atestadoSomado = true;
             }
         }
                     const saldo = (reg.minutosTrabalhadosNum || 0) - (reg.minutosEsperadosNum || 0);
@@ -1120,16 +1121,17 @@ async function filtrarRelatorioTela() {
         return new Date(pa[2], pa[1]-1, pa[0]) - new Date(pb[2], pb[1]-1, pb[0]);
     });
 
-    dadosConsolidados.forEach(r => {
-       if (r.horaInicioAtestado && r.horaFimAtestado) {
-            const [hIni, mIni] = r.horaInicioAtestado.split(':').map(Number);
-            const [hFim, mFim] = r.horaFimAtestado.split(':').map(Number);
-            const minutosAtestado = (hFim * 60 + mFim) - (hIni * 60 + mIni);
-            if (minutosAtestado > 0) {
-                r.minutosTrabalhadosNum += minutosAtestado;
+    if (r.horaInicioAtestado && r.horaFimAtestado) {
+            const minInicio = bolarTempoParaMinutos(r.horaInicioAtestado) || 0;
+            const minFim = bolarTempoParaMinutos(r.horaFimAtestado) || 0;
+            const minutosAtestado = Math.max(0, minFim - minInicio);
+            
+            if (minutosAtestado > 0 && !r._atestadoSomado) {
+                r.minutosTrabalhadosNum = (r.minutosTrabalhadosNum || 0) + minutosAtestado;
+                r.horasTrabalhadas = formatarMinutosParaString(r.minutosTrabalhadosNum);
+                r._atestadoSomado = true;
             }
         }
-
         acumuladorTrabalhadas += r.minutosTrabalhadosNum;
         acumuladorEsperadas += r.minutosEsperadosNum;
 

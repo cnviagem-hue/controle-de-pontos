@@ -1162,20 +1162,15 @@ async function filtrarRelatorioTela() {
             tr.setAttribute('style', 'background-color: #f8fafc;');
         }
         
-        tr.innerHTML = `
+        const ehAtestadoParcial = (r.statusDia === "ATESTADO PARCIAL" || r.statusDia === "Atestado Parcial (Horas)" || (r.horaInicioAtestado && r.horaFimAtestado));
+
+    tr.innerHTML = `
         <td><strong>${r.data}</strong>${tagStatusHtml}</td>
         <td>${r.nome}</td>
-        <td colspan="4" class="text-center">
-            ${(r.statusDia === "ATESTADO PARCIAL" || r.statusDia === "Atestado Parcial (Horas)" || (r.horaInicioAtestado && r.horaFimAtestado)) ? 
-                `<span class="badge bg-warning text-dark border">Início: ${r.horaInicioAtestado || '-'} | Fim: ${r.horaFimAtestado || '-'}</span>` : 
-                `
-                <span class="badge bg-light text-dark border">${r.entrada || '-'}</span>
-                <span class="badge bg-light text-dark border">${r.almocoIda || '-'}</span>
-                <span class="badge bg-light text-dark border">${r.almocoVolta || '-'}</span>
-                <span class="badge bg-light text-dark border">${r.saida || '-'}</span>
-                `
-            }
-        </td>
+        <td><span class="badge bg-light text-dark border">${ehAtestadoParcial ? (r.horaInicioAtestado || '-') : (r.entrada || '-')}</span></td>
+        <td><span class="badge bg-light text-dark border">${ehAtestadoParcial ? '-' : (r.almocoIda || '-')}</span></td>
+        <td><span class="badge bg-light text-dark border">${ehAtestadoParcial ? '-' : (r.almocoVolta || '-')}</span></td>
+        <td><span class="badge bg-light text-dark border">${ehAtestadoParcial ? (r.horaFimAtestado || '-') : (r.saida || '-')}</span></td>
         <td class="text-success fw-bold">${r.horasTrabalhadas || '00:00'}</td>
         <td class="${r.classeCorExtra || ''} fw-bold">${r.horasExtras || '00:00'}</td>
         <td class="text-center">${btnObsHtml}</td>

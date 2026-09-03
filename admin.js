@@ -1747,6 +1747,5 @@ function controlarCamposConfiguracao(bloquear) {
     if(document.getElementById("btnGpsConfigs")) document.getElementById("btnGpsConfigs").disabled = bloquear;
     if(document.getElementById("btnBuscarCep")) document.getElementById("btnBuscarCep").disabled = bloquear;
 } // Fecha a função controlarCamposConfiguracao
+});
 
-} // Fecha alguma função anterior que ficou aberta
-}); // Fecha o escopo principal da página

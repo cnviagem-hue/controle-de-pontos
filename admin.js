@@ -1736,7 +1736,7 @@ function focarEdicaoConfigs() {
     const inputNome = document.getElementById("nomeEmpresa");
     if(inputNome) inputNome.focus();
 }
-
+}
 function controlarCamposConfiguracao(bloquear) {
     if(document.getElementById("nomeEmpresa")) document.getElementById("nomeEmpresa").disabled = bloquear;
     if(document.getElementById("cepBusca")) document.getElementById("cepBusca").disabled = bloquear;

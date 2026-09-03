@@ -68,10 +68,12 @@ document.addEventListener("DOMContentLoaded", async () => {
         await carregarUsuariosDaNuvem();
 
     } catch (e) {
-        console.error("Erro critico de carregamento da tela:", e);
-        document.getElementById("sidebarNomeEmpresa").innerText = "Modo de Segurança";
-    }
-function toggleSidebarMenu() {
+            console.error("Erro critico de carregamento da tela:", e);
+            document.getElementById("sidebarNomeEmpresa").innerText = "Modo de Segurança";
+        }
+    }); // <--- COLOQUE AQUI (na linha 74)
+
+    function toggleSidebarMenu() {
     const sidebar = document.getElementById("sidebarMenu");
     const mainContent = document.getElementById("mainContentContainer");
     const btn = document.getElementById("btnToggleSidebar");
@@ -1727,6 +1729,7 @@ async function carregarConfigsNuvem() {
     } catch (error) {
         console.error("Erro ao carregar configs:", error);
     }
+} // <--- ADICIONE AQUI (linha 1732)
 
 function focarEdicaoConfigs() {
     controlarCamposConfiguracao(false);
